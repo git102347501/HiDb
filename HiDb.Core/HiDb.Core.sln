@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.33627.172
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HiDb.Core", "HiDb.Core.csproj", "{73A7BA8E-5E3F-42AF-AD22-386462F0C6B3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HiDb.WinForm", "..\HiDb.WinForm\HiDb.WinForm.csproj", "{4A334E99-DDA3-4452-B9F0-4DD3E8A4535C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{73A7BA8E-5E3F-42AF-AD22-386462F0C6B3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{73A7BA8E-5E3F-42AF-AD22-386462F0C6B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{73A7BA8E-5E3F-42AF-AD22-386462F0C6B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{73A7BA8E-5E3F-42AF-AD22-386462F0C6B3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4A334E99-DDA3-4452-B9F0-4DD3E8A4535C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4A334E99-DDA3-4452-B9F0-4DD3E8A4535C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4A334E99-DDA3-4452-B9F0-4DD3E8A4535C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4A334E99-DDA3-4452-B9F0-4DD3E8A4535C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EA25A727-FC52-4C3F-B26C-E875602E45C7}
+	EndGlobalSection
+EndGlobal
