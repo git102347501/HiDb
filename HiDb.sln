@@ -15,6 +15,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HiDb.DataProvider.SqlServer
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HiDb.DataProvider", "HiDb.DataProvider\HiDb.DataProvider.csproj", "{44032BFA-4185-431B-8827-045C96B8AA66}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{9DBEF6AD-5FEA-4DF1-B19D-C0EDFC2D3D75}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataProvider.UnitTest", "Test\DataProvider.UnitTest\DataProvider.UnitTest.csproj", "{B2BEB3FC-7374-4E82-9511-9D74EA7F71AD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -37,6 +41,10 @@ Global
 		{44032BFA-4185-431B-8827-045C96B8AA66}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{44032BFA-4185-431B-8827-045C96B8AA66}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{44032BFA-4185-431B-8827-045C96B8AA66}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2BEB3FC-7374-4E82-9511-9D74EA7F71AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2BEB3FC-7374-4E82-9511-9D74EA7F71AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2BEB3FC-7374-4E82-9511-9D74EA7F71AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2BEB3FC-7374-4E82-9511-9D74EA7F71AD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -46,6 +54,7 @@ Global
 		{D702094A-F794-46F9-8538-4B1303A52004} = {8AB4D31B-CE2B-4025-A483-7ACD217EDDDD}
 		{910F0A57-F28B-4955-9691-DDA1DA4C24BB} = {8AB4D31B-CE2B-4025-A483-7ACD217EDDDD}
 		{44032BFA-4185-431B-8827-045C96B8AA66} = {8AB4D31B-CE2B-4025-A483-7ACD217EDDDD}
+		{B2BEB3FC-7374-4E82-9511-9D74EA7F71AD} = {9DBEF6AD-5FEA-4DF1-B19D-C0EDFC2D3D75}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0E3F01F2-2121-45BF-968B-99EE702F8C2F}

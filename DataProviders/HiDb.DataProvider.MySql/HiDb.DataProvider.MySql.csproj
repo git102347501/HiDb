@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\HiDb.DataProvider\HiDb.DataProvider.csproj" />
+  </ItemGroup>
+
 </Project>

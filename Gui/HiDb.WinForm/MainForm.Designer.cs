@@ -29,56 +29,56 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
-            menuStrip1 = new MenuStrip();
+            menuStrip_Main = new MenuStrip();
             打开ToolStripMenuItem = new ToolStripMenuItem();
+            数据库连接ToolStripMenuItem = new ToolStripMenuItem();
+            关于ToolStripMenuItem = new ToolStripMenuItem();
             splitContainer1 = new SplitContainer();
-            panel3 = new Panel();
-            treeView1 = new TreeView();
+            panel_Db = new Panel();
+            treeView_Db = new TreeView();
             panel1 = new Panel();
-            toolStrip1 = new ToolStrip();
+            toolStrip_Menu = new ToolStrip();
             toolStripComboBox1 = new ToolStripComboBox();
             toolStripButton1 = new ToolStripButton();
             splitContainer2 = new SplitContainer();
             panel4 = new Panel();
-            richTextBox1 = new RichTextBox();
+            richTextBox_Search = new RichTextBox();
             panel2 = new Panel();
-            toolStrip2 = new ToolStrip();
+            toolStrip_Search = new ToolStrip();
             toolStripButton2 = new ToolStripButton();
             toolStripButton3 = new ToolStripButton();
             toolStripButton4 = new ToolStripButton();
             panel6 = new Panel();
-            dataGridView1 = new DataGridView();
+            dataGridView_Result = new DataGridView();
             panel5 = new Panel();
-            数据库连接ToolStripMenuItem = new ToolStripMenuItem();
-            关于ToolStripMenuItem = new ToolStripMenuItem();
-            menuStrip1.SuspendLayout();
+            menuStrip_Main.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
             splitContainer1.SuspendLayout();
-            panel3.SuspendLayout();
+            panel_Db.SuspendLayout();
             panel1.SuspendLayout();
-            toolStrip1.SuspendLayout();
+            toolStrip_Menu.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer2).BeginInit();
             splitContainer2.Panel1.SuspendLayout();
             splitContainer2.Panel2.SuspendLayout();
             splitContainer2.SuspendLayout();
             panel4.SuspendLayout();
             panel2.SuspendLayout();
-            toolStrip2.SuspendLayout();
+            toolStrip_Search.SuspendLayout();
             panel6.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)dataGridView_Result).BeginInit();
             SuspendLayout();
             // 
-            // menuStrip1
+            // menuStrip_Main
             // 
-            menuStrip1.ImageScalingSize = new Size(20, 20);
-            menuStrip1.Items.AddRange(new ToolStripItem[] { 打开ToolStripMenuItem, 关于ToolStripMenuItem });
-            menuStrip1.Location = new Point(0, 0);
-            menuStrip1.Name = "menuStrip1";
-            menuStrip1.Size = new Size(846, 28);
-            menuStrip1.TabIndex = 0;
-            menuStrip1.Text = "menuStrip1";
+            menuStrip_Main.ImageScalingSize = new Size(20, 20);
+            menuStrip_Main.Items.AddRange(new ToolStripItem[] { 打开ToolStripMenuItem, 关于ToolStripMenuItem });
+            menuStrip_Main.Location = new Point(0, 0);
+            menuStrip_Main.Name = "menuStrip_Main";
+            menuStrip_Main.Size = new Size(846, 28);
+            menuStrip_Main.TabIndex = 0;
+            menuStrip_Main.Text = "menuStrip1";
             // 
             // 打开ToolStripMenuItem
             // 
@@ -86,6 +86,19 @@
             打开ToolStripMenuItem.Name = "打开ToolStripMenuItem";
             打开ToolStripMenuItem.Size = new Size(53, 24);
             打开ToolStripMenuItem.Text = "打开";
+            // 
+            // 数据库连接ToolStripMenuItem
+            // 
+            数据库连接ToolStripMenuItem.Name = "数据库连接ToolStripMenuItem";
+            数据库连接ToolStripMenuItem.Size = new Size(167, 26);
+            数据库连接ToolStripMenuItem.Text = "数据库连接";
+            // 
+            // 关于ToolStripMenuItem
+            // 
+            关于ToolStripMenuItem.Name = "关于ToolStripMenuItem";
+            关于ToolStripMenuItem.Size = new Size(53, 24);
+            关于ToolStripMenuItem.Text = "关于";
+            关于ToolStripMenuItem.Click += 关于ToolStripMenuItem_Click;
             // 
             // splitContainer1
             // 
@@ -95,7 +108,7 @@
             // 
             // splitContainer1.Panel1
             // 
-            splitContainer1.Panel1.Controls.Add(panel3);
+            splitContainer1.Panel1.Controls.Add(panel_Db);
             splitContainer1.Panel1.Controls.Add(panel1);
             // 
             // splitContainer1.Panel2
@@ -105,41 +118,41 @@
             splitContainer1.SplitterDistance = 281;
             splitContainer1.TabIndex = 1;
             // 
-            // panel3
+            // panel_Db
             // 
-            panel3.Controls.Add(treeView1);
-            panel3.Dock = DockStyle.Fill;
-            panel3.Location = new Point(0, 34);
-            panel3.Name = "panel3";
-            panel3.Size = new Size(281, 388);
-            panel3.TabIndex = 1;
+            panel_Db.Controls.Add(treeView_Db);
+            panel_Db.Dock = DockStyle.Fill;
+            panel_Db.Location = new Point(0, 34);
+            panel_Db.Name = "panel_Db";
+            panel_Db.Size = new Size(281, 388);
+            panel_Db.TabIndex = 1;
             // 
-            // treeView1
+            // treeView_Db
             // 
-            treeView1.Dock = DockStyle.Fill;
-            treeView1.Location = new Point(0, 0);
-            treeView1.Name = "treeView1";
-            treeView1.Size = new Size(281, 388);
-            treeView1.TabIndex = 0;
+            treeView_Db.Dock = DockStyle.Fill;
+            treeView_Db.Location = new Point(0, 0);
+            treeView_Db.Name = "treeView_Db";
+            treeView_Db.Size = new Size(281, 388);
+            treeView_Db.TabIndex = 0;
             // 
             // panel1
             // 
-            panel1.Controls.Add(toolStrip1);
+            panel1.Controls.Add(toolStrip_Menu);
             panel1.Dock = DockStyle.Top;
             panel1.Location = new Point(0, 0);
             panel1.Name = "panel1";
             panel1.Size = new Size(281, 34);
             panel1.TabIndex = 0;
             // 
-            // toolStrip1
+            // toolStrip_Menu
             // 
-            toolStrip1.ImageScalingSize = new Size(20, 20);
-            toolStrip1.Items.AddRange(new ToolStripItem[] { toolStripComboBox1, toolStripButton1 });
-            toolStrip1.Location = new Point(0, 0);
-            toolStrip1.Name = "toolStrip1";
-            toolStrip1.Size = new Size(281, 28);
-            toolStrip1.TabIndex = 0;
-            toolStrip1.Text = "toolStrip1";
+            toolStrip_Menu.ImageScalingSize = new Size(20, 20);
+            toolStrip_Menu.Items.AddRange(new ToolStripItem[] { toolStripComboBox1, toolStripButton1 });
+            toolStrip_Menu.Location = new Point(0, 0);
+            toolStrip_Menu.Name = "toolStrip_Menu";
+            toolStrip_Menu.Size = new Size(281, 28);
+            toolStrip_Menu.TabIndex = 0;
+            toolStrip_Menu.Text = "toolStrip1";
             // 
             // toolStripComboBox1
             // 
@@ -177,41 +190,41 @@
             // 
             // panel4
             // 
-            panel4.Controls.Add(richTextBox1);
+            panel4.Controls.Add(richTextBox_Search);
             panel4.Dock = DockStyle.Fill;
             panel4.Location = new Point(0, 34);
             panel4.Name = "panel4";
             panel4.Size = new Size(561, 141);
             panel4.TabIndex = 1;
             // 
-            // richTextBox1
+            // richTextBox_Search
             // 
-            richTextBox1.BorderStyle = BorderStyle.FixedSingle;
-            richTextBox1.Dock = DockStyle.Fill;
-            richTextBox1.Location = new Point(0, 0);
-            richTextBox1.Name = "richTextBox1";
-            richTextBox1.Size = new Size(561, 141);
-            richTextBox1.TabIndex = 0;
-            richTextBox1.Text = "";
+            richTextBox_Search.BorderStyle = BorderStyle.FixedSingle;
+            richTextBox_Search.Dock = DockStyle.Fill;
+            richTextBox_Search.Location = new Point(0, 0);
+            richTextBox_Search.Name = "richTextBox_Search";
+            richTextBox_Search.Size = new Size(561, 141);
+            richTextBox_Search.TabIndex = 0;
+            richTextBox_Search.Text = "";
             // 
             // panel2
             // 
-            panel2.Controls.Add(toolStrip2);
+            panel2.Controls.Add(toolStrip_Search);
             panel2.Dock = DockStyle.Top;
             panel2.Location = new Point(0, 0);
             panel2.Name = "panel2";
             panel2.Size = new Size(561, 34);
             panel2.TabIndex = 0;
             // 
-            // toolStrip2
+            // toolStrip_Search
             // 
-            toolStrip2.ImageScalingSize = new Size(20, 20);
-            toolStrip2.Items.AddRange(new ToolStripItem[] { toolStripButton2, toolStripButton3, toolStripButton4 });
-            toolStrip2.Location = new Point(0, 0);
-            toolStrip2.Name = "toolStrip2";
-            toolStrip2.Size = new Size(561, 27);
-            toolStrip2.TabIndex = 0;
-            toolStrip2.Text = "toolStrip2";
+            toolStrip_Search.ImageScalingSize = new Size(20, 20);
+            toolStrip_Search.Items.AddRange(new ToolStripItem[] { toolStripButton2, toolStripButton3, toolStripButton4 });
+            toolStrip_Search.Location = new Point(0, 0);
+            toolStrip_Search.Name = "toolStrip_Search";
+            toolStrip_Search.Size = new Size(561, 27);
+            toolStrip_Search.TabIndex = 0;
+            toolStrip_Search.Text = "toolStrip2";
             // 
             // toolStripButton2
             // 
@@ -242,23 +255,23 @@
             // 
             // panel6
             // 
-            panel6.Controls.Add(dataGridView1);
+            panel6.Controls.Add(dataGridView_Result);
             panel6.Dock = DockStyle.Fill;
             panel6.Location = new Point(0, 0);
             panel6.Name = "panel6";
             panel6.Size = new Size(561, 211);
             panel6.TabIndex = 1;
             // 
-            // dataGridView1
+            // dataGridView_Result
             // 
-            dataGridView1.BackgroundColor = SystemColors.Control;
-            dataGridView1.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridView1.Dock = DockStyle.Fill;
-            dataGridView1.Location = new Point(0, 0);
-            dataGridView1.Name = "dataGridView1";
-            dataGridView1.RowHeadersWidth = 51;
-            dataGridView1.Size = new Size(561, 211);
-            dataGridView1.TabIndex = 0;
+            dataGridView_Result.BackgroundColor = SystemColors.Control;
+            dataGridView_Result.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dataGridView_Result.Dock = DockStyle.Fill;
+            dataGridView_Result.Location = new Point(0, 0);
+            dataGridView_Result.Name = "dataGridView_Result";
+            dataGridView_Result.RowHeadersWidth = 51;
+            dataGridView_Result.Size = new Size(561, 211);
+            dataGridView_Result.TabIndex = 0;
             // 
             // panel5
             // 
@@ -268,41 +281,28 @@
             panel5.Size = new Size(561, 32);
             panel5.TabIndex = 0;
             // 
-            // 数据库连接ToolStripMenuItem
-            // 
-            数据库连接ToolStripMenuItem.Name = "数据库连接ToolStripMenuItem";
-            数据库连接ToolStripMenuItem.Size = new Size(224, 26);
-            数据库连接ToolStripMenuItem.Text = "数据库连接";
-            // 
-            // 关于ToolStripMenuItem
-            // 
-            关于ToolStripMenuItem.Name = "关于ToolStripMenuItem";
-            关于ToolStripMenuItem.Size = new Size(53, 24);
-            关于ToolStripMenuItem.Text = "关于";
-            关于ToolStripMenuItem.Click += 关于ToolStripMenuItem_Click;
-            // 
             // MainForm
             // 
             AutoScaleDimensions = new SizeF(9F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(846, 450);
             Controls.Add(splitContainer1);
-            Controls.Add(menuStrip1);
-            MainMenuStrip = menuStrip1;
+            Controls.Add(menuStrip_Main);
+            MainMenuStrip = menuStrip_Main;
             Name = "MainForm";
             Text = "HiDb";
             Load += MainForm_Load;
-            menuStrip1.ResumeLayout(false);
-            menuStrip1.PerformLayout();
+            menuStrip_Main.ResumeLayout(false);
+            menuStrip_Main.PerformLayout();
             splitContainer1.Panel1.ResumeLayout(false);
             splitContainer1.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)splitContainer1).EndInit();
             splitContainer1.ResumeLayout(false);
-            panel3.ResumeLayout(false);
+            panel_Db.ResumeLayout(false);
             panel1.ResumeLayout(false);
             panel1.PerformLayout();
-            toolStrip1.ResumeLayout(false);
-            toolStrip1.PerformLayout();
+            toolStrip_Menu.ResumeLayout(false);
+            toolStrip_Menu.PerformLayout();
             splitContainer2.Panel1.ResumeLayout(false);
             splitContainer2.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)splitContainer2).EndInit();
@@ -310,36 +310,36 @@
             panel4.ResumeLayout(false);
             panel2.ResumeLayout(false);
             panel2.PerformLayout();
-            toolStrip2.ResumeLayout(false);
-            toolStrip2.PerformLayout();
+            toolStrip_Search.ResumeLayout(false);
+            toolStrip_Search.PerformLayout();
             panel6.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)dataGridView1).EndInit();
+            ((System.ComponentModel.ISupportInitialize)dataGridView_Result).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
 
         #endregion
 
-        private MenuStrip menuStrip1;
+        private MenuStrip menuStrip_Main;
         private ToolStripMenuItem 打开ToolStripMenuItem;
         private SplitContainer splitContainer1;
-        private Panel panel3;
+        private Panel panel_Db;
         private Panel panel1;
         private SplitContainer splitContainer2;
         private Panel panel4;
         private Panel panel2;
         private Panel panel5;
-        private TreeView treeView1;
-        private ToolStrip toolStrip1;
+        private TreeView treeView_Db;
+        private ToolStrip toolStrip_Menu;
         private ToolStripComboBox toolStripComboBox1;
         private ToolStripButton toolStripButton1;
-        private RichTextBox richTextBox1;
-        private ToolStrip toolStrip2;
+        private RichTextBox richTextBox_Search;
+        private ToolStrip toolStrip_Search;
         private ToolStripButton toolStripButton2;
         private ToolStripButton toolStripButton3;
         private ToolStripButton toolStripButton4;
         private Panel panel6;
-        private DataGridView dataGridView1;
+        private DataGridView dataGridView_Result;
         private ToolStripMenuItem 数据库连接ToolStripMenuItem;
         private ToolStripMenuItem 关于ToolStripMenuItem;
     }

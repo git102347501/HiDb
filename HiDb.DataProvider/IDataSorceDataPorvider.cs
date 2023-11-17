@@ -14,13 +14,13 @@ namespace HiDb.DataProvider
         /// </summary>
         /// <param name="dataSource"></param>
         /// <returns></returns>
-        public bool ConnectDb(string dataSource);
+        public ConnectDbOutput ConnectDb(string dataSource);
 
         /// <summary>
         /// 连接数据库
         /// </summary>
         /// <param name="dataSource"></param>
         /// <returns></returns>
-        public bool ConnectDb(ConnectDbInput input);
+        public ConnectDbOutput ConnectDb(ConnectDbInput input);
     }
 }
