@@ -17,13 +17,13 @@ namespace HiDb.DataProvider
         /// </summary>
         /// <param name="tableName"></param>
         /// <returns></returns>
-        public List<TableColumnOutput> GetDbColumnList(string tableName);
+        public List<TableColumnOutput> GetDbColumnList(TableColumnInput input);
 
         /// <summary>
         /// 获取指定属性-全量信息
         /// </summary>
         /// <param name="tableName"></param>
         /// <returns></returns>
-        public TableColumnFullOutput GetDbColumnFullInfo(string tableName);
+        public TableColumnFullOutput GetDbColumnFullInfo(TableColumnFullInput input);
     }
 }

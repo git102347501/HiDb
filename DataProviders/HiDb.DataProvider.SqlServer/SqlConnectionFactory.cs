@@ -10,7 +10,6 @@ namespace HiDb.DataProvider.SqlServer
     public class SqlConnectionFactory
     {
         private static SqlConnection connection = null;
-
         private static string _connectionString = "";
 
         private SqlConnectionFactory()
