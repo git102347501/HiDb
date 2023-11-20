@@ -16,6 +16,8 @@ namespace DataProvider.UnitTest
             // 注册需要注入的服务
             services.AddTransient<IDataSorceDataPorvider, DataSorceDataPorvider>();
             services.AddTransient<IMenuDataProvider, MenuDataProvider>();
+            services.AddTransient<ITableDataProvider, TableDataProvider>();
+            services.AddTransient<ISearchDataProvider, SearchDataProvider>();
         }
     }
 }
