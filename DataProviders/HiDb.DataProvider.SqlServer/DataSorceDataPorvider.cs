@@ -12,7 +12,7 @@ namespace HiDb.DataProvider.SqlServer
     /// <summary>
     /// 数据库连接实现
     /// </summary>
-    public class DataSorceDataPorvider : IDataSorceDataPorvider
+    public class DataSorceDataPorvider : MainDataProvider, IDataSorceDataPorvider
     {
         public ConnectDbOutput ConnectDb(string dataSource)
         {
