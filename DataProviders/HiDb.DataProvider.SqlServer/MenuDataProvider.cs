@@ -4,29 +4,38 @@ using System.Data.SqlClient;
 
 namespace HiDb.DataProvider.SqlServer
 {
-    public class MenuDataProvider : IMenuDataProvider
+    /// <summary>
+    /// MenuDataProvider
+    /// </summary>
+    public class MenuDataProvider : MainDataProvider, IMenuDataProvider
     {
         public List<MenuDataBaseOutput> GetDataBaseList()
         {
-            var connection = SqlConnectionFactory.GetConnection();
-            var sql = "SELECT name FROM sys.databases";
-            var result = connection.Query<MenuDataBaseOutput>(sql);
-            return result.ToList();
+            return GetList<MenuDataBaseOutput>("SELECT name AS Name FROM sys.databases");
         }
 
-        public List<MenuDbTableOutput> GetDbSpList()
+        public List<MenuDbSpOutput> GetDbSpList()
         {
-            throw new NotImplementedException();
+            return GetList<MenuDbSpOutput>("SELECT name AS Name FROM sys.procedures");
         }
 
-        public List<MenuDbTableOutput> GetDbTableList()
+        public List<MenuDbTableOutput> GetDbTableList(string mode, string database)
         {
-            throw new NotImplementedException();
+            return GetList<MenuDbTableOutput>(@$"SELECT TABLE_NAME AS Name
+                                                FROM [{database}].INFORMATION_SCHEMA.TABLES
+                                                WHERE TABLE_SCHEMA = '{mode}'");
         }
 
-        public List<MenuDbTableOutput> GetDbViewList()
+        public List<MenuDbModeOutput> GetDbModeList(string database)
         {
-            throw new NotImplementedException();
+            return GetList<MenuDbModeOutput>(@$"USE {database};
+                                                SELECT SCHEMA_NAME(schema_id) AS Name
+                                                FROM sys.schemas;");
+        }
+
+        public List<MenuDbViewOutput> GetDbViewList()
+        {
+            return GetList<MenuDbViewOutput>("SELECT name AS Name FROM sys.views");
         }
     }
 }
