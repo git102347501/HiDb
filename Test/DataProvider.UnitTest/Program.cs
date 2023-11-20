@@ -29,7 +29,7 @@ try
     {
         Account = "sa",
         Address = "127.0.0.1",
-        PassWord = "123456",
+        PassWord = "Sql@123456",
         Port = 1433
     });
 
@@ -43,7 +43,7 @@ try
     }
 
     var menuService = serviceProvider.GetService<IMenuDataProvider>();
-    if (mainService == null)
+    if (menuService == null)
     {
         throw new Exception("缺少服务[IMenuDataProvider]实现");
     }
@@ -54,6 +54,15 @@ try
 
     Console.WriteLine("2. Get DbList Ok!");
 
+    Console.WriteLine("3. Get DbMode Test...");
+    var modeList = menuService.GetDbModeList(dbList.FirstOrDefault().Name);
+    Console.WriteLine("3. Get DbMode:" + string.Join(",", modeList.Select(c => c.Name).ToList()));
+    Console.WriteLine("3. Get DbMode Ok!");
+
+    Console.WriteLine("4. Get DbTable Test...");
+    var tableList = menuService.GetDbTableList(modeList.FirstOrDefault().Name, dbList.FirstOrDefault().Name);
+    Console.WriteLine("4. Get DbTable:" + string.Join(",", tableList.Select(c => c.Name).ToList()));
+    Console.WriteLine("4. Get DbTable Ok!");
 }
 catch (Exception ex)
 {

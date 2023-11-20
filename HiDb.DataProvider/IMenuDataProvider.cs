@@ -24,6 +24,13 @@ namespace HiDb.DataProvider
         public List<MenuDbViewOutput> GetDbViewList();
 
         /// <summary>
+        /// 获取菜单-数据库-模式列表
+        /// </summary>
+        /// <param name="database"></param>
+        /// <returns></returns>
+        List<MenuDbModeOutput> GetDbModeList(string database);
+
+        /// <summary>
         /// 获取菜单-数据库-存储过程列表
         /// </summary>
         /// <returns></returns>
