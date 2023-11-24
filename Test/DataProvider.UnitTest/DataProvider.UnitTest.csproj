@@ -14,7 +14,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\DataProviders\HiDb.DataProvider.SqlServer\HiDb.DataProvider.SqlServer.csproj" />
-    <ProjectReference Include="..\..\HiDb.DataProvider\HiDb.DataProvider.csproj" />
   </ItemGroup>
 
 </Project>

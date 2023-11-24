@@ -44,6 +44,8 @@ class MainInit {
       webPreferences: {
         sandbox: false,
         webSecurity: false,
+        nodeIntegration: true,
+        contextIsolation: false,
         // 如果是开发模式可以使用devTools
         devTools: process.env.NODE_ENV === 'development',
         // 在macos中启用橡皮动画
@@ -181,6 +183,8 @@ class MainInit {
       transparent: true,
       resizable: false,
       webPreferences: {
+        nodeIntegration: true,
+        contextIsolation: false,
         experimentalFeatures: true,
         preload: process.env.NODE_ENV === 'development'
           ? join(app.getAppPath(), 'preload.js')

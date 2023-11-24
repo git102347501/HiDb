@@ -80,6 +80,8 @@ export default {
         webPreferences: {
           sandbox: false,
           webSecurity: false,
+          nodeIntegration: true,
+          contextIsolation: false,
           // 如果是开发模式可以使用devTools
           devTools: process.env.NODE_ENV === 'development',
           // 在macos中启用橡皮动画

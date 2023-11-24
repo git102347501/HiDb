@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\HiDb.DataProvider\HiDb.DataProvider.csproj" />
+    <ProjectReference Include="..\HiDb.DataProvider\HiDb.DataProvider.csproj" />
   </ItemGroup>
 
 </Project>

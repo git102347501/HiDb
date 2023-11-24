@@ -1,0 +1,12 @@
+@HiDb.Api_HostAddress = http://localhost:5078
+
+GET {{HiDb.Api_HostAddress}}/Menu/DataBase
+Accept: application/json
+
+
+###
+
+GET {{HiDb.Api_HostAddress}}/Menu/Mode/master
+Accept: application/json
+
+###

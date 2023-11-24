@@ -1,6 +1,6 @@
 'use strict'
 
-import { app, session } from 'electron'
+import { BrowserWindow, app, session } from 'electron'
 import InitWindow from './services/windowManager'
 import DisableButton from './config/DisableButton'
 
