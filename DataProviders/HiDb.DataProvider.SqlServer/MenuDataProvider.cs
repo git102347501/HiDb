@@ -19,7 +19,7 @@ namespace HiDb.DataProvider.SqlServer
             return GetList<MenuDbSpOutput>("SELECT name AS Name FROM sys.procedures");
         }
 
-        public List<MenuDbTableOutput> GetDbTableList(string mode, string database)
+        public List<MenuDbTableOutput> GetDbTableList(string database, string mode)
         {
             return GetList<MenuDbTableOutput>(@$"SELECT TABLE_NAME AS Name
                                                 FROM [{database}].INFORMATION_SCHEMA.TABLES

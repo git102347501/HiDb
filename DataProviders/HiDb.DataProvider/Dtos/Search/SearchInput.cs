@@ -17,5 +17,9 @@ namespace HiDb.DataProvider.Dtos.Search
         /// 查询语句
         /// </summary>
         public string Sql { get; set; }
+
+        public int? PageIndex { get; set; }
+
+        public int? PageSize { get; set; }
     }
 }

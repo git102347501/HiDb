@@ -1,6 +1,7 @@
 import axios from "axios";
+const BASE_URL = process.env.API_HOST;
 const serves = axios.create({
-  baseURL: __CONFIG__.BASE_API,
+  baseURL: BASE_URL ? BASE_URL : 'http://localhost:5078',
   timeout: 5000,
 });
 

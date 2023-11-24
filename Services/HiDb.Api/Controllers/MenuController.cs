@@ -12,19 +12,19 @@ namespace HiDb.Api.Controllers
     {
         private readonly IMenuDataProvider _menuDataProvider = menuDataProvider;
 
-        [HttpGet("DataBase")]
+        [HttpGet("db")]
         public IEnumerable<MenuDataBaseOutput> GetMenu()
         {
             return _menuDataProvider.GetDataBaseList();
         }
 
-        [HttpGet("Mode")]
+        [HttpGet("mode")]
         public IEnumerable<MenuDbModeOutput> GetModeByDb(string database)
         {
             return _menuDataProvider.GetDbModeList(database);
         }
 
-        [HttpGet("Table")]
+        [HttpGet("table")]
         public IEnumerable<MenuDbTableOutput> GetModeByDb(string database, string mode)
         {
             return _menuDataProvider.GetDbTableList(database, mode);
