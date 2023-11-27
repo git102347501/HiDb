@@ -27,8 +27,9 @@ namespace HiDb.Api.Controllers
         /// <param name="database"></param>
         /// <returns></returns>
         [HttpGet]
-        public List<dynamic> Get(string sql, int? pageIndex = null, int? pageSize = null, string? database = "")
+        public SearchOutput Get(string sql, int? pageIndex = null, int? pageSize = null, string? database = "")
         {
+            sql = sql.Replace("\n", "");
             return _searchDataProvider.GetSearchData(new SearchInput()
             {
                 DataBase = database,

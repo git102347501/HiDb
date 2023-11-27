@@ -16,17 +16,20 @@ namespace HiDb.DataProvider.SqlServer
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        public List<dynamic> GetSearchData(SearchInput input)
+        public SearchOutput GetSearchData(SearchInput input)
         {
-            var sql = input.PageSize.HasValue && input.PageIndex.HasValue ? GetPageSql(input.Sql, input.PageIndex.Value, input.PageSize.Value) : input.Sql;
-            if (string.IsNullOrWhiteSpace(input.DataBase))
+            var query = GetPageSql(input.Sql, input.PageSize.Value);
+
+            if (!string.IsNullOrWhiteSpace(input.DataBase))
             {
-                return this.GetList(sql);
-            } 
-            else
-            {
-                return this.GetList(@$"use {input.DataBase};" + sql);
+                input.Sql = @$"use {input.DataBase};" + input.Sql;
             }
+            var res = new SearchOutput()
+            {
+                List = this.GetList(query.Item1),
+                Count = this.GetCount(query.Item2)
+            };
+            return res;
         }
 
         /// <summary>
@@ -47,20 +50,19 @@ namespace HiDb.DataProvider.SqlServer
             }
         }
 
-        private string GetPageSql(string sql, int pageIndex, int pageSize)
+        private (string,string) GetPageSql(string sql, int pageSize)
         {
             // 计算需要跳过的记录数
 
             // 非查询不转分页
             if (!sql.ToLower().Contains("select"))
             {
-                return sql;
-            }
-
-            int offset = (pageIndex - 1) * pageSize;
+                return (sql,"");
+            } 
             // 构建分页查询SQL
-            string pageSql = $"SELECT * FROM ({sql}) AS TempTable ORDER BY (SELECT NULL) OFFSET {offset} ROWS FETCH NEXT {pageSize} ROWS ONLY";
-            return pageSql;
+            var pageSql = $"SELECT top {pageSize} * FROM ({sql}) AS a";
+            var countSql = $"SELECT count(1) FROM ({sql}) AS a";
+            return (pageSql, countSql);
         }
     }
 }

@@ -59,11 +59,12 @@
                     :auto-size="{ minRows: 4, maxRows: 15 }" />
             </div>
             <div class="data">
-                <a-table
+                <a-table class="table"
                   v-if="isQuery"
                     :columns="columns" 
                     size="small"
                     :data-source="currData"
+                    :scroll="{ y: pageHeight }"
                     :pagination="pagination"
                     :loading="loading"
                     @change="handleTableChange"
@@ -80,14 +81,25 @@
     </a-layout>
   </template>
   <script lang="ts" setup>
-    import { h, ref, watch, computed } from 'vue';
+    import { h, ref, watch, onMounted  } from 'vue';
     import { AppstoreOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownOutlined, FrownFilled  } from '@ant-design/icons-vue';
     import { usePagination } from 'vue-request';
     import { getDb,getMode,getTable } from '../api/menu';
     import { getSearch,execute} from '../api/search';
     import type { MenuTheme,TreeProps,TableProps  } from 'ant-design-vue';
     import { message } from 'ant-design-vue';
-
+    const sh = 320;
+    const pageHeight = ref(0);
+    
+    onMounted(() => {
+      pageHeight.value = document.body.clientHeight - sh;
+      console.log('onMounted:' + pageHeight.value);
+      window.addEventListener('resize', onResize)
+    });
+    const onResize = () => {
+      pageHeight.value = document.body.clientHeight - sh;
+      console.log('onResize:' + pageHeight.value);
+    };
     const [messageApi] = message.useMessage(); // 消息
     const optValue = ref<string>(''); // 执行SQL
     const searchValue = ref<string>(''); // 左侧搜索内容
@@ -188,7 +200,7 @@
     const currDbName = ref('');
     const onSelect = (selectedKeys, e)=>{
       if (e && e.node && e.node.dataRef.type === 'table') {
-        optValue.value = 'select top 10 * from ' + e.node.dataRef.title;
+        optValue.value = 'select * from ' + e.node.dataRef.title;
         currDbName.value = e.node.dataRef.database;
       }
     }
@@ -236,7 +248,7 @@
     const pagination = ref({
       total: 200,
       pageIndex: 1,
-      pageSize: 10,
+      pageSize: 1000,
     });
     const textarea = ref(null);
     const handleClick = ()=>{
@@ -289,16 +301,18 @@
         }).then(res => {
           loading.value = false;
           console.log(res);
-          if (res && res.data && res.data.length > 0) {
-            let obj  = res.data[0];
+          if (res && res.data && res.data.list && res.data.list.length > 0) {
+            let obj  = res.data.list[0];
             columns.value = Object.keys(obj).map(key => ({
               title: key,
               dataIndex: key,
               sorter: false
             }));
-            currData.value = res.data;
+            currData.value = res.data.list;
+            pagination.value.total = res.data.count;
           } else {
             currData.value = [];
+            pagination.value.total = 0;
           }
         }, err => {
           loading.value = false;
@@ -330,6 +344,11 @@
   }
   .main {
     margin-top: 30px;
+    width: 100%;
+    height: calc(100vh - 30px);
+    overflow-y: hidden;
+    overflow-x: hidden;
+
     .header {
         height: 50px;
         width: 100%;
@@ -368,11 +387,12 @@
 
         .tree {
             width: 100%;
-            height: calc(100% - 45px);
+            max-height: calc(100vh - 45px);
+            overflow-y: auto;
         }
     }
     .work {
-        height: calc(100vh - 120px);
+        height: calc(100vh - 80px);
         width: calc(100% - 350px);    
         .tools {
             width: 100%;
@@ -402,6 +422,11 @@
             .data {
                 width: 100%;
                 height: 100%;
+
+                .table {
+                  width: 100%;
+                  height: 100%;
+                }
 
                 .msg {
                   width: 100%;

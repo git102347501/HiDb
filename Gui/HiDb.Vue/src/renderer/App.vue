@@ -45,4 +45,5 @@ import TitleBar from "./components/common/TitleBar.vue";
 
 </script>
 
-<style></style>
+<style>
+</style>

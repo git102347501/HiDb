@@ -11,6 +11,13 @@ namespace HiDb.DataProvider.SqlServer
             return result.ToList();
         }
 
+        public long GetCount(string sql)
+        {
+            var connection = SqlConnectionFactory.GetConnection();
+            var result = connection.QueryFirstOrDefault<long>(sql);
+            return result;
+        }
+
         public List<dynamic> GetList(string sql)
         {
             var connection = SqlConnectionFactory.GetConnection();

@@ -14,7 +14,7 @@ namespace HiDb.DataProvider
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        public List<dynamic> GetSearchData(SearchInput input);
+        SearchOutput GetSearchData(SearchInput input);
 
         int Execute(SearchInput input);
     }
