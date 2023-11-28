@@ -3,7 +3,7 @@
       <a-layout-header class="header">
         <div class="btn">
           <a-dropdown>
-            <a-button type="default">操作</a-button>
+            <a-button ghost>操作</a-button>
             <template #overlay>
               <a-menu >
                 <a-menu-item key="1">数据库列表</a-menu-item>
@@ -65,74 +65,96 @@
                     size="small"
                     :data-source="currData"
                     :scroll="{ y: pageHeight }"
-                    :pagination="pagination"
                     :loading="loading"
-                    @change="handleTableChange"
+                    :pagination="false"
                 >
                   <template #headerCell="{ column }"/>
                 </a-table>
                 <div class="msg" v-if="!isQuery">
                   影响行数: {{executeNum}}
                 </div>
+                <div  v-if="isQuery && pagination.total" class="table-line">
+                  总记录行数:{{ pagination.total }}
+                </div>
             </div>
           </a-layout-content>
         </a-layout>
       </a-layout>
+      <a-modal v-model:open="openDbDialog" title="Basic Modal" @ok="handleOk">
+        <div>
+          <a-form :model="formState" :label-col="labelCol" :wrapper-col="wrapperCol">
+            <a-form-item label="Activity name">
+              <a-input v-model:value="formState.name" />
+            </a-form-item>
+          </a-form>
+        </div>
+        <template #footer>
+          <a-button key="back" @click="cancelDbDialog">取消</a-button>
+          <a-button key="submit" type="primary" :loading="loading" @click="handleOk">连接</a-button>
+        </template>
+      </a-modal>
     </a-layout>
-  </template>
-  <script lang="ts" setup>
-    import { h, ref, watch, onMounted  } from 'vue';
-    import { AppstoreOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownOutlined, FrownFilled  } from '@ant-design/icons-vue';
-    import { usePagination } from 'vue-request';
-    import { getDb,getMode,getTable } from '../api/menu';
-    import { getSearch,execute} from '../api/search';
-    import type { MenuTheme,TreeProps,TableProps  } from 'ant-design-vue';
-    import { message } from 'ant-design-vue';
-    const sh = 320;
-    const pageHeight = ref(0);
-    
-    onMounted(() => {
-      pageHeight.value = document.body.clientHeight - sh;
-      console.log('onMounted:' + pageHeight.value);
-      window.addEventListener('resize', onResize)
-    });
-    const onResize = () => {
-      pageHeight.value = document.body.clientHeight - sh;
-      console.log('onResize:' + pageHeight.value);
-    };
-    const [messageApi] = message.useMessage(); // 消息
-    const optValue = ref<string>(''); // 执行SQL
-    const searchValue = ref<string>(''); // 左侧搜索内容
-    const expandedMenuKeys = ref<string[]>([]); // tree搜索key
-    const selectedMenuKeys = ref<string[]>([]); // tree选择key
-    // tree数据
-    const treeData = ref<TreeProps['treeData']>([
-    ]);
+</template>
 
-    // 加载数据库列表
-    const loadDataBase = ()=>{
-      getDb().then(res => {
-        console.log(res);
-        treeData.value = res.data.map(c=> {
-          return {
-            title: c.name,
-            key: c.name,
-            isLeaf: false,
-            type: 'db'
-          }});
-        console.log(treeData.value);
-      })
-    }
-    // 默认加载列表
+<script lang="ts" setup>
+import { h, ref, watch, onMounted  } from 'vue';
+import { AppstoreOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownOutlined, FrownFilled  } from '@ant-design/icons-vue';
+import { getDb,getMode,getTable } from '../api/menu';
+import { getSearch,execute} from '../api/search';
+import type { MenuTheme,TreeProps,TableProps  } from 'ant-design-vue';
+import { message } from 'ant-design-vue';
+
+  const sh = 320;
+  const pageHeight = ref(0);
+  const loading = ref(false);
+  onMounted(() => {
+    pageHeight.value = document.body.clientHeight - sh;
+    console.log('onMounted:' + pageHeight.value);
+    window.addEventListener('resize', onResize)
+  });
+  const onResize = () => {
+    pageHeight.value = document.body.clientHeight - sh;
+    console.log('onResize:' + pageHeight.value);
+  };
+  const [messageApi] = message.useMessage(); // 消息
+  const optValue = ref<string>(''); // 执行SQL
+  const searchValue = ref<string>(''); // 左侧搜索内容
+  const expandedMenuKeys = ref<string[]>([]); // tree搜索key
+  const selectedMenuKeys = ref<string[]>([]); // tree选择key
+  const executeNum = ref(0); // 影响行数
+  const isQuery = ref(true); // 是否走查询
+  // tree数据
+  const treeData = ref<TreeProps['treeData']>([
+  ]);
+  const openDbDialog = ref<boolean>(false);
+
+  // 加载数据库列表
+  const loadDataBase = ()=>{
+    getDb().then(res => {
+      console.log(res);
+      treeData.value = res.data.map(c=> {
+        return {
+          title: c.name,
+          key: c.name,
+          isLeaf: false,
+          type: 'db'
+        }});
+      console.log(treeData.value);
+    })
+  }
+  // 默认加载列表
+  loadDataBase();
+
+  // 搜索
+  const onSearch = (searchValue: string) => {
     loadDataBase();
+  };
+  const cancelDbDialog = ()=>{
+    openDbDialog.value = false;
+  }
 
-    // 搜索
-    const onSearch = (searchValue: string) => {
-      loadDataBase();
-    };
-
-    // 主菜单
-    const items = ref([
+  // 主菜单
+  const items = ref([
   {
     key: '1',
     icon: () => h(AppstoreOutlined),
@@ -210,13 +232,13 @@
         const expanded = treeData.value
             .map((item: TreeProps['treeData'][number]) => {
               if (item.title.indexOf(value) > -1) {
-                  return getParentKey(item.key, gData.value);
+                  //return getParentKey(item.key, gData.value);
               }
               return null;
             }).filter((item, i, self) => item && self.indexOf(item) === i);
-                expandedMenuKeys.value = expanded;
+                //expandedMenuKeys.value = expanded;
                 searchValue.value = value;
-                autoExpandParent.value = true;
+                //autoExpandParent.value = true;
     });
 
     // 获取父key
@@ -246,9 +268,8 @@
     const currData = ref<any[]>([]);
     // 表格分页信息
     const pagination = ref({
-      total: 200,
-      pageIndex: 1,
-      pageSize: 1000,
+      total: null,
+      pageSize: 1000
     });
     const textarea = ref(null);
     const handleClick = ()=>{
@@ -266,9 +287,6 @@
         return optValue.value;
       }
     }
-    // 影响行数
-    const executeNum = ref(0);
-    const isQuery = ref(true);
 
     // 表格主查询
     const searchData = () => {
@@ -296,7 +314,6 @@
         getSearch({
           database: currDbName.value ? currDbName.value : '',
           sql: sql,
-          pageIndex: pagination.value.pageIndex,
           pageSize: pagination.value.pageSize
         }).then(res => {
           loading.value = false;
@@ -306,7 +323,8 @@
             columns.value = Object.keys(obj).map(key => ({
               title: key,
               dataIndex: key,
-              sorter: false
+              sorter: false,
+              width: 40 + (key.length * 10)
             }));
             currData.value = res.data.list;
             pagination.value.total = res.data.count;
@@ -320,18 +338,8 @@
         })
       }
     }
+</script>
 
-    const loading = ref(false);
-    const handleTableChange: TableProps['onChange'] = (
-      pag: { pageSize: number; current: number },
-      filters: any,
-      sorter: any,
-    ) => {
-      pagination.value.pageIndex = pag?.current;
-      pagination.value.pageSize = pag.pageSize;
-      searchData();
-    };
-  </script>
 <style lang="scss" scoped>
   
   .ant-row-rtl #components-layout-demo-top-side-2 .logo {
@@ -425,7 +433,19 @@
 
                 .table {
                   width: 100%;
-                  height: 100%;
+                  height: calc(100% - 30px);
+                }
+                .table-line {
+                  width: 100%;
+                  height: 30px;
+                  font-size: 12px;
+                  color: #333333;
+                  padding: 0 6px;
+                  display: flex;
+                  flex-direction: row;
+                  align-items: center;
+                  justify-content: flex-start;
+                  background-color: #f5f5f5;
                 }
 
                 .msg {
@@ -440,5 +460,5 @@
         }
     }
   }
-  </style>
+</style>
   

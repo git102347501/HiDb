@@ -1,7 +1,7 @@
 ﻿using HiDb.DataProvider;
 using HiDb.DataProvider.Dtos.Menus;
 using HiDb.DataProvider.Dtos.Search;
-using HiDb.DataProvider.SqlServer;
+using HiDb.DataProvider.Factory;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,10 +14,8 @@ namespace HiDb.Api.Controllers
     [ApiController]
     [AllowAnonymous]
     [Route("Search")]
-    public class SearchController(ISearchDataProvider searchDataProvider) : ControllerBase
+    public class SearchController : MainController
     {
-        private readonly ISearchDataProvider _searchDataProvider = searchDataProvider;
-
         /// <summary>
         /// search data
         /// </summary>
@@ -30,7 +28,7 @@ namespace HiDb.Api.Controllers
         public SearchOutput Get(string sql, int? pageIndex = null, int? pageSize = null, string? database = "")
         {
             sql = sql.Replace("\n", "");
-            return _searchDataProvider.GetSearchData(new SearchInput()
+            return GetService(ServiceFactory.GetSearch).GetSearchData(new SearchInput()
             {
                 DataBase = database,
                 Sql = sql,
@@ -48,7 +46,7 @@ namespace HiDb.Api.Controllers
         [HttpPost("Execute")]
         public int Execute(string sql, string? database = "")
         {
-            return _searchDataProvider.Execute(new SearchInput()
+            return GetService(ServiceFactory.GetSearch).Execute(new SearchInput()
             {
                 DataBase = database,
                 Sql = sql

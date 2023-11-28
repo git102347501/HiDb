@@ -12,8 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\DataProviders\HiDb.DataProvider.MySql\HiDb.DataProvider.MySql.csproj" />
-    <ProjectReference Include="..\..\DataProviders\HiDb.DataProvider.SqlServer\HiDb.DataProvider.SqlServer.csproj" />
+    <ProjectReference Include="..\..\DataProviders\HiDb.DataProvider.Factory\HiDb.DataProvider.Factory.csproj" />
     <ProjectReference Include="..\..\DataProviders\HiDb.DataProvider\HiDb.DataProvider.csproj" />
   </ItemGroup>
 

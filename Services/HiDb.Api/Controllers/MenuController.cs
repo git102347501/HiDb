@@ -1,33 +1,35 @@
 using HiDb.DataProvider;
+using HiDb.DataProvider.Dtos.Enums;
 using HiDb.DataProvider.Dtos.Menus;
+using HiDb.DataProvider.Factory;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Net.Http.Headers;
 
 namespace HiDb.Api.Controllers
 {
     [ApiController]
     [AllowAnonymous]
     [Route("Menu")]
-    public class MenuController(IMenuDataProvider menuDataProvider) : ControllerBase
+    public class MenuController : MainController
     {
-        private readonly IMenuDataProvider _menuDataProvider = menuDataProvider;
 
         [HttpGet("db")]
         public IEnumerable<MenuDataBaseOutput> GetMenu()
         {
-            return _menuDataProvider.GetDataBaseList();
+            return GetService(ServiceFactory.GetMenu).GetDataBaseList();
         }
 
         [HttpGet("mode")]
         public IEnumerable<MenuDbModeOutput> GetModeByDb(string database)
         {
-            return _menuDataProvider.GetDbModeList(database);
+            return GetService(ServiceFactory.GetMenu).GetDbModeList(database);
         }
 
         [HttpGet("table")]
         public IEnumerable<MenuDbTableOutput> GetModeByDb(string database, string mode)
         {
-            return _menuDataProvider.GetDbTableList(database, mode);
+            return GetService(ServiceFactory.GetMenu).GetDbTableList(database, mode);
         }
     }
 }

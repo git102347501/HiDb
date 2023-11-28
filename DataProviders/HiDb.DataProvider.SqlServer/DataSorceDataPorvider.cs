@@ -31,5 +31,7 @@ namespace HiDb.DataProvider.SqlServer
         {
             return ConnectDb(SqlConnectionFactory.GeneratorDataSource(input));
         }
+
+
     }
 }
