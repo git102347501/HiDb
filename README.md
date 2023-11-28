@@ -4,5 +4,22 @@
 Modern Database Management Desktop Software Based on Electron
 
 
-# Gui Provder:
+# Gui
 - Electron for Vue3
+- WinForm (Plan)
+- WPF (Plan)
+
+# Api
+- Net8 WebApi
+
+# DAO
+- Dapper
+
+# Operation mode
+- Local tool operation
+
+  A pure tool software that runs locally and can be used after installation
+  
+- Service deployment and operation
+
+  Deploy backend services on your server, with only graphical interfaces running on the desktop for use
