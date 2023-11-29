@@ -17,18 +17,7 @@ namespace HiDb.DataProvider.Dtos.Enums
     {
         public static DbTypeEnum? GetDbType(string name)
         {
-            if (name.Trim().ToLower() == "sqlserver")
-            {
-                return DbTypeEnum.SqlServer;
-            } 
-            else if (name.Trim().ToLower() == "mysql")
-            {
-                return DbTypeEnum.MySql;
-            }
-            else
-            {
-                return null;
-            }
+            return (DbTypeEnum)int.Parse(name);
         }
     }
 }

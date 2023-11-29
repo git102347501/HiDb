@@ -5,7 +5,7 @@
           <a-dropdown>
             <a-button ghost>操作</a-button>
             <template #overlay>
-              <a-menu >
+              <a-menu @click="selectedMenu">
                 <a-menu-item key="1">数据库列表</a-menu-item>
                 <a-menu-item key="2">新的连接</a-menu-item>
               </a-menu>
@@ -39,6 +39,7 @@
                 </template>
               </template>
             </a-tree>
+            <a-empty v-if="!treeData.length" description="暂无数据库列表" />
           </div>
         </a-layout-sider>
         <a-layout class="work" style="padding: 0 8px 8px">
@@ -80,29 +81,49 @@
           </a-layout-content>
         </a-layout>
       </a-layout>
-      <a-modal v-model:open="openDbDialog" title="Basic Modal" @ok="handleOk">
-        <div>
-          <a-form :model="formState" :label-col="labelCol" :wrapper-col="wrapperCol">
-            <a-form-item label="Activity name">
-              <a-input v-model:value="formState.name" />
+      <a-modal v-model:open="openDbDialog" title="数据库连接">
+        <div class="db-dialog">
+          <a-form :model="openDbModel" :label-col="{ style: { width: '150px' } }" :wrapper-col="{ span: 14 }">
+            <a-form-item label="数据库类型" name="type"
+                :rules="[{ required: true, message: '请选择数据库类型!' }]">
+              <a-select
+                v-model:value="openDbModel.type"
+                style="width: 100%"
+                placeholder="请选择数据库类型"
+                :options="dbTypeOptions"
+              ></a-select>
+            </a-form-item>
+            <a-form-item label="数据库地址" name="address"
+                :rules="[{ required: true, message: '请输入数据库地址' }]">
+              <a-input v-model:value="openDbModel.address" placeholder="请输入数据库地址" />
+            </a-form-item>
+            <a-form-item label="登录名" name="account"
+                :rules="[{ required: true, message: '请输入登录名!' }]">
+              <a-input v-model:value="openDbModel.account" placeholder="请输入登录名" />
+            </a-form-item>
+            <a-form-item label="密码" name="passWord"
+                :rules="[{ required: true, message: '请输入密码!' }]">
+              <a-input-password v-model:value="openDbModel.passWord" placeholder="请输入密码" />
             </a-form-item>
           </a-form>
         </div>
         <template #footer>
           <a-button key="back" @click="cancelDbDialog">取消</a-button>
-          <a-button key="submit" type="primary" :loading="loading" @click="handleOk">连接</a-button>
+          <a-button key="submit" type="primary" :loading="submitOpenDbLoading" @click="submitOpenDb">连接</a-button>
         </template>
       </a-modal>
     </a-layout>
 </template>
 
 <script lang="ts" setup>
-import { h, ref, watch, onMounted  } from 'vue';
+import { h, ref, watch, onMounted, UnwrapRef, reactive  } from 'vue';
 import { AppstoreOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownOutlined, FrownFilled  } from '@ant-design/icons-vue';
 import { getDb,getMode,getTable } from '../api/menu';
 import { getSearch,execute} from '../api/search';
-import type { MenuTheme,TreeProps,TableProps  } from 'ant-design-vue';
+import { connectDb } from '../api/datasource';
+import type { MenuTheme,TreeProps,TableProps, MenuProps  } from 'ant-design-vue';
 import { message } from 'ant-design-vue';
+import { ConnectDbInput } from './model/MainPageMode';
 
   const sh = 320;
   const pageHeight = ref(0);
@@ -116,21 +137,44 @@ import { message } from 'ant-design-vue';
     pageHeight.value = document.body.clientHeight - sh;
     console.log('onResize:' + pageHeight.value);
   };
-  const [messageApi] = message.useMessage(); // 消息
   const optValue = ref<string>(''); // 执行SQL
   const searchValue = ref<string>(''); // 左侧搜索内容
   const expandedMenuKeys = ref<string[]>([]); // tree搜索key
   const selectedMenuKeys = ref<string[]>([]); // tree选择key
   const executeNum = ref(0); // 影响行数
   const isQuery = ref(true); // 是否走查询
+  const dbTypeOptions = [{
+    value: 0,
+    label: 'SqlServer',
+  },{
+    value: 1,
+    label: 'MySql',
+  },{
+    value: 2,
+    label: 'PgSql',
+  }];
+  const submitOpenDbLoading = ref(false);
+  // 当前数据库信息
+  const currDatabase = ref<ConnectDbInput>({
+    account: '',
+    passWord: '',
+    address: '',
+    type: 0,
+    port: 0
+  });
   // tree数据
   const treeData = ref<TreeProps['treeData']>([
   ]);
   const openDbDialog = ref<boolean>(false);
+  const selectedMenu: MenuProps['onClick'] = ({ key }) => {
+    if (key == '1') {
+      openDbDialog.value = true;
+    }
+  };
 
   // 加载数据库列表
   const loadDataBase = ()=>{
-    getDb().then(res => {
+    getDb(currDatabase.value.type).then(res => {
       console.log(res);
       treeData.value = res.data.map(c=> {
         return {
@@ -140,11 +184,37 @@ import { message } from 'ant-design-vue';
           type: 'db'
         }});
       console.log(treeData.value);
+    }, err => {
+      message.error(err.message);
     })
-  }
-  // 默认加载列表
-  loadDataBase();
-
+  };
+  const openDbModel = reactive<ConnectDbInput>({
+    account: 'sa',
+    passWord: '',
+    address: '',
+    type: 0,
+    port: 1433
+  });
+  // 打开数据库连接
+  const submitOpenDb = ()=>{
+    submitOpenDbLoading.value = true;
+    connectDb(openDbModel).then(res=>{
+      if (!res.data || !res.data || !res.data.success) {
+        message.error(res.data.message);
+        submitOpenDbLoading.value = false;
+      } else {
+        message.success('连接成功');
+        openDbDialog.value = false;
+        submitOpenDbLoading.value = false;
+        currDatabase.value = openDbModel;
+        // 加载数据库列表
+        loadDataBase();
+      }
+    }, err => { 
+      submitOpenDbLoading.value = false;
+      message.error(err && err.message ? err.message : '连接失败');
+    })
+  };
   // 搜索
   const onSearch = (searchValue: string) => {
     loadDataBase();
@@ -175,124 +245,124 @@ import { message } from 'ant-design-vue';
       }
     ],
   }
-    ]);
+  ]);
 
-    // tree 点击加载
-    const onLoadData: TreeProps['loadData'] = treeNode => {
-        return new Promise<void>(resolve => {
-          if (treeNode.dataRef.children) {
-            resolve();
-            return;
-          }
-          console.log(treeNode);
-          if (treeNode.dataRef.type === 'db') {
-            getMode(treeNode.title).then(res=>{
-              treeNode.dataRef.children = res.data.map(c => {
-                return {            
-                  title: c.name,
-                  key: c.name,
-                  isLeaf: false,
-                  type: 'mode',
-                  database: treeNode.title
-                }
-              });
-              treeData.value = [...treeData.value];
-              resolve();
-            })
-          } else if (treeNode.dataRef.type === 'mode'){
-            getTable(treeNode.dataRef.database,treeNode.title).then(res=>{
-              treeNode.dataRef.children = res.data.map(c => {
-                return {            
-                  title: c.name,
-                  key: c.name,
-                  isLeaf: true,
-                  type: 'table'
-                }
-              });
-              treeData.value = [...treeData.value];
-              resolve();
-            })
-          }  else {
-            resolve();
-          }
-        });
-    };
-
-    // 选中表
-    const currDbName = ref('');
-    const onSelect = (selectedKeys, e)=>{
-      if (e && e.node && e.node.dataRef.type === 'table') {
-        optValue.value = 'select * from ' + e.node.dataRef.title;
-        currDbName.value = e.node.dataRef.database;
-      }
-    }
-
-    // 数据监听
-    watch(searchValue, value => {
-        const expanded = treeData.value
-            .map((item: TreeProps['treeData'][number]) => {
-              if (item.title.indexOf(value) > -1) {
-                  //return getParentKey(item.key, gData.value);
-              }
-              return null;
-            }).filter((item, i, self) => item && self.indexOf(item) === i);
-                //expandedMenuKeys.value = expanded;
-                searchValue.value = value;
-                //autoExpandParent.value = true;
-    });
-
-    // 获取父key
-    const getParentKey = (
-        key: string | number,
-        tree: TreeProps['treeData'],
-        ): string | number | undefined => {
-        let parentKey;
-        for (let i = 0; i < tree.length; i++) {
-            const node = tree[i];
-            if (node.children) {
-            if (node.children.some(item => item.key === key)) {
-                parentKey = node.key;
-            } else if (getParentKey(key, node.children)) {
-                parentKey = getParentKey(key, node.children);
-            }
-            }
+  // tree 点击加载
+  const onLoadData: TreeProps['loadData'] = treeNode => {
+      return new Promise<void>(resolve => {
+        if (treeNode.dataRef.children) {
+          resolve();
+          return;
         }
-        return parentKey;
-    };
+        console.log(treeNode);
+        if (treeNode.dataRef.type === 'db') {
+          getMode(treeNode.title, currDatabase.value.type).then(res=>{
+            treeNode.dataRef.children = res.data.map(c => {
+              return {            
+                title: c.name,
+                key: c.name,
+                isLeaf: false,
+                type: 'mode',
+                database: treeNode.title
+              }
+            });
+            treeData.value = [...treeData.value];
+            resolve();
+          })
+        } else if (treeNode.dataRef.type === 'mode'){
+          getTable(treeNode.dataRef.database,treeNode.title, currDatabase.value.type).then(res=>{
+            treeNode.dataRef.children = res.data.map(c => {
+              return {            
+                title: c.name,
+                key: c.name,
+                isLeaf: true,
+                type: 'table'
+              }
+            });
+            treeData.value = [...treeData.value];
+            resolve();
+          })
+        }  else {
+          resolve();
+        }
+      });
+  };
 
-    // 表格数据列
-    const columns = ref<any[]>([]);
-    // 主题
-    const theme = ref<MenuTheme>('dark');
-    // 当前表格数据
-    const currData = ref<any[]>([]);
-    // 表格分页信息
-    const pagination = ref({
-      total: null,
-      pageSize: 1000
-    });
-    const textarea = ref(null);
-    const handleClick = ()=>{
-      textarea.value.focus();
+  // 选中表
+  const currDbName = ref('');
+  const onSelect = (selectedKeys, e)=>{
+    if (e && e.node && e.node.dataRef.type === 'table') {
+      optValue.value = 'select * from ' + e.node.dataRef.title;
+      currDbName.value = e.node.dataRef.database;
     }
-    const getSelectedText = () => {
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      
-      if (start !== end) {
-        textarea.setSelectionRange(start, end);
-        const selectedText = textarea.value.substring(start, end);
-        return selectedText;
-      } else {
-        return optValue.value;
+  }
+
+  // 数据监听
+  watch(searchValue, value => {
+      const expanded = treeData.value
+          .map((item: TreeProps['treeData'][number]) => {
+            if (item.title.indexOf(value) > -1) {
+                //return getParentKey(item.key, gData.value);
+            }
+            return null;
+          }).filter((item, i, self) => item && self.indexOf(item) === i);
+              //expandedMenuKeys.value = expanded;
+              searchValue.value = value;
+              //autoExpandParent.value = true;
+  });
+
+  // 获取父key
+  const getParentKey = (
+      key: string | number,
+      tree: TreeProps['treeData'],
+      ): string | number | undefined => {
+      let parentKey;
+      for (let i = 0; i < tree.length; i++) {
+          const node = tree[i];
+          if (node.children) {
+          if (node.children.some(item => item.key === key)) {
+              parentKey = node.key;
+          } else if (getParentKey(key, node.children)) {
+              parentKey = getParentKey(key, node.children);
+          }
+          }
       }
+      return parentKey;
+  };
+
+  // 表格数据列
+  const columns = ref<any[]>([]);
+  // 主题
+  const theme = ref<MenuTheme>('dark');
+  // 当前表格数据
+  const currData = ref<any[]>([]);
+  // 表格分页信息
+  const pagination = ref({
+    total: null,
+    pageSize: 1000
+  });
+  const textarea = ref(null);
+  const handleClick = ()=>{
+    textarea.value.focus();
+  }
+  const getSelectedText = () => {
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    
+    if (start !== end) {
+      textarea.setSelectionRange(start, end);
+      const selectedText = textarea.value.substring(start, end);
+      return selectedText;
+    } else {
+      return optValue.value;
     }
+  }
 
     // 表格主查询
     const searchData = () => {
       let sql = getSelectedText();
       if (!sql) {
-        messageApi.error('执行语句不能为空!');
+        message.error('执行语句不能为空!');
         return;
       }
       if ((sql as any).toLowerCase().indexOf('select') == -1) {
@@ -301,12 +371,12 @@ import { message } from 'ant-design-vue';
         execute({
           database: currDbName.value ? currDbName.value : '',
           sql: sql
-        }).then(res => {
+        }, currDatabase.value.type).then(res => {
           loading.value = false;
           executeNum.value = res.data;
         }, err => {
           loading.value = false;
-          messageApi.error(err);
+          message.error(err);
         })
       } else {
         isQuery.value = true;
@@ -315,7 +385,7 @@ import { message } from 'ant-design-vue';
           database: currDbName.value ? currDbName.value : '',
           sql: sql,
           pageSize: pagination.value.pageSize
-        }).then(res => {
+        }, currDatabase.value.type).then(res => {
           loading.value = false;
           console.log(res);
           if (res && res.data && res.data.list && res.data.list.length > 0) {
@@ -334,7 +404,7 @@ import { message } from 'ant-design-vue';
           }
         }, err => {
           loading.value = false;
-          messageApi.error(err);
+          message.error(err);
         })
       }
     }
@@ -459,6 +529,10 @@ import { message } from 'ant-design-vue';
             }
         }
     }
+  }
+  .db-dialog {
+    padding: 12px 0px 0px 0px;
+    margin-top: 12px;
   }
 </style>
   

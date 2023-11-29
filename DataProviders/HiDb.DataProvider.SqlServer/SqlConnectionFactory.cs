@@ -72,7 +72,7 @@ namespace HiDb.DataProvider.SqlServer
         {
             var connectionString = new StringBuilder();
             connectionString.Append("Server=");
-            connectionString.Append(input.Address);
+            connectionString.Append(input.Address + "," + input.Port);
             //connectionString.Append(";Database=YourDatabaseName;");
             connectionString.Append(";Uid=");
             connectionString.Append(input.Account);

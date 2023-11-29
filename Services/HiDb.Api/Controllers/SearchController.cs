@@ -13,7 +13,7 @@ namespace HiDb.Api.Controllers
     /// <param name="searchDataProvider"></param>
     [ApiController]
     [AllowAnonymous]
-    [Route("Search")]
+    [Route("search")]
     public class SearchController : MainController
     {
         /// <summary>
@@ -25,14 +25,13 @@ namespace HiDb.Api.Controllers
         /// <param name="database"></param>
         /// <returns></returns>
         [HttpGet]
-        public SearchOutput Get(string sql, int? pageIndex = null, int? pageSize = null, string? database = "")
+        public SearchOutput Get(string sql, int? pageSize = null, string? database = "")
         {
             sql = sql.Replace("\n", "");
             return GetService(ServiceFactory.GetSearch).GetSearchData(new SearchInput()
             {
                 DataBase = database,
                 Sql = sql,
-                PageIndex = pageIndex,
                 PageSize = pageSize
             });
         }

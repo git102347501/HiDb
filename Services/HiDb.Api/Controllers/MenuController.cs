@@ -10,7 +10,7 @@ namespace HiDb.Api.Controllers
 {
     [ApiController]
     [AllowAnonymous]
-    [Route("Menu")]
+    [Route("menu")]
     public class MenuController : MainController
     {
 
