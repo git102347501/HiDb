@@ -81,6 +81,54 @@
           </a-layout-content>
         </a-layout>
       </a-layout>
+      <a-modal v-model:open="openDbListDialog" title="数据库列表" width="680px" height="550px">
+        <div class="db-dialog">
+          <a-table class="table"
+                :columns="dbColumns" 
+                size="small"
+                :data-source="currdbData"
+                :row-selection="rowSelection"
+                :scroll="{ y: 500 }"
+                :loading="dbloading"
+                :pagination="false">
+                
+              <template #bodyCell="{ column, text, record }">
+                <template v-if="['name', 'age', 'address'].includes(column.dataIndex)">
+                  <div>
+                    <a-input
+                      v-if="editableData[record.key]"
+                      v-model:value="editableData[record.key][column.dataIndex]"
+                      style="margin: -5px 0"
+                    />
+                    <template v-else>
+                      {{ text }}
+                    </template>
+                  </div>
+                </template>
+                <template v-else-if="column.dataIndex === 'operation'">
+                  <div class="editable-row-operations">
+                    <span v-if="editableData[record.key]">
+                      <a-typography-link @click="save(record.key)" style="margin-right: 8px;">保存</a-typography-link>
+                      <a @click="cancel(record.key)" style="color: #555555">撤销</a>
+                    </span>
+                    <span v-else>
+                      <a-typography-link @click="edit(record.key)"  style="margin-right: 8px;">
+                        编辑
+                      </a-typography-link>
+                      <a-popconfirm title="确认删除吗?" @confirm="deleteDbRow(record.key)">
+                        <a style="color: rgb(251, 78, 78);">删除</a>
+                      </a-popconfirm>
+                    </span>
+                  </div>
+                </template>
+              </template>
+          </a-table>
+        </div>
+        <template #footer>
+          <a-button key="submit" type="default" @click="selectDb(true)">打开</a-button>
+          <a-button key="submit" type="primary" @click="selectDbAndOpen">连接</a-button>
+        </template>
+      </a-modal>
       <a-modal v-model:open="openDbDialog" title="数据库连接">
         <div class="db-dialog">
           <a-form :model="openDbModel" :label-col="{ style: { width: '150px' } }" :wrapper-col="{ span: 14 }">
@@ -105,6 +153,32 @@
                 :rules="[{ required: true, message: '请输入密码!' }]">
               <a-input-password v-model:value="openDbModel.passWord" placeholder="请输入密码" />
             </a-form-item>
+            <a-row>
+              <a-col :span="12">
+                <a-form-item v-if="isMore" label="启用加密连接" name="encrypt">
+                    <a-checkbox v-model:checked="openDbModel.encrypt"></a-checkbox>
+                </a-form-item>
+              </a-col>
+              <a-col :span="12">
+                <a-form-item v-if="isMore" label="信任服务器证书" name="trustCert">
+                    <a-checkbox v-model:checked="openDbModel.trustCert"></a-checkbox>
+                </a-form-item>
+              </a-col>
+              <a-col :span="12">
+                <a-form-item v-if="isMore" label="保存到本地列表" name="saveLocal">
+                    <a-checkbox v-model:checked="openDbModel.saveLocal"></a-checkbox>
+                </a-form-item>
+              </a-col>
+              <!-- <a-col :span="12">
+                <a-form-item v-if="isMore" label="使用Windows身份验证" name="trustedConnection">
+                    <a-checkbox v-model:checked="openDbModel.trustedConnection"></a-checkbox>
+                </a-form-item>
+              </a-col> -->
+            </a-row>
+            <div class="more">
+              <a-button @click="submitIsMore" class="btn" type="primary" ghost>
+              {{ isMore ? '收缩' : '更多' }}</a-button>
+            </div>
           </a-form>
         </div>
         <template #footer>
@@ -116,6 +190,7 @@
 </template>
 
 <script lang="ts" setup>
+import { cloneDeep } from 'lodash-es';
 import { h, ref, watch, onMounted, UnwrapRef, reactive  } from 'vue';
 import { AppstoreOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownOutlined, FrownFilled  } from '@ant-design/icons-vue';
 import { getDb,getMode,getTable } from '../api/menu';
@@ -124,10 +199,13 @@ import { connectDb } from '../api/datasource';
 import type { MenuTheme,TreeProps,TableProps, MenuProps  } from 'ant-design-vue';
 import { message } from 'ant-design-vue';
 import { ConnectDbInput } from './model/MainPageMode';
-
+import { DataType } from 'vue-request';
+import { getGuid } from '@renderer/utils/guid';
+import { getuid } from 'process';
   const sh = 320;
   const pageHeight = ref(0);
   const loading = ref(false);
+  const dbloading = ref(false);
   onMounted(() => {
     pageHeight.value = document.body.clientHeight - sh;
     console.log('onMounted:' + pageHeight.value);
@@ -154,22 +232,43 @@ import { ConnectDbInput } from './model/MainPageMode';
     label: 'PgSql',
   }];
   const submitOpenDbLoading = ref(false);
+  const isMore = ref(false);
   // 当前数据库信息
   const currDatabase = ref<ConnectDbInput>({
+    key: getGuid(),
     account: '',
     passWord: '',
     address: '',
     type: 0,
-    port: 0
+    port: 0,
+    trustCert: true,
+    trustedConnection: false,
+    encrypt: true,
+    saveLocal: true
   });
   // tree数据
   const treeData = ref<TreeProps['treeData']>([
   ]);
   const openDbDialog = ref<boolean>(false);
+  const openDbListDialog = ref<boolean>(false);
   const selectedMenu: MenuProps['onClick'] = ({ key }) => {
     if (key == '1') {
+      submitOpenDbList();
+    } else {
       openDbDialog.value = true;
+      openDbModel.key = getGuid();
+      openDbModel.account = '';
+      openDbModel.passWord =  '';
+      openDbModel.address = '';
+      openDbModel.type = 0;
+      openDbModel.port = 1433;
+      openDbModel.trustCert = true;
+      openDbModel.trustedConnection = false;
+      openDbModel.encrypt = true;
     }
+  };
+  const submitIsMore = () => {
+    isMore.value =!isMore.value;
   };
 
   // 加载数据库列表
@@ -188,12 +287,35 @@ import { ConnectDbInput } from './model/MainPageMode';
       message.error(err.message);
     })
   };
+  const editableData: UnwrapRef<Record<string, ConnectDbInput>> = reactive({});
+
+  const edit = (key: string) => {
+    editableData[key] = cloneDeep(currdbData.value.filter(item => key === item.key)[0]);
+  };
+  const save = (key: string) => {
+    Object.assign(currdbData.value.filter(item => key === item.key)[0], editableData[key]);
+    delete editableData[key];
+    localStorage.setItem('hidbdata', JSON.stringify(currdbData.value));
+  };
+  const cancel = (key: string) => {
+    delete editableData[key];
+  };
+  const deleteDbRow = (key: string)=>{
+    let index = currdbData.value.findIndex(item => key === item.key);
+    currdbData.value.splice(index, 1);
+    localStorage.setItem('hidbdata', JSON.stringify(currdbData.value));
+  }
   const openDbModel = reactive<ConnectDbInput>({
-    account: 'sa',
+    key: getGuid(),
+    account: '',
     passWord: '',
     address: '',
     type: 0,
-    port: 1433
+    port: 1433,
+    trustCert: true,
+    trustedConnection: false,
+    encrypt: true,
+    saveLocal: true
   });
   // 打开数据库连接
   const submitOpenDb = ()=>{
@@ -207,6 +329,8 @@ import { ConnectDbInput } from './model/MainPageMode';
         openDbDialog.value = false;
         submitOpenDbLoading.value = false;
         currDatabase.value = openDbModel;
+        // 保存到本地
+        saveDbByLocal(openDbModel);
         // 加载数据库列表
         loadDataBase();
       }
@@ -215,12 +339,88 @@ import { ConnectDbInput } from './model/MainPageMode';
       message.error(err && err.message ? err.message : '连接失败');
     })
   };
+  const saveDbByLocal = (data) => {
+    searchDbData();
+    console.log('saveDbByLocal');
+    // 寻找相同地址，账号和类型的本地记录
+    let index = currdbData.value.findIndex(c=> c.key == data.key);
+    if (data.saveLocal){
+      if (index != -1) {
+        // 更新本地
+        currdbData.value[index].passWord = data.passWord;
+        currdbData.value[index].port = data.port;
+        currdbData.value[index].trustCert = data.trustCert;
+        currdbData.value[index].trustedConnection = data.trustedConnection;
+        currdbData.value[index].encrypt = data.encrypt;
+      } else {
+        // 新增本地
+        currdbData.value.push(data);
+      }
+    } else {
+      if (index == -1) {
+        // 不保存本地也没有，跳过
+        return;
+      } else {
+        // 不保存移除本地
+        currdbData.value.splice(index, 1);
+      }
+    }
+    localStorage.setItem('hidbdata', JSON.stringify(currdbData.value));
+  }
+  // 打开数据库列表
+  const submitOpenDbList = ()=>{
+    openDbListDialog.value = true;
+    searchDbData();
+  }
+  const selectDb = (openDialog)=> {
+    if (!currSelectDb.value || !currSelectDb.value.key) {
+      message.error('请选择一个数据库');
+      return;
+    }
+    let data = currSelectDb.value;
+    if (openDialog) {
+      openDbListDialog.value = false;
+      openDbDialog.value = true;
+    } else {
+      openDbDialog.value = false;
+      openDbListDialog.value = false;
+    }
+    openDbModel.key = data.key;
+    openDbModel.account = data.account;
+    openDbModel.passWord = data.passWord;
+    openDbModel.address = data.address;
+    openDbModel.type = data.type;
+    openDbModel.port = data.port;
+    openDbModel.trustCert = data.trustCert;
+    openDbModel.trustedConnection = data.trustedConnection;
+    openDbModel.encrypt = data.encrypt;
+  }
+  const selectDbAndOpen = ()=>{
+    selectDb(false);
+    submitOpenDb ();
+  }
+  const currSelectDb = ref<DataType>();
+  const rowSelection: TableProps['rowSelection'] = {
+    onChange: (selectedRowKeys: string[], selectedRows: DataType[]) => {
+      console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows);
+      currSelectDb.value = selectedRows[0];
+    },
+    getCheckboxProps: (record: DataType) => ({
+      disabled: record.name === 'Disabled User', // Column configuration not to be checked
+      name: record.name,
+    }),
+    type: 'radio',
+    fixed: true
+  };
   // 搜索
   const onSearch = (searchValue: string) => {
     loadDataBase();
   };
   const cancelDbDialog = ()=>{
     openDbDialog.value = false;
+  }
+  const cancelDbListDialog = ()=>{
+    openDbListDialog.value = false;
   }
 
   // 主菜单
@@ -267,6 +467,9 @@ import { ConnectDbInput } from './model/MainPageMode';
               }
             });
             treeData.value = [...treeData.value];
+            resolve();
+          },()=>{
+            message.error('获取数据库信息失败');
             resolve();
           })
         } else if (treeNode.dataRef.type === 'mode'){
@@ -332,10 +535,34 @@ import { ConnectDbInput } from './model/MainPageMode';
 
   // 表格数据列
   const columns = ref<any[]>([]);
+  // 表格数据列
+  const dbColumns = ref<any[]>([{
+    title: '名称',
+    dataIndex: 'name',
+    sorter: false,
+    width: 150
+  },{
+    title: '地址',
+    dataIndex: 'address',
+    sorter: false,
+    width: 130
+  },{
+    title: '用户名',
+    dataIndex: 'account',
+    sorter: false,
+    width: 90
+  },{
+    title: '操作',
+    dataIndex: 'operation',
+    width: 120,
+    fixed: 'right'
+  }]);
   // 主题
   const theme = ref<MenuTheme>('dark');
   // 当前表格数据
   const currData = ref<any[]>([]);
+  // 当前数据库表格数据
+  const currdbData = ref<ConnectDbInput[]>([]);
   // 表格分页信息
   const pagination = ref({
     total: null,
@@ -358,56 +585,83 @@ import { ConnectDbInput } from './model/MainPageMode';
     }
   }
 
-    // 表格主查询
-    const searchData = () => {
-      let sql = getSelectedText();
-      if (!sql) {
-        message.error('执行语句不能为空!');
-        return;
-      }
-      if ((sql as any).toLowerCase().indexOf('select') == -1) {
-        isQuery.value = false;
-        loading.value = true;
-        execute({
-          database: currDbName.value ? currDbName.value : '',
-          sql: sql
-        }, currDatabase.value.type).then(res => {
-          loading.value = false;
-          executeNum.value = res.data;
-        }, err => {
-          loading.value = false;
-          message.error(err);
-        })
-      } else {
-        isQuery.value = true;
-        loading.value = true;
-        getSearch({
-          database: currDbName.value ? currDbName.value : '',
-          sql: sql,
-          pageSize: pagination.value.pageSize
-        }, currDatabase.value.type).then(res => {
-          loading.value = false;
-          console.log(res);
-          if (res && res.data && res.data.list && res.data.list.length > 0) {
-            let obj  = res.data.list[0];
-            columns.value = Object.keys(obj).map(key => ({
-              title: key,
-              dataIndex: key,
-              sorter: false,
-              width: 40 + (key.length * 10)
-            }));
-            currData.value = res.data.list;
-            pagination.value.total = res.data.count;
-          } else {
-            currData.value = [];
-            pagination.value.total = 0;
-          }
-        }, err => {
-          loading.value = false;
-          message.error(err);
-        })
+  // 获取本地数据库列表
+  const searchDbData = ()=> {
+    dbloading.value = true;
+    let data = localStorage.getItem('hidbdata');
+    currdbData.value = data ? JSON.parse(data) : [];
+    dbloading.value = false;
+  }
+
+  // 表格主查询
+  const searchData = () => {
+    let sql = getSelectedText();
+    if (!sql) {
+      message.error('执行语句不能为空!');
+      return;
+    }
+    if ((sql as any).toLowerCase().indexOf('select') == -1) {
+      isQuery.value = false;
+      loading.value = true;
+      execute({
+        database: currDbName.value ? currDbName.value : '',
+        sql: sql
+      }, currDatabase.value.type).then(res => {
+        loading.value = false;
+        executeNum.value = res.data;
+      }, err => {
+        loading.value = false;
+        message.error(err);
+      })
+    } else {
+      isQuery.value = true;
+      loading.value = true;
+      getSearch({
+        database: currDbName.value ? currDbName.value : '',
+        sql: sql,
+        pageSize: pagination.value.pageSize
+      }, currDatabase.value.type).then(res => {
+        loading.value = false;
+        console.log(res);
+        if (res && res.data && res.data.list && res.data.list.length > 0) {
+          let obj  = res.data.list[0];
+          let len = Object.keys(obj).length;
+          columns.value = Object.keys(obj).map(key => ({
+            title: key,
+            dataIndex: key,
+            sorter: false,
+            width: 30 + (getMaxLength(res.data.list, key) * 7)
+          }));
+          currData.value = res.data.list;
+          pagination.value.total = res.data.count;
+        } else {
+          currData.value = [];
+          pagination.value.total = 0;
+        }
+      }, err => {
+        loading.value = false;
+        message.error(err);
+      })
+    }
+  }
+  const getMaxLength = (objCollection, name)=>{
+    let maxLength = 0;
+    let length = objCollection.length > 20 ? 20 : objCollection.length;
+    for (var i = 0; i < length; i++) {
+      // 获取当前对象的name属性长度
+      var nameLength = objCollection[i][name] ? objCollection[i][name].length : 0;
+      
+      // 如果当前长度大于最大长度，则更新最大长度
+      if (nameLength > maxLength) {
+        maxLength = nameLength;
       }
     }
+    if (maxLength < name.length) {
+      return name.length;
+    } else {   
+      return maxLength;
+    }
+  }
 </script>
 
 <style lang="scss" scoped>
@@ -533,6 +787,18 @@ import { ConnectDbInput } from './model/MainPageMode';
   .db-dialog {
     padding: 12px 0px 0px 0px;
     margin-top: 12px;
+
+    .more {
+      width: 100%;
+      height: 35px;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      .btn {
+        width: 100%;
+      }
+    }
   }
 </style>
   

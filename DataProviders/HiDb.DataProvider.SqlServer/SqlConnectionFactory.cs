@@ -1,7 +1,8 @@
 ﻿using HiDb.DataProvider.Dtos.Connect;
+using Microsoft.Data.SqlClient;
 using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,7 +11,7 @@ namespace HiDb.DataProvider.SqlServer
 {
     public class SqlConnectionFactory
     {
-        private static SqlConnection connection = null;
+        private static IDbConnection connection = null;
         private static string _connectionString = "";
 
         private SqlConnectionFactory()
@@ -28,7 +29,7 @@ namespace HiDb.DataProvider.SqlServer
             connection.Open();
         }
          
-        public static SqlConnection GetConnection(string connectionString = "")
+        public static IDbConnection GetConnection(string connectionString = "")
         {
             // 如果未初始化，初始化连接
             if (connection == null)
@@ -58,7 +59,7 @@ namespace HiDb.DataProvider.SqlServer
             InitConnection(GeneratorDataSource(input));
         }
 
-        public static SqlConnection GetConnection(ConnectDbInput input)
+        public static IDbConnection GetConnection(ConnectDbInput input)
         {
             return GetConnection(GeneratorDataSource(input));
         }
@@ -72,14 +73,32 @@ namespace HiDb.DataProvider.SqlServer
         {
             var connectionString = new StringBuilder();
             connectionString.Append("Server=");
-            connectionString.Append(input.Address + "," + input.Port);
-            //connectionString.Append(";Database=YourDatabaseName;");
+            if (input.Port > 0)
+            {
+                connectionString.Append(input.Address + "," + input.Port);
+            } 
+            else
+            {
+                connectionString.Append(input.Address + ",1433");
+            }
+            //connectionString.Append(";Database=master");
             connectionString.Append(";Uid=");
             connectionString.Append(input.Account);
             connectionString.Append(";Pwd=");
             connectionString.Append(input.PassWord);
             connectionString.Append(";");
-
+            if (input.TrustCert.HasValue)
+            {
+                connectionString.Append($"TrustServerCertificate={input.TrustCert.ToString()};");
+            }
+            if (input.Encrypt.HasValue)
+            {
+                connectionString.Append($"Encrypt={input.Encrypt.ToString()};");
+            }
+            if (input.TrustedConnection.HasValue)
+            {
+                connectionString.Append($"Trusted_Connection={input.TrustedConnection.ToString()};");
+            }
             return connectionString.ToString();
         }
     }

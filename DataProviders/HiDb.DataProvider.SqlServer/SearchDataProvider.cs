@@ -22,7 +22,8 @@ namespace HiDb.DataProvider.SqlServer
 
             if (!string.IsNullOrWhiteSpace(input.DataBase))
             {
-                input.Sql = @$"use {input.DataBase};" + input.Sql;
+                input.Sql = @$"use [{input.DataBase}];
+                               {input.Sql}";
             }
             var res = new SearchOutput()
             {
@@ -46,7 +47,8 @@ namespace HiDb.DataProvider.SqlServer
             }
             else
             {
-                return connection.Execute(@$"use {input.DataBase};" + input.Sql);
+                return connection.Execute(@$"use [{input.DataBase}];
+                                            {input.Sql}");
             }
         }
 

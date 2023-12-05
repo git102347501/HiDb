@@ -28,7 +28,7 @@ namespace HiDb.DataProvider.SqlServer
 
         public List<MenuDbModeOutput> GetDbModeList(string database)
         {
-            return GetList<MenuDbModeOutput>(@$"USE {database};
+            return GetList<MenuDbModeOutput>(@$"USE [{database}]
                                                 SELECT SCHEMA_NAME(schema_id) AS Name
                                                 FROM sys.schemas;");
         }

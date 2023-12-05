@@ -16,7 +16,11 @@ namespace HiDb.Api.Controllers
             var type = DbTypeHelper.GetDbType(dbType.Value.ToString());
             if (!type.HasValue)
             {
+#if DEBUG
+                type = DbTypeEnum.SqlServer;
+#else
                 throw new Exception("不支持的数据库类型");
+#endif
             }
             var service = func(type.Value);
             if (service == null)

@@ -18,5 +18,20 @@ namespace HiDb.DataProvider.Dtos.Connect
         public string Address { get; set; }
 
         public int Port { get; set; }
+
+        /// <summary>
+        /// 是否信任服务端证书
+        /// </summary>
+        public bool? TrustCert { get; set; }
+
+        /// <summary>
+        /// 可信链接
+        /// </summary>
+        public bool? TrustedConnection { get; set; }
+
+        /// <summary>
+        /// 加密
+        /// </summary>
+        public bool? Encrypt { get; set; }
     }
 }

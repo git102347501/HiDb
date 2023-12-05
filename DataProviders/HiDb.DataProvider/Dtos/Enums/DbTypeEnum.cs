@@ -17,6 +17,10 @@ namespace HiDb.DataProvider.Dtos.Enums
     {
         public static DbTypeEnum? GetDbType(string name)
         {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return null;
+            }
             return (DbTypeEnum)int.Parse(name);
         }
     }
