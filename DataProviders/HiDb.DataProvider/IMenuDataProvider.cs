@@ -15,13 +15,13 @@ namespace HiDb.DataProvider
         /// 获取菜单-数据库-表列表
         /// </summary>
         /// <returns></returns>
-        public List<MenuDbTableOutput> GetDbTableList(string mode, string  database);
+        public List<MenuDbTableOutput> GetDbTableList(string mode, string database);
 
         /// <summary>
         /// 获取菜单-数据库-视图列表
         /// </summary>
         /// <returns></returns>
-        public List<MenuDbViewOutput> GetDbViewList();
+        public List<MenuDbViewOutput> GetDbViewList(string mode, string database);
 
         /// <summary>
         /// 获取菜单-数据库-模式列表
@@ -34,6 +34,6 @@ namespace HiDb.DataProvider
         /// 获取菜单-数据库-存储过程列表
         /// </summary>
         /// <returns></returns>
-        public List<MenuDbSpOutput> GetDbSpList();
+        public List<MenuDbSpOutput> GetDbSpList(string mode, string database);
     }
 }

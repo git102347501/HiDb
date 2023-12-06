@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using HiDb.DataProvider.Dtos.Menus;
+using MySqlX.XDevAPI.Relational;
 using System.Data.SqlClient;
 
 namespace HiDb.DataProvider.SqlServer
@@ -11,21 +12,19 @@ namespace HiDb.DataProvider.SqlServer
     {
         public List<MenuDataBaseOutput> GetDataBaseList()
         {
-            return GetList<MenuDataBaseOutput>("SELECT name AS Name FROM sys.databases");
+            return GetList<MenuDataBaseOutput>("SHOW DATABASES;");
         }
-
         public List<MenuDbTableOutput> GetDbTableList(string database, string mode)
         {
-            return GetList<MenuDbTableOutput>(@$"SELECT TABLE_NAME AS Name
-                                                FROM [{database}].INFORMATION_SCHEMA.TABLES
-                                                WHERE TABLE_SCHEMA = '{mode}'");
+            return GetList<MenuDbTableOutput>(@$"SELECT TABLE_NAME
+                                              FROM INFORMATION_SCHEMA.TABLES
+                                              WHERE TABLE_SCHEMA = '{database}'
+                                              AND TABLE_TYPE = 'BASE TABLE';");
         }
 
         public List<MenuDbModeOutput> GetDbModeList(string database)
         {
-            return GetList<MenuDbModeOutput>(@$"USE [{database}]
-                                                SELECT SCHEMA_NAME(schema_id) AS Name
-                                                FROM sys.schemas;");
+            return GetList<MenuDbModeOutput>($@"SHOW TABLES FROM {database};");
         }
 
         public List<MenuDbViewOutput> GetDbViewList(string mode, string database)
