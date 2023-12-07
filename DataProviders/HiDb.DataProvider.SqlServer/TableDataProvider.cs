@@ -14,7 +14,7 @@ namespace HiDb.DataProvider.SqlServer
     {
         public TableColumnFullOutput GetDbColumnFullInfo(TableColumnFullInput input)
         {
-            var use = @$"use {input.DataBase};";
+            var use = @$"use [{input.DataBase}];";
             return GetFirst<TableColumnFullOutput>(use + @$"SELECT 
                                 COLUMN_NAME AS Name,
                                 DATA_TYPE AS Type,
@@ -38,7 +38,7 @@ namespace HiDb.DataProvider.SqlServer
 
         public List<TableColumnOutput> GetDbColumnList(TableColumnInput input)
         {
-            var use = @$"use {input.DataBase};";
+            var use = @$"use [{input.DataBase}];";
             return GetList<TableColumnOutput>(use + @$"SELECT 
                                 COLUMN_NAME AS Name,
                                 DATA_TYPE AS Type,

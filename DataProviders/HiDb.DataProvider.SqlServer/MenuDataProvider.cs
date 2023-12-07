@@ -14,12 +14,7 @@ namespace HiDb.DataProvider.SqlServer
             return GetList<MenuDataBaseOutput>("SELECT name AS Name FROM sys.databases");
         }
 
-        public List<MenuDbSpOutput> GetDbSpList()
-        {
-            return GetList<MenuDbSpOutput>("SELECT name AS Name FROM sys.procedures");
-        }
-
-        public List<MenuDbTableOutput> GetDbTableList(string mode, string database)
+        public List<MenuDbTableOutput> GetDbTableList(string database, string mode)
         {
             return GetList<MenuDbTableOutput>(@$"SELECT TABLE_NAME AS Name
                                                 FROM [{database}].INFORMATION_SCHEMA.TABLES
@@ -28,14 +23,19 @@ namespace HiDb.DataProvider.SqlServer
 
         public List<MenuDbModeOutput> GetDbModeList(string database)
         {
-            return GetList<MenuDbModeOutput>(@$"USE {database};
+            return GetList<MenuDbModeOutput>(@$"USE [{database}]
                                                 SELECT SCHEMA_NAME(schema_id) AS Name
                                                 FROM sys.schemas;");
         }
 
-        public List<MenuDbViewOutput> GetDbViewList()
+        public List<MenuDbViewOutput> GetDbViewList(string mode, string database)
         {
-            return GetList<MenuDbViewOutput>("SELECT name AS Name FROM sys.views");
+            throw new NotImplementedException();
+        }
+
+        public List<MenuDbSpOutput> GetDbSpList(string mode, string database)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -1,10 +1,4 @@
 ﻿using Dapper;
-using HiDb.DataProvider.Dtos.Menus;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace HiDb.DataProvider.SqlServer
 {
@@ -15,6 +9,13 @@ namespace HiDb.DataProvider.SqlServer
             var connection = SqlConnectionFactory.GetConnection();
             var result = connection.Query<T>(sql);
             return result.ToList();
+        }
+
+        public long GetCount(string sql)
+        {
+            var connection = SqlConnectionFactory.GetConnection();
+            var result = connection.QueryFirstOrDefault<long>(sql);
+            return result;
         }
 
         public List<dynamic> GetList(string sql)

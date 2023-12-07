@@ -7,7 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\HiDb.DataProvider\HiDb.DataProvider.csproj" />
+    <PackageReference Include="Dapper" Version="2.1.24" />
+    <PackageReference Include="MySql.Data" Version="8.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\HiDb.DataProvider\HiDb.DataProvider.csproj" />
   </ItemGroup>
 
 </Project>

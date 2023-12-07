@@ -29,27 +29,9 @@ namespace HiDb.DataProvider.SqlServer
 
         public ConnectDbOutput ConnectDb(ConnectDbInput input)
         {
-            return ConnectDb(GeneratorDataSource(input));
+            return ConnectDb(SqlConnectionFactory.GeneratorDataSource(input));
         }
 
-        /// <summary>
-        /// 拼接MySQL连接字符串
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
-        private string GeneratorDataSource(ConnectDbInput input)
-        {
-            var connectionString = new StringBuilder();
-            connectionString.Append("Server=");
-            connectionString.Append(input.Address);
-            //connectionString.Append(";Database=YourDatabaseName;");
-            connectionString.Append(";Uid=");
-            connectionString.Append(input.Account);
-            connectionString.Append(";Pwd=");
-            connectionString.Append(input.PassWord);
-            connectionString.Append(";");
 
-            return connectionString.ToString();
-        }
     }
 }
