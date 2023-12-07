@@ -16,7 +16,7 @@ namespace HiDb.DataProvider.Factory
                 case DbTypeEnum.SqlServer:
                     return new SqlServer.DataSorceDataPorvider();
                 case DbTypeEnum.MySql:
-                    return null;
+                    return new MySql.DataSorceDataPorvider();
                 default:
                     return null;
             }
@@ -29,7 +29,7 @@ namespace HiDb.DataProvider.Factory
                 case DbTypeEnum.SqlServer:
                     return new SqlServer.MenuDataProvider();
                 case DbTypeEnum.MySql:
-                    return null;
+                    return new MySql.MenuDataProvider();
                 default:
                     return null;
             }
@@ -42,7 +42,7 @@ namespace HiDb.DataProvider.Factory
                 case DbTypeEnum.SqlServer:
                     return new SqlServer.SearchDataProvider();
                 case DbTypeEnum.MySql:
-                    return null;
+                    return new MySql.SearchDataProvider();
                 default:
                     return null;
             }
@@ -55,7 +55,7 @@ namespace HiDb.DataProvider.Factory
                 case DbTypeEnum.SqlServer:
                     return new SqlServer.TableDataProvider();
                 case DbTypeEnum.MySql:
-                    return null;
+                    return new MySql.TableDataProvider();
                 default:
                     return null;
             }

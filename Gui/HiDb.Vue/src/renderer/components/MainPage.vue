@@ -12,74 +12,108 @@
             </template>
           </a-dropdown>
         </div>
+        <div class="title">
+          <span v-if="currDatabase.type != null && currDatabase.type!= undefined" class="info">
+            <span style="color:aquamarine">{{ currDatabase.type === 1 ? 'MySQL' : 'SQL Server' }}</span>
+            <span style="margin-left: 10px;">|</span>
+          </span>
+          <span v-if="currDatabase.name" class="info">
+            <database-outlined :width="20" :height="20" />
+            {{ currDatabase.name }}
+          </span>
+          <span v-if="currDatabase.address" class="info">
+            <api-outlined :width="20" :height="20"  />
+            {{ currDatabase.address }}
+          </span>
+          <span v-if="!currDatabase || !currDatabase.key" class="info">
+            未连接到数据库
+          </span>
+          <a-dropdown v-if="currDatabase && currDatabase.key">
+            <a-button ghost>
+              <span v-if="currDatabase.account" class="info">
+                <user-outlined :width="20" :height="20" />
+                {{ currDatabase.account }}
+              </span>
+            </a-button>
+            <template #overlay>
+              <a-menu @click="selectedUserMenu">
+                <a-menu-item key="1">注销</a-menu-item>
+              </a-menu>
+            </template>
+          </a-dropdown>
+        </div>
       </a-layout-header>
-      <a-layout>
-        <a-layout-sider width="200" class="menu">
-          <div class="search">
-            <a-input-search v-model:value="searchValue" style="margin-bottom: 8px" placeholder="Search"  @search="onSearch" />
-          </div>
-          <div class="tree">
-            <a-tree style="height: 100%;"
-                v-model:expandedKeys="expandedMenuKeys"
-                v-model:selectedKeys="selectedMenuKeys"
-                :load-data="onLoadData" show-icon
-                @select="onSelect"
-                :tree-data="treeData"
-            >
-              <template #switcherIcon="{ switcherCls }"><down-outlined :class="switcherCls" /></template>
-              <template #icon="{ type, selected }">
-                <template v-if="type === 'db'">
-                  <database-outlined />
-                </template>
-                <template v-if="type === 'mode'">
-                  <tablet-outlined />
-                </template>
-                <template v-if="type === 'table'">
-                  <table-outlined />
-                </template>
-              </template>
-            </a-tree>
-            <a-empty v-if="!treeData.length" description="暂无数据库列表" />
-          </div>
-        </a-layout-sider>
-        <a-layout class="work" style="padding: 0 8px 8px">
-          <div class="tools">
-            <a-tooltip title="执行">
-                <a-button @click="searchData" :icon="h(CaretRightOutlined)" style="margin-right: 6px;">执行</a-button>
-            </a-tooltip>
-            <a-tooltip title="撤销">
-                <a-button :icon="h(RedoOutlined)">撤销</a-button>
-            </a-tooltip>
-          </div>
-          <a-layout-content  class="content"
-            :style="{ background: '#fff', padding: '6px', margin: 0, minHeight: '280px' }" >
-            <div class="sql">
-                <a-textarea class="input" ref="textarea" @pressEnter="searchData"
-                    v-model:value="optValue" @click="handleClick"
-                    placeholder="输入SQL语句后执行"
-                    :auto-size="{ minRows: 4, maxRows: 15 }" />
-            </div>
-            <div class="data">
-                <a-table class="table"
-                  v-if="isQuery"
-                    :columns="columns" 
-                    size="small"
-                    :data-source="currData"
-                    :scroll="{ y: pageHeight }"
-                    :loading="loading"
-                    :pagination="false"
+      <a-layout> 
+          <a-layout-sider width="200" class="menu">
+            <a-spin :spinning="currloading">
+              <div class="search">
+                <a-input-search v-model:value="searchValue" style="margin-bottom: 8px" placeholder="Search"  @search="onSearch" />
+              </div>
+              <div v-if="!currloading" class="tree">
+                <a-tree style="height: 100%;"
+                    v-model:expandedKeys="expandedMenuKeys"
+                    v-model:selectedKeys="selectedMenuKeys"
+                    :load-data="onLoadData" show-icon
+                    @select="onSelect"
+                    :tree-data="treeData"
                 >
-                  <template #headerCell="{ column }"/>
-                </a-table>
-                <div class="msg" v-if="!isQuery">
-                  影响行数: {{executeNum}}
+                  <template #switcherIcon="{ switcherCls }"><down-outlined :class="switcherCls" /></template>
+                  <template #icon="{ type, selected }">
+                    <template v-if="type === 'db'">
+                      <database-outlined />
+                    </template>
+                    <template v-if="type === 'mode'">
+                      <tablet-outlined />
+                    </template>
+                    <template v-if="type === 'table'">
+                      <table-outlined />
+                    </template>
+                  </template>
+                </a-tree>
+                <a-empty v-if="!treeData.length" description="暂无数据库列表" />
+              </div>
+            </a-spin>
+          </a-layout-sider>
+          <a-layout class="work" style="padding: 0 8px 8px">
+            <a-spin :spinning="currloading">
+              <div class="tools">
+                <a-tooltip title="执行">
+                    <a-button @click="searchData" :icon="h(CaretRightOutlined)" style="margin-right: 6px;">执行</a-button>
+                </a-tooltip>
+                <a-tooltip title="撤销">
+                    <a-button :icon="h(RedoOutlined)">撤销</a-button>
+                </a-tooltip>
+              </div>
+              <a-layout-content  class="content"
+                :style="{ background: '#fff', padding: '6px', margin: 0, minHeight: '280px' }" >
+                <div class="sql">
+                    <a-textarea class="input" ref="textarea" @pressEnter="searchData"
+                        v-model:value="optValue" @click="handleClick"
+                        placeholder="输入SQL语句后执行"
+                        :auto-size="{ minRows: 4, maxRows: 15 }" />
                 </div>
-                <div  v-if="isQuery && pagination.total" class="table-line">
-                  总记录行数:{{ pagination.total }}
+                <div class="data">
+                    <a-table class="table"
+                        v-if="isQuery"
+                        :columns="columns" 
+                        size="small"
+                        :data-source="currData"
+                        :scroll="{ y: pageHeight }"
+                        :loading="loading"
+                        :pagination="false"
+                    >
+                      <template #headerCell="{ column }"/>
+                    </a-table>
+                    <div class="msg" v-if="!isQuery">
+                      影响行数: {{executeNum}}
+                    </div>
+                    <div  v-if="isQuery && pagination.total" class="table-line">
+                      总记录行数:{{ pagination.total }} | 当前查询页大小:{{ pagination.pageSize }}
+                    </div>
                 </div>
-            </div>
-          </a-layout-content>
-        </a-layout>
+              </a-layout-content>
+            </a-spin>
+          </a-layout>
       </a-layout>
       <a-modal v-model:open="openDbListDialog" title="数据库列表" width="680px" height="550px">
         <div class="db-dialog">
@@ -192,7 +226,7 @@
 <script lang="ts" setup>
 import { cloneDeep } from 'lodash-es';
 import { h, ref, watch, onMounted, UnwrapRef, reactive  } from 'vue';
-import { AppstoreOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownOutlined, FrownFilled  } from '@ant-design/icons-vue';
+import { ApiOutlined,UserOutlined,AppstoreOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownOutlined, FrownFilled  } from '@ant-design/icons-vue';
 import { getDb,getMode,getTable } from '../api/menu';
 import { getSearch,execute} from '../api/search';
 import { connectDb } from '../api/datasource';
@@ -235,7 +269,8 @@ import { getuid } from 'process';
   const isMore = ref(false);
   // 当前数据库信息
   const currDatabase = ref<ConnectDbInput>({
-    key: getGuid(),
+    key: null,
+    name: '',
     account: '',
     passWord: '',
     address: '',
@@ -251,6 +286,11 @@ import { getuid } from 'process';
   ]);
   const openDbDialog = ref<boolean>(false);
   const openDbListDialog = ref<boolean>(false);
+  const selectedUserMenu: MenuProps['onClick'] = ({ key }) => {
+    if (key == '1') {
+      clearCurrDbData();
+    } 
+  }
   const selectedMenu: MenuProps['onClick'] = ({ key }) => {
     if (key == '1') {
       submitOpenDbList();
@@ -307,6 +347,7 @@ import { getuid } from 'process';
   }
   const openDbModel = reactive<ConnectDbInput>({
     key: getGuid(),
+    name: '',
     account: '',
     passWord: '',
     address: '',
@@ -317,10 +358,40 @@ import { getuid } from 'process';
     encrypt: true,
     saveLocal: true
   });
+  // 清空当前数据库数据
+  const clearCurrDbData = () => {
+    treeData.value = [];
+    currData.value = [];
+    expandedMenuKeys.value = [];
+    selectedMenuKeys.value = [];
+    searchValue.value = '';
+    isQuery.value = true;
+    optValue.value = '';
+    pagination.value.total = 0;
+    pagination.value.pageSize = 100;
+    currDbName.value = '';
+    currDatabase.value = {
+      key: null,
+      name: '',
+      account: '',
+      passWord: '',
+      address: '',
+      type: 0,
+      port: 0,
+      trustCert: true,
+      trustedConnection: false,
+      encrypt: true,
+      saveLocal: true
+    };
+    columns.value = [];
+  }
   // 打开数据库连接
-  const submitOpenDb = ()=>{
+  const submitOpenDb = ()=> {
+    clearCurrDbData();
+    currloading.value = true;
     submitOpenDbLoading.value = true;
     connectDb(openDbModel).then(res=>{
+      currloading.value = false;
       if (!res.data || !res.data || !res.data.success) {
         message.error(res.data.message);
         submitOpenDbLoading.value = false;
@@ -335,6 +406,7 @@ import { getuid } from 'process';
         loadDataBase();
       }
     }, err => { 
+      currloading.value = false;
       submitOpenDbLoading.value = false;
       message.error(err && err.message ? err.message : '连接失败');
     })
@@ -372,6 +444,7 @@ import { getuid } from 'process';
     openDbListDialog.value = true;
     searchDbData();
   }
+  const currloading = ref<boolean>(false);
   const selectDb = (openDialog)=> {
     if (!currSelectDb.value || !currSelectDb.value.key) {
       message.error('请选择一个数据库');
@@ -397,7 +470,7 @@ import { getuid } from 'process';
   }
   const selectDbAndOpen = ()=>{
     selectDb(false);
-    submitOpenDb ();
+    submitOpenDb();
   }
   const currSelectDb = ref<DataType>();
   const rowSelection: TableProps['rowSelection'] = {
@@ -456,6 +529,7 @@ import { getuid } from 'process';
         }
         console.log(treeNode);
         if (treeNode.dataRef.type === 'db') {
+          currDbName.value = treeNode.title;
           getMode(treeNode.title, currDatabase.value.type).then(res=>{
             treeNode.dataRef.children = res.data.map(c => {
               return {            
@@ -468,18 +542,18 @@ import { getuid } from 'process';
             });
             treeData.value = [...treeData.value];
             resolve();
-          },()=>{
+          },() => {
             message.error('获取数据库信息失败');
             resolve();
           })
-        } else if (treeNode.dataRef.type === 'mode'){
-          getTable(treeNode.dataRef.database,treeNode.title, currDatabase.value.type).then(res=>{
+        } else if (treeNode.dataRef.type === 'mode') {
+          getTable(treeNode.dataRef.database, treeNode.title, currDatabase.value.type).then(res=>{
             treeNode.dataRef.children = res.data.map(c => {
               return {            
                 title: c.name,
                 key: c.name,
                 isLeaf: true,
-                type: 'table'
+                type: 'table',
               }
             });
             treeData.value = [...treeData.value];
@@ -494,9 +568,16 @@ import { getuid } from 'process';
   // 选中表
   const currDbName = ref('');
   const onSelect = (selectedKeys, e)=>{
-    if (e && e.node && e.node.dataRef.type === 'table') {
-      optValue.value = 'select * from ' + e.node.dataRef.title;
-      currDbName.value = e.node.dataRef.database;
+    console.log('onSelect');
+    console.log(e);
+    if (e && e.node) {
+      if (e.node.dataRef.type === 'table') {
+        if (currDatabase.value.type == 0) {
+          optValue.value = 'select * from ' + e.node.dataRef.title;
+        } else if (currDatabase.value.type == 1) {
+          optValue.value = 'select * from ' + e.node.dataRef.title;
+        }
+      }
     }
   }
 
@@ -566,7 +647,7 @@ import { getuid } from 'process';
   // 表格分页信息
   const pagination = ref({
     total: null,
-    pageSize: 1000
+    pageSize: 100
   });
   const textarea = ref(null);
   const handleClick = ()=>{
@@ -611,7 +692,7 @@ import { getuid } from 'process';
         executeNum.value = res.data;
       }, err => {
         loading.value = false;
-        message.error(err);
+        message.error(err && err.message ? err.message : '执行失败');
       })
     } else {
       isQuery.value = true;
@@ -640,7 +721,7 @@ import { getuid } from 'process';
         }
       }, err => {
         loading.value = false;
-        message.error(err);
+        message.error(err && err.message ? err.message : '查询失败');
       })
     }
   }
@@ -687,15 +768,28 @@ import { getuid } from 'process';
         margin: 0;
         padding: 0;
         z-index: 999;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
 
         .btn {
-          width: calc(100% - 12px);
+          width: 150px;
           height: 100%;
           display: flex;
           flex-direction: row;
           align-items: center;
           justify-content: flex-start;
           padding: 0 6px;
+        }
+        .title {
+          color: #ffffff;
+          margin-right: 12px;
+
+          .info {
+            margin-right: 12px;
+            cursor: pointer;
+          }
         }
     }
     .menu {
@@ -726,6 +820,7 @@ import { getuid } from 'process';
     .work {
         height: calc(100vh - 80px);
         width: calc(100% - 350px);    
+
         .tools {
             width: 100%;
             height: 40px;
@@ -742,6 +837,7 @@ import { getuid } from 'process';
             flex-direction: column;
             padding: 0;
             margin: 0;
+
             .sql {
                 width: 100%;
                 min-height: 105px;

@@ -19,7 +19,7 @@ namespace HiDb.DataProvider.Dtos.Connect
 
         public int Port { get; set; }
 
-        public string Database { get; set; }
+        public string? Database { get; set; }
 
         /// <summary>
         /// 是否信任服务端证书

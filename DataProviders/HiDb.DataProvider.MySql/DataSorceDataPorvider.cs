@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HiDb.DataProvider.SqlServer
+namespace HiDb.DataProvider.MySql
 {
     /// <summary>
     /// 数据库连接实现

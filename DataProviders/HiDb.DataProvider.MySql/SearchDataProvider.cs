@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HiDb.DataProvider.SqlServer
+namespace HiDb.DataProvider.MySql
 {
     public class SearchDataProvider : MainDataProvider, ISearchDataProvider
     {
@@ -20,15 +20,10 @@ namespace HiDb.DataProvider.SqlServer
         {
             var query = GetPageSql(input.Sql, input.PageSize.Value);
 
-            if (!string.IsNullOrWhiteSpace(input.DataBase))
-            {
-                input.Sql = @$"use [{input.DataBase}];
-                               {input.Sql}";
-            }
             var res = new SearchOutput()
             {
-                List = this.GetList(query.Item1),
-                Count = this.GetCount(query.Item2)
+                List = this.GetList(query.Item1, input.DataBase),
+                Count = this.GetCount(query.Item2, input.DataBase)
             };
             return res;
         }
@@ -40,16 +35,8 @@ namespace HiDb.DataProvider.SqlServer
         /// <returns></returns>
         public int Execute(SearchInput input)
         {
-            var connection = SqlConnectionFactory.GetConnection();
-            if (string.IsNullOrWhiteSpace(input.DataBase))
-            {
-                return connection.Execute(input.Sql);
-            }
-            else
-            {
-                return connection.Execute(@$"use [{input.DataBase}];
-                                            {input.Sql}");
-            }
+            var connection = SqlConnectionFactory.GetConnection(input.DataBase);
+            return connection.Execute(input.Sql, input.DataBase);
         }
 
         private (string,string) GetPageSql(string sql, int pageSize)
@@ -62,7 +49,7 @@ namespace HiDb.DataProvider.SqlServer
                 return (sql,"");
             } 
             // 构建分页查询SQL
-            var pageSql = $"SELECT top {pageSize} * FROM ({sql}) AS a";
+            var pageSql = $"{sql}  LIMIT {pageSize}";
             var countSql = $"SELECT count(1) FROM ({sql}) AS a";
             return (pageSql, countSql);
         }

@@ -1,4 +1,5 @@
-﻿using HiDb.DataProvider.Dtos.Connect;
+﻿using Dapper;
+using HiDb.DataProvider.Dtos.Connect;
 using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
@@ -7,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HiDb.DataProvider.SqlServer
+namespace HiDb.DataProvider.MySql
 {
     public class SqlConnectionFactory
     {
@@ -29,27 +30,27 @@ namespace HiDb.DataProvider.SqlServer
             connection.Open();
         }
          
-        public static IDbConnection GetConnection(string connectionString = "")
+        public static IDbConnection GetConnection(string database = "", string connectionString = "")
         {
-            // 如果未初始化，初始化连接
-            if (connection == null)
+            if (connection != null)
             {
-                connection = new MySqlConnection(connectionString ?? _connectionString);
-                try
+                if (!string.IsNullOrWhiteSpace(database))
                 {
-                    connection.Open();
-                }
-                catch (Exception ex)
-                {
-                    // 连接打开异常，抛出错误
-                    throw ex;
+                    var useDatabaseSql = $"USE `{database}`;";
+                    connection.Execute(useDatabaseSql);
                 }
                 return connection;
-            }
+            } 
             else
             {
-                // 正常返回连接
-#warning 这里考虑初始化连接的时候，获取到数据库的超时配置，比如说30000毫秒，则设定时间戳，在30000毫秒临近的时候，进行connection Open重连操作，以免连接超时查询异常
+                connection = new MySqlConnection(connectionString ?? _connectionString);
+                if (!string.IsNullOrWhiteSpace(database))
+                {
+                    var useDatabaseSql = $"USE {database};";
+                    connection.Execute(useDatabaseSql);
+                }
+
+                connection.Open();
                 return connection;
             }
         }
@@ -75,7 +76,7 @@ namespace HiDb.DataProvider.SqlServer
             connectionString.Append("Server=");
             if (input.Port > 0)
             {
-                connectionString.Append(input.Address + ";" + "Port=" + input.Port);
+                connectionString.Append(input.Address + ";" + "Port=3306");
             }
             else
             {
@@ -91,18 +92,18 @@ namespace HiDb.DataProvider.SqlServer
             connectionString.Append(";Pwd=");
             connectionString.Append(input.PassWord);
             connectionString.Append(";");
-            if (input.TrustCert.HasValue)
-            {
-                connectionString.Append($"SslMode={input.TrustCert.ToString()};");
-            }
-            if (input.Encrypt.HasValue)
-            {
-                connectionString.Append($"AllowPublicKeyRetrieval={input.Encrypt.ToString()};");
-            }
-            if (input.TrustedConnection.HasValue)
-            {
-                connectionString.Append($"TrustServerCertificate={input.TrustedConnection.ToString()};");
-            }
+            //if (input.TrustCert.HasValue)
+            //{
+            //    connectionString.Append($"SslMode={input.TrustCert.ToString()};");
+            //}
+            //if (input.Encrypt.HasValue)
+            //{
+            //    connectionString.Append($"AllowPublicKeyRetrieval={input.Encrypt.ToString()};");
+            //}
+            //if (input.TrustedConnection.HasValue)
+            //{
+            //    connectionString.Append($"TrustServerCertificate={input.TrustedConnection.ToString()};");
+            //}
             return connectionString.ToString();
         }
     }

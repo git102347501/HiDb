@@ -1,9 +1,10 @@
 ﻿using Dapper;
 using HiDb.DataProvider.Dtos.Menus;
+using HiDb.DataProvider.MySql.Models;
 using MySqlX.XDevAPI.Relational;
 using System.Data.SqlClient;
 
-namespace HiDb.DataProvider.SqlServer
+namespace HiDb.DataProvider.MySql
 {
     /// <summary>
     /// MenuDataProvider
@@ -12,27 +13,34 @@ namespace HiDb.DataProvider.SqlServer
     {
         public List<MenuDataBaseOutput> GetDataBaseList()
         {
-            return GetList<MenuDataBaseOutput>("SHOW DATABASES;");
-        }
-        public List<MenuDbTableOutput> GetDbTableList(string database, string mode)
-        {
-            return GetList<MenuDbTableOutput>(@$"SELECT TABLE_NAME
-                                              FROM INFORMATION_SCHEMA.TABLES
-                                              WHERE TABLE_SCHEMA = '{database}'
-                                              AND TABLE_TYPE = 'BASE TABLE';");
+            var res = GetList<MySqlDataBaseList>("SHOW DATABASES;");
+            return res.Select(c => new MenuDataBaseOutput() { Name = c.Database }).ToList();
         }
 
+        public List<MenuDbTableOutput> GetDbTableList(string database, string mode = "")
+        {
+            var res = GetList<dynamic>($@"SHOW TABLES FROM `{database}`;");
+
+            return res.Select(c => new MenuDbTableOutput() { 
+                Name = ((IDictionary<string, object>)c)[$"Tables_in_{database}"].ToString() ?? "" }).ToList();
+        }
+
+        /// <summary>
+        /// MySQL does not support data mode and returns master by default
+        /// </summary>
+        /// <param name="database"></param>
+        /// <returns></returns>
         public List<MenuDbModeOutput> GetDbModeList(string database)
         {
-            return GetList<MenuDbModeOutput>($@"SHOW TABLES FROM {database};");
+            return new List<MenuDbModeOutput>() { new MenuDbModeOutput() { Name = "master" } };
         }
 
-        public List<MenuDbViewOutput> GetDbViewList(string mode, string database)
+        public List<MenuDbViewOutput> GetDbViewList(string database, string mode = "")
         {
             throw new NotImplementedException();
         }
 
-        public List<MenuDbSpOutput> GetDbSpList(string mode, string database)
+        public List<MenuDbSpOutput> GetDbSpList(string database, string mode = "")
         {
             throw new NotImplementedException();
         }

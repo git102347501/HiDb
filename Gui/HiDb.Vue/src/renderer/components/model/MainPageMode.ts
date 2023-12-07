@@ -2,6 +2,7 @@
 export interface ConnectDbInput
 {
     key: string;
+    name: string;
     account: string;
     passWord: string;
     address: string;
