@@ -13,8 +13,23 @@
           </a-dropdown>
         </div>
         <div class="title">
+          <span class="info" @click="getLife">
+            <span>
+              <span v-if="lifeTest == 1">
+                <wifi-outlined :width="20" :height="20" style="margin-right: 4px;" />服务连接中...</span>
+              <span style="color: green" v-if="lifeTest == 9">
+                <wifi-outlined :width="20" :height="20" style="margin-right: 4px;" />服务正常</span>
+              <span style="color:red" v-if="lifeTest == -1">
+                <wifi-outlined :width="20" :height="20" style="margin-right: 4px;" />服务连接失败</span>
+              <span style="color: brown;" v-if="lifeTest == 0">
+                <wifi-outlined :width="20" :height="20" style="margin-right: 4px;" />
+                服务未连接
+              </span>
+          </span>
+            <span style="margin-left: 10px;">|</span>
+          </span>
           <span v-if="currDatabase.type != null && currDatabase.type!= undefined" class="info">
-            <span style="color:aquamarine">{{ currDatabase.type === 1 ? 'MySQL' : 'SQL Server' }}</span>
+            <span style="color:#fff">{{ currDatabase.type === 1 ? 'MySQL' : 'SQL Server' }}</span>
             <span style="margin-left: 10px;">|</span>
           </span>
           <span v-if="currDatabase.name" class="info">
@@ -226,7 +241,7 @@
 <script lang="ts" setup>
 import { cloneDeep } from 'lodash-es';
 import { h, ref, watch, onMounted, UnwrapRef, reactive  } from 'vue';
-import { ApiOutlined,UserOutlined,AppstoreOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownOutlined, FrownFilled  } from '@ant-design/icons-vue';
+import { WifiOutlined,ApiOutlined,UserOutlined,AppstoreOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownOutlined, FrownFilled  } from '@ant-design/icons-vue';
 import { getDb,getMode,getTable } from '../api/menu';
 import { getSearch,execute} from '../api/search';
 import { connectDb } from '../api/datasource';
@@ -236,6 +251,8 @@ import { ConnectDbInput } from './model/MainPageMode';
 import { DataType } from 'vue-request';
 import { getGuid } from '@renderer/utils/guid';
 import { getuid } from 'process';
+import { life } from '../api/life';
+
   const sh = 320;
   const pageHeight = ref(0);
   const loading = ref(false);
@@ -594,6 +611,17 @@ import { getuid } from 'process';
               searchValue.value = value;
               //autoExpandParent.value = true;
   });
+
+  const lifeTest = ref<number>(0);
+  const getLife = ()=> {
+    lifeTest.value = 1;
+    life().then(res=>{
+      lifeTest.value = res.data == true ? 9 : -1;
+    }, () => {
+      lifeTest.value = -1;
+    })
+  }
+  getLife();
 
   // 获取父key
   const getParentKey = (

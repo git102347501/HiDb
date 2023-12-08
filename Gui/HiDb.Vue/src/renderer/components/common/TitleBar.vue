@@ -2,12 +2,12 @@
   <div class="window-title" v-if="!IsUseSysTitle && isNotMac && !IsWeb">
     <!-- 软件logo预留位置 -->
     <div style="-webkit-app-region: drag" class="logo">
-      <img src="@renderer/assets/icons/svg/electron-logo.svg" class="icon-logo" />
+      <img src="@renderer/assets/icons/png/hidb.png" class="icon-logo" />
     </div>
     <!-- 菜单栏位置 -->
     <div></div>
     <!-- 中间标题位置 -->
-    <div style="-webkit-app-region: drag" class="title"></div>
+    <div style="-webkit-app-region: drag" class="title">HiDb</div>
   </div>
   <div v-else-if="!IsUseSysTitle && !isNotMac" class="window-title"></div>
 </template>
@@ -19,6 +19,7 @@ let { ipcRenderer, systemInfo } = window;
 const IsUseSysTitle = ref(false);
 const mix = ref(false);
 const isNotMac = ref(false);
+const __ISWEB__ = ref(false);
 const IsWeb = ref(Boolean(__ISWEB__));
 
 if (!ipcRenderer) {
