@@ -26,7 +26,6 @@ console.log(path);
 const assetsPath = path.join(__dirname, '..', '..', '..', 'publish');
 const exePath = path.join(assetsPath, 'HiDb.Api.exe');
 // 调用 runAppInBackground 函数，传入你的 exe 文件路径
-console.log(exePath);
 runAppInBackground(exePath);
 // let apiProcess = null;
 

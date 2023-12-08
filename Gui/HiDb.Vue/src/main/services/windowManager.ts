@@ -183,6 +183,7 @@ class MainInit {
       transparent: true,
       resizable: false,
       webPreferences: {
+        webSecurity: false,
         nodeIntegration: true,
         contextIsolation: false,
         experimentalFeatures: true,
