@@ -70,6 +70,7 @@ export default {
     ipcMain.handle('open-win', (event, arg) => {
       const ChildWin = new BrowserWindow({
         titleBarStyle: config.IsUseSysTitle ? 'default' : 'hidden',
+        title: 'HiDb',
         height: 595,
         useContentSize: true,
         width: 1140,
@@ -92,6 +93,7 @@ export default {
         }
       })
       // 开发模式下自动开启devtools
+      console.log('开发模式下自动开启devtools:' + process.env.NODE_ENV);
       if (process.env.NODE_ENV === 'development') {
         ChildWin.webContents.openDevTools({ mode: 'undocked', activate: true })
       }

@@ -62,7 +62,9 @@
           <a-layout-sider width="200" class="menu">
             <a-spin :spinning="currloading">
               <div class="search">
-                <a-input-search v-model:value="searchValue" style="margin-bottom: 8px" placeholder="Search"  @search="onSearch" />
+                <a-input-search v-model:value="searchValue" 
+                  style="margin-bottom: 8px" placeholder="Search"  
+                  @search="onSearch" />
               </div>
               <div v-if="!currloading" class="tree">
                 <a-tree style="height: 100%;"
@@ -93,7 +95,8 @@
             <a-spin :spinning="currloading">
               <div class="tools">
                 <a-tooltip title="执行">
-                    <a-button @click="searchData" :icon="h(CaretRightOutlined)" style="margin-right: 6px;">执行</a-button>
+                    <a-button @click="searchData" 
+                      :icon="h(CaretRightOutlined)" style="margin-right: 6px;">执行</a-button>
                 </a-tooltip>
                 <a-tooltip title="撤销">
                     <a-button :icon="h(RedoOutlined)">撤销</a-button>
@@ -102,7 +105,7 @@
               <a-layout-content  class="content"
                 :style="{ background: '#fff', padding: '6px', margin: 0, minHeight: '280px' }" >
                 <div class="sql">
-                    <a-textarea class="input" ref="textarea" @pressEnter="searchData"
+                    <a-textarea class="input" ref="textarea" 
                         v-model:value="optValue" @click="handleClick"
                         placeholder="输入SQL语句后执行"
                         :auto-size="{ minRows: 4, maxRows: 15 }" />
@@ -784,9 +787,9 @@ import { life } from '../api/life';
     background: #fff;
   }
   .main {
-    margin-top: 30px;
+    //margin-top: 30px;
     width: 100%;
-    height: calc(100vh - 30px);
+    height: 100%;
     overflow-y: hidden;
     overflow-x: hidden;
 
