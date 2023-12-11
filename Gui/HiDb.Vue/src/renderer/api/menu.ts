@@ -1,12 +1,15 @@
 import request from '@renderer/utils/request'
 
 // 获取数据库列表
-export function getDb(dbtype) {
+export function getDb(dbtype, name) {
     return request({
       url: '/menu/db',
       method: 'get',
       headers: {
         'dbtype': dbtype
+      },
+      params: {
+        name: name
       }
     })
 }

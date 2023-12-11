@@ -63,7 +63,7 @@
             <a-spin :spinning="currloading">
               <div class="search">
                 <a-input-search v-model:value="searchValue" 
-                  style="margin-bottom: 8px" placeholder="Search"  
+                  style="margin-bottom: 8px" placeholder="搜索数据库名称"  
                   @search="onSearch" />
               </div>
               <div v-if="!currloading" class="tree">
@@ -253,10 +253,9 @@ import { message } from 'ant-design-vue';
 import { ConnectDbInput } from './model/MainPageMode';
 import { DataType } from 'vue-request';
 import { getGuid } from '@renderer/utils/guid';
-import { getuid } from 'process';
 import { life } from '../api/life';
 
-  const sh = 320;
+  const sh = 280;
   const pageHeight = ref(0);
   const loading = ref(false);
   const dbloading = ref(false);
@@ -333,7 +332,8 @@ import { life } from '../api/life';
 
   // 加载数据库列表
   const loadDataBase = ()=>{
-    getDb(currDatabase.value.type).then(res => {
+    currloading.value = true;
+    getDb(currDatabase.value.type, searchValue.value).then(res => {
       console.log(res);
       treeData.value = res.data.map(c=> {
         return {
@@ -343,8 +343,10 @@ import { life } from '../api/life';
           type: 'db'
         }});
       console.log(treeData.value);
+      currloading.value = false;
     }, err => {
       message.error(err.message);
+      currloading.value = false;
     })
   };
   const editableData: UnwrapRef<Record<string, ConnectDbInput>> = reactive({});
@@ -506,39 +508,17 @@ import { life } from '../api/life';
     fixed: true
   };
   // 搜索
-  const onSearch = (searchValue: string) => {
+  const onSearch = () => {
+    treeData.value = [];
+    currData.value = [];
+    expandedMenuKeys.value = [];
+    selectedMenuKeys.value = [];
     loadDataBase();
   };
+  // 关闭数据库连接
   const cancelDbDialog = ()=>{
     openDbDialog.value = false;
   }
-  const cancelDbListDialog = ()=>{
-    openDbListDialog.value = false;
-  }
-
-  // 主菜单
-  const items = ref([
-  {
-    key: '1',
-    icon: () => h(AppstoreOutlined),
-    label: '打开',
-    title: 'open',
-    children: [
-      {
-        key: '11',
-        icon: () => h(DatabaseOutlined),
-        label: '数据库列表',
-        title: 'db list',
-      },
-      {
-        key: '12',
-        icon: () => h(FileAddOutlined),
-        label: '新的链接',
-        title: 'new db',
-      }
-    ],
-  }
-  ]);
 
   // tree 点击加载
   const onLoadData: TreeProps['loadData'] = treeNode => {
@@ -568,14 +548,25 @@ import { life } from '../api/life';
           })
         } else if (treeNode.dataRef.type === 'mode') {
           getTable(treeNode.dataRef.database, treeNode.title, currDatabase.value.type).then(res=>{
-            treeNode.dataRef.children = res.data.map(c => {
-              return {            
-                title: c.name,
-                key: c.name,
-                isLeaf: true,
-                type: 'table',
-              }
-            });
+            if (!res.data || res.data.length == 0) {
+              treeNode.dataRef.children = res.data.map(c => {
+                return {            
+                  title: '暂无表数据',
+                  key: '暂无表数据',
+                  isLeaf: true,
+                  type: 'tablenull',
+                }
+              });
+            } else {
+              treeNode.dataRef.children = res.data.map(c => {
+                return {            
+                  title: c.name,
+                  key: c.name,
+                  isLeaf: true,
+                  type: 'table',
+                }
+              });
+            }
             treeData.value = [...treeData.value];
             resolve();
           })
@@ -601,19 +592,19 @@ import { life } from '../api/life';
     }
   }
 
-  // 数据监听
-  watch(searchValue, value => {
-      const expanded = treeData.value
-          .map((item: TreeProps['treeData'][number]) => {
-            if (item.title.indexOf(value) > -1) {
-                //return getParentKey(item.key, gData.value);
-            }
-            return null;
-          }).filter((item, i, self) => item && self.indexOf(item) === i);
-              //expandedMenuKeys.value = expanded;
-              searchValue.value = value;
-              //autoExpandParent.value = true;
-  });
+  // // 数据监听
+  // watch(searchValue, value => {
+  //     const expanded = treeData.value
+  //         .map((item: TreeProps['treeData'][number]) => {
+  //           if (item.title.indexOf(value) > -1) {
+  //               //return getParentKey(item.key, gData.value);
+  //           }
+  //           return null;
+  //         }).filter((item, i, self) => item && self.indexOf(item) === i);
+  //             //expandedMenuKeys.value = expanded;
+  //             searchValue.value = value;
+  //             //autoExpandParent.value = true;
+  // });
 
   const lifeTest = ref<number>(0);
   const getLife = ()=> {
@@ -897,6 +888,7 @@ import { life } from '../api/life';
                   align-items: center;
                   justify-content: flex-start;
                   background-color: #f5f5f5;
+                  border-radius: 8px;
                 }
 
                 .msg {
