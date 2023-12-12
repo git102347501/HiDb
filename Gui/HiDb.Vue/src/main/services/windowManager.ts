@@ -179,8 +179,8 @@ class MainInit {
   // 加载窗口函数
   loadingWindow(loadingURL: string) {
     this.loadWindow = new BrowserWindow({
-      width: 400,
-      height: 600,
+      width: 614,
+      height: 614,
       frame: false,
       skipTaskbar: true,
       transparent: true,

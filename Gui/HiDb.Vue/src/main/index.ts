@@ -11,7 +11,7 @@ let childProcess;
 
 // 启动后台子进程
 function runAppInBackground() {
-  const assetsPath = path.join(__dirname, '..','..', 'publish');
+  const assetsPath = path.join(__dirname, '..', 'publish');
   const exePath = path.join(assetsPath, 'HiDb.Api.exe');
   const options = {
     detached: true,

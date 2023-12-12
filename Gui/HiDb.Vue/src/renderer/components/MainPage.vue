@@ -1,6 +1,6 @@
 <template>
-    <a-layout class="main">
-      <a-layout-header class="header">
+    <div class="main">
+      <div class="header">
         <div class="btn">
           <a-dropdown>
             <a-button ghost>操作</a-button>
@@ -57,9 +57,9 @@
             </template>
           </a-dropdown>
         </div>
-      </a-layout-header>
-      <a-layout> 
-          <a-layout-sider width="200" class="menu">
+      </div>
+      <div class="content"> 
+          <div class="menu" :key="refreshKey1" :style="{ 'width': menuWidth + 'px' }">
             <a-spin :spinning="currloading">
               <div class="search">
                 <a-input-search v-model:value="searchValue" 
@@ -74,7 +74,9 @@
                     @select="onSelect"
                     :tree-data="treeData"
                 >
-                  <template #switcherIcon="{ switcherCls }"><down-outlined :class="switcherCls" /></template>
+                  <template #switcherIcon="{ switcherCls }">
+                    <down-outlined :class="switcherCls" />
+                  </template>
                   <template #icon="{ type, selected }">
                     <template v-if="type === 'db'">
                       <database-outlined />
@@ -85,13 +87,17 @@
                     <template v-if="type === 'table'">
                       <table-outlined />
                     </template>
+                    <template v-if="type === 'tablenull'">
+                      <borderless-table-outlined />
+                    </template>
                   </template>
                 </a-tree>
                 <a-empty v-if="!treeData.length" description="暂无数据库列表" />
               </div>
             </a-spin>
-          </a-layout-sider>
-          <a-layout class="work" style="padding: 0 8px 8px">
+          </div>
+          <div class="drap-line" @mousedown="leftResize"></div>
+          <div class="work" :key="refreshKey2"  :style="{ 'width': 'calc(100% - '+ (menuWidth + 20) + ')px' }">
             <a-spin :spinning="currloading">
               <div class="tools">
                 <a-tooltip title="执行">
@@ -102,8 +108,7 @@
                     <a-button :icon="h(RedoOutlined)">撤销</a-button>
                 </a-tooltip>
               </div>
-              <a-layout-content  class="content"
-                :style="{ background: '#fff', padding: '6px', margin: 0, minHeight: '280px' }" >
+              <div class="context" >
                 <div class="sql">
                     <a-textarea class="input" ref="textarea" 
                         v-model:value="optValue" @click="handleClick"
@@ -129,10 +134,10 @@
                       总记录行数:{{ pagination.total }} | 当前查询页大小:{{ pagination.pageSize }}
                     </div>
                 </div>
-              </a-layout-content>
+              </div>
             </a-spin>
-          </a-layout>
-      </a-layout>
+          </div>
+      </div>
       <a-modal v-model:open="openDbListDialog" title="数据库列表" width="680px" height="550px">
         <div class="db-dialog">
           <a-table class="table"
@@ -238,13 +243,13 @@
           <a-button key="submit" type="primary" :loading="submitOpenDbLoading" @click="submitOpenDb">连接</a-button>
         </template>
       </a-modal>
-    </a-layout>
+    </div>
 </template>
 
 <script lang="ts" setup>
 import { cloneDeep } from 'lodash-es';
 import { h, ref, watch, onMounted, UnwrapRef, reactive  } from 'vue';
-import { WifiOutlined,ApiOutlined,UserOutlined,AppstoreOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownOutlined, FrownFilled  } from '@ant-design/icons-vue';
+import { WifiOutlined,ApiOutlined,UserOutlined,BorderlessTableOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownOutlined, FrownFilled  } from '@ant-design/icons-vue';
 import { getDb,getMode,getTable } from '../api/menu';
 import { getSearch,execute} from '../api/search';
 import { connectDb } from '../api/datasource';
@@ -310,6 +315,36 @@ import { life } from '../api/life';
       clearCurrDbData();
     } 
   }
+  const menuWidth =  ref(350); // 菜单宽度
+  const refreshKey1 =  ref<number>(0);
+  const refreshKey2 =  ref<number>(0);
+  const mouseEventX =  ref<number>(0);
+  
+  const leftResize = (e: MouseEvent) => {
+    //解决拖动会选中文字的问题\
+    document.onselectstart = function () {
+      return false;
+    }; 
+    const changeWidth = (documentE: MouseEvent) => {
+      menuWidth.value = documentE.clientX;
+      refreshKey1.value = refreshKey1.value + 1;
+      refreshKey2.value = refreshKey1.value + 1;
+    };
+    const mouseMove = (documentE: MouseEvent) => {
+      mouseEventX.value = documentE.clientX;
+      changeWidth(documentE);
+    };
+    const mouseUp = () => {
+      document.removeEventListener('mousemove', mouseMove);
+      document.removeEventListener('mouseup', mouseUp);
+      // 拖拽完记得重新设置可以选中
+      document.onselectstart = function () {
+        return true;
+      };
+    };
+    document.addEventListener('mousemove', mouseMove);
+    document.addEventListener('mouseup', mouseUp);
+  };
   const selectedMenu: MenuProps['onClick'] = ({ key }) => {
     if (key == '1') {
       submitOpenDbList();
@@ -534,7 +569,7 @@ import { life } from '../api/life';
             treeNode.dataRef.children = res.data.map(c => {
               return {            
                 title: c.name,
-                key: c.name,
+                key: treeNode.title + '_' + c.name,
                 isLeaf: false,
                 type: 'mode',
                 database: treeNode.title
@@ -548,15 +583,14 @@ import { life } from '../api/life';
           })
         } else if (treeNode.dataRef.type === 'mode') {
           getTable(treeNode.dataRef.database, treeNode.title, currDatabase.value.type).then(res=>{
-            if (!res.data || res.data.length == 0) {
-              treeNode.dataRef.children = res.data.map(c => {
-                return {            
-                  title: '暂无表数据',
-                  key: '暂无表数据',
-                  isLeaf: true,
-                  type: 'tablenull',
-                }
-              });
+            if (!res.data || !res.data || res.data.length < 1) {
+              treeNode.dataRef.children = [{            
+                title: '暂无表数据',
+                key: '暂无表数据',
+                isLeaf: true,
+                disabled: true,
+                type: 'tablenull',
+              }];
             } else {
               treeNode.dataRef.children = res.data.map(c => {
                 return {            
@@ -783,6 +817,8 @@ import { life } from '../api/life';
     height: 100%;
     overflow-y: hidden;
     overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
 
     .header {
         height: 50px;
@@ -794,6 +830,7 @@ import { life } from '../api/life';
         flex-direction: row;
         align-items: center;
         justify-content: space-between;
+        background-color: rgb(24, 24, 40);
 
         .btn {
           width: 150px;
@@ -814,93 +851,111 @@ import { life } from '../api/life';
           }
         }
     }
-    .menu {
-        width: 300px !important;
-        max-width: 300px !important;
-        min-width: 300px !important;
-        height: calc(100% - 16px);
-        display: flex;
-        flex-direction: column;
-        padding: 8px;
-        background-color: #fff;
 
-        .search {
-            height: 45px;
-            width: 100%;
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            justify-content: center;
-        }
+    .content{
+      height: calc(100% - 50px);
+      width: 100%;
+      display: flex;
+      flex-direction: row;
 
-        .tree {
-            width: 100%;
-            max-height: calc(100vh - 45px);
-            overflow-y: auto;
-        }
-    }
-    .work {
-        height: calc(100vh - 80px);
-        width: calc(100% - 350px);    
+      
+      .menu {
+          height: calc(100% - 16px);
+          display: flex;
+          flex-direction: column;
+          padding: 8px;
+          background-color: #fff;
 
-        .tools {
-            width: 100%;
-            height: 40px;
-            padding: 0 12px;
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            justify-content: flex-start;
-        }
-        .content {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            padding: 0;
-            margin: 0;
+          .search {
+              height: 45px;
+              width: 100%;
+              display: flex;
+              flex-direction: row;
+              align-items: center;
+              justify-content: center;
+          }
 
-            .sql {
-                width: 100%;
-                min-height: 105px;
-                .input {
-                    height: calc(100% - 8px);
-                    margin: 4px;
-                    width: calc(100% - 8px);
-                }
-            }
-            .data {
-                width: 100%;
-                height: 100%;
+          .tree {
+              width: 100%;
+              max-height: calc(100vh - 45px);
+              overflow-y: auto;
+          }
+      }
+      .drap-line {
+        height: 100%;
+        width: 5px;
+        background-color: #d0cece;
+        border-radius: 6px;
+        cursor: col-resize;
+        z-index: 999;
+      }
+      .work {
+          height: calc(100vh - 80px);
+          padding: 0 0 8px 8px;
+          flex: 1;
 
-                .table {
+          .tools {
+              width: 100%;
+              height: 40px;
+              padding: 0 12px;
+              display: flex;
+              flex-direction: row;
+              align-items: center;
+              justify-content: flex-start;
+          }
+          .context {
+              width: 100%;
+              height: 100%;
+              display: flex;
+              flex-direction: column;
+              padding: 0;
+              margin: 0;
+              background: '#fff'; 
+              padding: '6px'; 
+              min-height: '280px';
+
+              .sql {
                   width: 100%;
-                  height: calc(100% - 30px);
-                }
-                .table-line {
-                  width: 100%;
-                  height: 30px;
-                  font-size: 12px;
-                  color: #333333;
-                  padding: 0 6px;
-                  display: flex;
-                  flex-direction: row;
-                  align-items: center;
-                  justify-content: flex-start;
-                  background-color: #f5f5f5;
-                  border-radius: 8px;
-                }
-
-                .msg {
+                  min-height: 105px;
+                  .input {
+                      height: calc(100% - 8px);
+                      margin: 4px;
+                      width: calc(100% - 8px);
+                  }
+              }
+              .data {
                   width: 100%;
                   height: 100%;
-                  display: flex;
-                  flex-direction: column;
-                  align-items: flex-start;
-                  justify-content: flex-start;
-                }
-            }
-        }
+
+                  .table {
+                    width: 100%;
+                    height: calc(100% - 30px);
+                  }
+                  .table-line {
+                    width: 100%;
+                    height: 30px;
+                    font-size: 12px;
+                    color: #333333;
+                    padding: 0 6px;
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+                    justify-content: flex-start;
+                    background-color: #f5f5f5;
+                    border-radius: 8px;
+                  }
+
+                  .msg {
+                    width: 100%;
+                    height: 100%;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: flex-start;
+                    justify-content: flex-start;
+                  }
+              }
+          }
+      }
     }
   }
   .db-dialog {

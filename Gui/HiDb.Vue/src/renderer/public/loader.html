@@ -32,6 +32,7 @@
       margin: 0;
     }
 
+    
     /* .loading-line {
       height: 1px;
       width: 100%;
@@ -70,15 +71,17 @@
       justify-content: center;
       align-items: center;
       height: 100%;
-      background: #222;
       position: relative;
+      background-image: url(./loadingbj.png);
+      background-size: cover;
+      background-position: center center;
     }
 
     .loader {
       position: relative;
       width: 15em;
       height: 15em;
-      background: linear-gradient(-225deg, #ff3cac9e 0%, #562b7c9e 52%, #2b86c59e 100%);
+      background: linear-gradient(-225deg, #0f49afd6 0%, #8215dc9e 52%, #033aba 100%);
       border-radius: 50%;
       animation: spin 0.5s linear infinite;
     }
@@ -110,15 +113,17 @@
     span::after {
       position: absolute;
       content: "";
-      top: 10px;
-      left: 10px;
-      right: 10px;
-      bottom: 10px;
-      background: #222;
+      top: 20px;
+      left: 20px;
+      right: 20px;
+      bottom: 20px;
+      background: #2a5ed7;
       border-radius: inherit;
     }
 
+    
     .text {
+      color: rgb(15, 11, 11);
       position: absolute;
       opacity: 0;
       animation: breath 3s ease-in-out infinite;
@@ -144,30 +149,18 @@
       }
     }
 
-    /* @keyframes slidein{
-      from{
-
-      }
-      to{
-        
-      }
-    } */
   </style>
 </head>
 
 <body>
   <div class="scene">
-    <!-- <i class="loading-line top"></i>
-    <i class="loading-line right"></i>
-    <i class="loading-line bottom"></i>
-    <i class="loading-line left"></i> -->
     <div class="loader">
       <span></span>
       <span></span>
       <span></span>
       <span></span>
     </div>
-    <div class="text">正在准备资源中...</div>
+    <div class="text">HiDb正在加载...</div>
   </div>
 
 </body>
