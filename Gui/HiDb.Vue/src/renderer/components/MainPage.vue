@@ -96,46 +96,44 @@
               </div>
             </a-spin>
           </div>
-          <div class="drap-line" @mousedown="leftResize"></div>
-          <div class="work" :key="refreshKey2"  :style="{ 'width': 'calc(100% - '+ (menuWidth + 20) + ')px' }">
-            <a-spin :spinning="currloading">
-              <div class="tools">
-                <a-tooltip title="执行">
+          <div :class="menuWidth <= 350 ? 'drap-line drap-line-left' : menuWidth >= 850 ? 'drap-line drap-line-right': 'drap-line'" @mousedown="leftResize"></div>
+          <div class="work" :key="refreshKey2"  :style="{ 'width': bodyWidth }">
+            <div class="tools">
+                <a-tooltip title="执行SQL区域内的SQL">
                     <a-button @click="searchData" 
                       :icon="h(CaretRightOutlined)" style="margin-right: 6px;">执行</a-button>
                 </a-tooltip>
-                <a-tooltip title="撤销">
-                    <a-button :icon="h(RedoOutlined)">撤销</a-button>
+                <a-tooltip title="清空SQL区域内容">
+                    <a-button @click="clearData"  :icon="h(RedoOutlined)">清空</a-button>
                 </a-tooltip>
+            </div>
+            <div class="context" >
+              <div class="sql">
+                  <a-textarea class="input" ref="textarea" 
+                      v-model:value="optValue" @click="handleClick"
+                      placeholder="输入SQL语句后执行"
+                      :auto-size="{ minRows: 4, maxRows: 15 }" />
               </div>
-              <div class="context" >
-                <div class="sql">
-                    <a-textarea class="input" ref="textarea" 
-                        v-model:value="optValue" @click="handleClick"
-                        placeholder="输入SQL语句后执行"
-                        :auto-size="{ minRows: 4, maxRows: 15 }" />
-                </div>
-                <div class="data">
-                    <a-table class="table"
-                        v-if="isQuery"
-                        :columns="columns" 
-                        size="small"
-                        :data-source="currData"
-                        :scroll="{ y: pageHeight }"
-                        :loading="loading"
-                        :pagination="false"
-                    >
-                      <template #headerCell="{ column }"/>
-                    </a-table>
-                    <div class="msg" v-if="!isQuery">
-                      影响行数: {{executeNum}}
-                    </div>
-                    <div  v-if="isQuery && pagination.total" class="table-line">
-                      总记录行数:{{ pagination.total }} | 当前查询页大小:{{ pagination.pageSize }}
-                    </div>
-                </div>
+              <div class="data">
+                  <a-table class="table"
+                      v-if="isQuery"
+                      :columns="columns" 
+                      size="small"
+                      :data-source="currData"
+                      :scroll="{ y: pageHeight, x: '(100% - ' + (menuWidth + 30) + ')'}"
+                      :loading="loading"
+                      :pagination="false"
+                  >
+                    <template #headerCell="{ column }"/>
+                  </a-table>
+                  <div class="msg" v-if="!isQuery">
+                    影响行数: {{executeNum}}
+                  </div>
+                  <div  v-if="isQuery && pagination.total" class="table-line">
+                    总记录行数:{{ pagination.total }} | 当前查询页大小:{{ pagination.pageSize }}
+                  </div>
               </div>
-            </a-spin>
+            </div>
           </div>
       </div>
       <a-modal v-model:open="openDbListDialog" title="数据库列表" width="680px" height="550px">
@@ -316,6 +314,7 @@ import { life } from '../api/life';
     } 
   }
   const menuWidth =  ref(350); // 菜单宽度
+  const bodyWidth =  ref('calc(100% - 350px)'); // 内容宽度
   const refreshKey1 =  ref<number>(0);
   const refreshKey2 =  ref<number>(0);
   const mouseEventX =  ref<number>(0);
@@ -326,7 +325,9 @@ import { life } from '../api/life';
       return false;
     }; 
     const changeWidth = (documentE: MouseEvent) => {
-      menuWidth.value = documentE.clientX;
+      let width = documentE.clientX < 350 ? 350 : documentE.clientX > 850 ? 850 : documentE.clientX;
+      menuWidth.value = width;
+      bodyWidth.value = 'calc(100% - ' + menuWidth.value + 'px)';
       refreshKey1.value = refreshKey1.value + 1;
       refreshKey2.value = refreshKey1.value + 1;
     };
@@ -729,6 +730,9 @@ import { life } from '../api/life';
     currdbData.value = data ? JSON.parse(data) : [];
     dbloading.value = false;
   }
+  const clearData = ()=> {
+    optValue.value = ''
+  }
 
   // 表格主查询
   const searchData = () => {
@@ -884,15 +888,22 @@ import { life } from '../api/life';
       .drap-line {
         height: 100%;
         width: 5px;
-        background-color: #d0cece;
-        border-radius: 6px;
+        background-color: #f5f5f5;
         cursor: col-resize;
         z-index: 999;
       }
+      .drap-line-left {
+        border-left: #979797 2px solid;
+      }
+      .drap-line-right {
+        border-right: #979797 2px solid;
+      }
       .work {
-          height: calc(100vh - 80px);
-          padding: 0 0 8px 8px;
+          height: calc(100vh - 50px);
+          padding: 0;
           flex: 1;
+          display: flex;
+          flex-direction: column;
 
           .tools {
               width: 100%;
@@ -905,7 +916,7 @@ import { life } from '../api/life';
           }
           .context {
               width: 100%;
-              height: 100%;
+              height: calc(100% - 40px);
               display: flex;
               flex-direction: column;
               padding: 0;
@@ -917,6 +928,7 @@ import { life } from '../api/life';
               .sql {
                   width: 100%;
                   min-height: 105px;
+
                   .input {
                       height: calc(100% - 8px);
                       margin: 4px;
@@ -925,11 +937,13 @@ import { life } from '../api/life';
               }
               .data {
                   width: 100%;
-                  height: 100%;
+                  flex : 1;
 
                   .table {
                     width: 100%;
                     height: calc(100% - 30px);
+                    padding: 0;
+                    margin: 0;
                   }
                   .table-line {
                     width: 100%;
@@ -942,7 +956,6 @@ import { life } from '../api/life';
                     align-items: center;
                     justify-content: flex-start;
                     background-color: #f5f5f5;
-                    border-radius: 8px;
                   }
 
                   .msg {
