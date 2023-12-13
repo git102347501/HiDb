@@ -31,9 +31,7 @@ class MainInit {
   // 主窗口函数
   createMainWindow() {
     this.mainWindow = new BrowserWindow({
-      titleBarOverlay:{
-        color:"#fff"
-      },
+      title: 'HiDb',
       titleBarStyle: config.IsUseSysTitle ? 'default' : 'hidden',
       height: 800,
       useContentSize: true,
@@ -56,8 +54,12 @@ class MainInit {
     })
     // 赋予模板
     const menu = Menu.buildFromTemplate(menuconfig as any)
-    // 加载模板
-    Menu.setApplicationMenu(menu)
+    // 加载菜单模板
+    if (process.env.NODE_ENV === 'development'){
+      Menu.setApplicationMenu(menu)
+    } else {
+      Menu.setApplicationMenu(null);
+    }
     // 加载主窗口
     this.mainWindow.loadURL(this.winURL)
     // dom-ready之后显示界面
@@ -66,6 +68,7 @@ class MainInit {
       if (config.UseStartupChart) this.loadWindow.destroy()
     })
     // 开发模式下自动开启devtools
+    console.log('开发模式下自动开启devtools2:' + process.env.NODE_ENV);
     if (process.env.NODE_ENV === 'development') {
       this.mainWindow.webContents.openDevTools({ mode: 'undocked', activate: true })
     }
@@ -176,13 +179,14 @@ class MainInit {
   // 加载窗口函数
   loadingWindow(loadingURL: string) {
     this.loadWindow = new BrowserWindow({
-      width: 400,
-      height: 600,
+      width: 614,
+      height: 614,
       frame: false,
       skipTaskbar: true,
       transparent: true,
       resizable: false,
       webPreferences: {
+        webSecurity: false,
         nodeIntegration: true,
         contextIsolation: false,
         experimentalFeatures: true,
@@ -191,7 +195,7 @@ class MainInit {
           : join(app.getAppPath(), 'dist/electron/main/preload.js')
       }
     })
-
+    this.loadWindow.setTitle('HiDb');
     this.loadWindow.loadURL(loadingURL)
     this.loadWindow.show()
     this.loadWindow.setAlwaysOnTop(true)

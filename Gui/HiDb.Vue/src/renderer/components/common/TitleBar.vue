@@ -41,8 +41,8 @@ if (!ipcRenderer) {
 <style rel="stylesheet/scss" lang="scss" scoped>
 .window-title {
   width: 100%;
-  height: 30px;
-  line-height: 30px;
+  height: 0px;
+  line-height:  0px;
   background-color: #ffffff;
   display: flex;
   -webkit-app-region: drag;

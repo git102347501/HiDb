@@ -15,9 +15,9 @@ namespace HiDb.Api.Controllers
     {
 
         [HttpGet("db")]
-        public IEnumerable<MenuDataBaseOutput> GetMenu()
+        public IEnumerable<MenuDataBaseOutput> GetMenu(string? name = null)
         {
-            return GetService(ServiceFactory.GetMenu).GetDataBaseList();
+            return GetService(ServiceFactory.GetMenu).GetDataBaseList(name);
         }
 
         [HttpGet("mode")]

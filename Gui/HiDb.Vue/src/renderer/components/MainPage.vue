@@ -1,6 +1,6 @@
 <template>
-    <a-layout class="main">
-      <a-layout-header class="header">
+    <div class="main">
+      <div class="header">
         <div class="btn">
           <a-dropdown>
             <a-button ghost>操作</a-button>
@@ -57,12 +57,14 @@
             </template>
           </a-dropdown>
         </div>
-      </a-layout-header>
-      <a-layout> 
-          <a-layout-sider width="200" class="menu">
+      </div>
+      <div class="content"> 
+          <div class="menu" :key="refreshKey1" :style="{ 'width': menuWidth + 'px' }">
             <a-spin :spinning="currloading">
               <div class="search">
-                <a-input-search v-model:value="searchValue" style="margin-bottom: 8px" placeholder="Search"  @search="onSearch" />
+                <a-input-search v-model:value="searchValue" 
+                  style="margin-bottom: 8px" placeholder="搜索数据库名称"  
+                  @search="onSearch" />
               </div>
               <div v-if="!currloading" class="tree">
                 <a-tree style="height: 100%;"
@@ -72,7 +74,9 @@
                     @select="onSelect"
                     :tree-data="treeData"
                 >
-                  <template #switcherIcon="{ switcherCls }"><down-outlined :class="switcherCls" /></template>
+                  <template #switcherIcon="{ switcherCls }">
+                    <down-outlined :class="switcherCls" />
+                  </template>
                   <template #icon="{ type, selected }">
                     <template v-if="type === 'db'">
                       <database-outlined />
@@ -83,53 +87,55 @@
                     <template v-if="type === 'table'">
                       <table-outlined />
                     </template>
+                    <template v-if="type === 'tablenull'">
+                      <borderless-table-outlined />
+                    </template>
                   </template>
                 </a-tree>
                 <a-empty v-if="!treeData.length" description="暂无数据库列表" />
               </div>
             </a-spin>
-          </a-layout-sider>
-          <a-layout class="work" style="padding: 0 8px 8px">
-            <a-spin :spinning="currloading">
-              <div class="tools">
-                <a-tooltip title="执行">
-                    <a-button @click="searchData" :icon="h(CaretRightOutlined)" style="margin-right: 6px;">执行</a-button>
+          </div>
+          <div :class="menuWidth <= 350 ? 'drap-line drap-line-left' : menuWidth >= 850 ? 'drap-line drap-line-right': 'drap-line'" @mousedown="leftResize"></div>
+          <div class="work" :key="refreshKey2"  :style="{ 'width': bodyWidth }">
+            <div class="tools">
+                <a-tooltip title="执行SQL区域内的SQL">
+                    <a-button @click="searchData" 
+                      :icon="h(CaretRightOutlined)" style="margin-right: 6px;">执行</a-button>
                 </a-tooltip>
-                <a-tooltip title="撤销">
-                    <a-button :icon="h(RedoOutlined)">撤销</a-button>
+                <a-tooltip title="清空SQL区域内容">
+                    <a-button @click="clearData"  :icon="h(RedoOutlined)">清空</a-button>
                 </a-tooltip>
+            </div>
+            <div class="context" >
+              <div class="sql">
+                  <a-textarea class="input" ref="textarea" 
+                      v-model:value="optValue" @click="handleClick"
+                      placeholder="输入SQL语句后执行"
+                      :auto-size="{ minRows: 4, maxRows: 15 }" />
               </div>
-              <a-layout-content  class="content"
-                :style="{ background: '#fff', padding: '6px', margin: 0, minHeight: '280px' }" >
-                <div class="sql">
-                    <a-textarea class="input" ref="textarea" @pressEnter="searchData"
-                        v-model:value="optValue" @click="handleClick"
-                        placeholder="输入SQL语句后执行"
-                        :auto-size="{ minRows: 4, maxRows: 15 }" />
-                </div>
-                <div class="data">
-                    <a-table class="table"
-                        v-if="isQuery"
-                        :columns="columns" 
-                        size="small"
-                        :data-source="currData"
-                        :scroll="{ y: pageHeight }"
-                        :loading="loading"
-                        :pagination="false"
-                    >
-                      <template #headerCell="{ column }"/>
-                    </a-table>
-                    <div class="msg" v-if="!isQuery">
-                      影响行数: {{executeNum}}
-                    </div>
-                    <div  v-if="isQuery && pagination.total" class="table-line">
-                      总记录行数:{{ pagination.total }} | 当前查询页大小:{{ pagination.pageSize }}
-                    </div>
-                </div>
-              </a-layout-content>
-            </a-spin>
-          </a-layout>
-      </a-layout>
+              <div class="data">
+                  <a-table class="table"
+                      v-if="isQuery"
+                      :columns="columns" 
+                      size="small"
+                      :data-source="currData"
+                      :scroll="{ y: pageHeight, x: '(100% - ' + (menuWidth + 30) + ')'}"
+                      :loading="loading"
+                      :pagination="false"
+                  >
+                    <template #headerCell="{ column }"/>
+                  </a-table>
+                  <div class="msg" v-if="!isQuery">
+                    影响行数: {{executeNum}}
+                  </div>
+                  <div  v-if="isQuery && pagination.total" class="table-line">
+                    总记录行数:{{ pagination.total }} | 当前查询页大小:{{ pagination.pageSize }}
+                  </div>
+              </div>
+            </div>
+          </div>
+      </div>
       <a-modal v-model:open="openDbListDialog" title="数据库列表" width="680px" height="550px">
         <div class="db-dialog">
           <a-table class="table"
@@ -235,13 +241,13 @@
           <a-button key="submit" type="primary" :loading="submitOpenDbLoading" @click="submitOpenDb">连接</a-button>
         </template>
       </a-modal>
-    </a-layout>
+    </div>
 </template>
 
 <script lang="ts" setup>
 import { cloneDeep } from 'lodash-es';
 import { h, ref, watch, onMounted, UnwrapRef, reactive  } from 'vue';
-import { WifiOutlined,ApiOutlined,UserOutlined,AppstoreOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownOutlined, FrownFilled  } from '@ant-design/icons-vue';
+import { WifiOutlined,ApiOutlined,UserOutlined,BorderlessTableOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownOutlined, FrownFilled  } from '@ant-design/icons-vue';
 import { getDb,getMode,getTable } from '../api/menu';
 import { getSearch,execute} from '../api/search';
 import { connectDb } from '../api/datasource';
@@ -250,10 +256,9 @@ import { message } from 'ant-design-vue';
 import { ConnectDbInput } from './model/MainPageMode';
 import { DataType } from 'vue-request';
 import { getGuid } from '@renderer/utils/guid';
-import { getuid } from 'process';
 import { life } from '../api/life';
 
-  const sh = 320;
+  const sh = 280;
   const pageHeight = ref(0);
   const loading = ref(false);
   const dbloading = ref(false);
@@ -308,6 +313,39 @@ import { life } from '../api/life';
       clearCurrDbData();
     } 
   }
+  const menuWidth =  ref(350); // 菜单宽度
+  const bodyWidth =  ref('calc(100% - 350px)'); // 内容宽度
+  const refreshKey1 =  ref<number>(0);
+  const refreshKey2 =  ref<number>(0);
+  const mouseEventX =  ref<number>(0);
+  
+  const leftResize = (e: MouseEvent) => {
+    //解决拖动会选中文字的问题\
+    document.onselectstart = function () {
+      return false;
+    }; 
+    const changeWidth = (documentE: MouseEvent) => {
+      let width = documentE.clientX < 350 ? 350 : documentE.clientX > 850 ? 850 : documentE.clientX;
+      menuWidth.value = width;
+      bodyWidth.value = 'calc(100% - ' + menuWidth.value + 'px)';
+      refreshKey1.value = refreshKey1.value + 1;
+      refreshKey2.value = refreshKey1.value + 1;
+    };
+    const mouseMove = (documentE: MouseEvent) => {
+      mouseEventX.value = documentE.clientX;
+      changeWidth(documentE);
+    };
+    const mouseUp = () => {
+      document.removeEventListener('mousemove', mouseMove);
+      document.removeEventListener('mouseup', mouseUp);
+      // 拖拽完记得重新设置可以选中
+      document.onselectstart = function () {
+        return true;
+      };
+    };
+    document.addEventListener('mousemove', mouseMove);
+    document.addEventListener('mouseup', mouseUp);
+  };
   const selectedMenu: MenuProps['onClick'] = ({ key }) => {
     if (key == '1') {
       submitOpenDbList();
@@ -330,7 +368,8 @@ import { life } from '../api/life';
 
   // 加载数据库列表
   const loadDataBase = ()=>{
-    getDb(currDatabase.value.type).then(res => {
+    currloading.value = true;
+    getDb(currDatabase.value.type, searchValue.value).then(res => {
       console.log(res);
       treeData.value = res.data.map(c=> {
         return {
@@ -340,8 +379,10 @@ import { life } from '../api/life';
           type: 'db'
         }});
       console.log(treeData.value);
+      currloading.value = false;
     }, err => {
       message.error(err.message);
+      currloading.value = false;
     })
   };
   const editableData: UnwrapRef<Record<string, ConnectDbInput>> = reactive({});
@@ -503,39 +544,17 @@ import { life } from '../api/life';
     fixed: true
   };
   // 搜索
-  const onSearch = (searchValue: string) => {
+  const onSearch = () => {
+    treeData.value = [];
+    currData.value = [];
+    expandedMenuKeys.value = [];
+    selectedMenuKeys.value = [];
     loadDataBase();
   };
+  // 关闭数据库连接
   const cancelDbDialog = ()=>{
     openDbDialog.value = false;
   }
-  const cancelDbListDialog = ()=>{
-    openDbListDialog.value = false;
-  }
-
-  // 主菜单
-  const items = ref([
-  {
-    key: '1',
-    icon: () => h(AppstoreOutlined),
-    label: '打开',
-    title: 'open',
-    children: [
-      {
-        key: '11',
-        icon: () => h(DatabaseOutlined),
-        label: '数据库列表',
-        title: 'db list',
-      },
-      {
-        key: '12',
-        icon: () => h(FileAddOutlined),
-        label: '新的链接',
-        title: 'new db',
-      }
-    ],
-  }
-  ]);
 
   // tree 点击加载
   const onLoadData: TreeProps['loadData'] = treeNode => {
@@ -551,7 +570,7 @@ import { life } from '../api/life';
             treeNode.dataRef.children = res.data.map(c => {
               return {            
                 title: c.name,
-                key: c.name,
+                key: treeNode.title + '_' + c.name,
                 isLeaf: false,
                 type: 'mode',
                 database: treeNode.title
@@ -565,14 +584,24 @@ import { life } from '../api/life';
           })
         } else if (treeNode.dataRef.type === 'mode') {
           getTable(treeNode.dataRef.database, treeNode.title, currDatabase.value.type).then(res=>{
-            treeNode.dataRef.children = res.data.map(c => {
-              return {            
-                title: c.name,
-                key: c.name,
+            if (!res.data || !res.data || res.data.length < 1) {
+              treeNode.dataRef.children = [{            
+                title: '暂无表数据',
+                key: '暂无表数据',
                 isLeaf: true,
-                type: 'table',
-              }
-            });
+                disabled: true,
+                type: 'tablenull',
+              }];
+            } else {
+              treeNode.dataRef.children = res.data.map(c => {
+                return {            
+                  title: c.name,
+                  key: c.name,
+                  isLeaf: true,
+                  type: 'table',
+                }
+              });
+            }
             treeData.value = [...treeData.value];
             resolve();
           })
@@ -598,19 +627,19 @@ import { life } from '../api/life';
     }
   }
 
-  // 数据监听
-  watch(searchValue, value => {
-      const expanded = treeData.value
-          .map((item: TreeProps['treeData'][number]) => {
-            if (item.title.indexOf(value) > -1) {
-                //return getParentKey(item.key, gData.value);
-            }
-            return null;
-          }).filter((item, i, self) => item && self.indexOf(item) === i);
-              //expandedMenuKeys.value = expanded;
-              searchValue.value = value;
-              //autoExpandParent.value = true;
-  });
+  // // 数据监听
+  // watch(searchValue, value => {
+  //     const expanded = treeData.value
+  //         .map((item: TreeProps['treeData'][number]) => {
+  //           if (item.title.indexOf(value) > -1) {
+  //               //return getParentKey(item.key, gData.value);
+  //           }
+  //           return null;
+  //         }).filter((item, i, self) => item && self.indexOf(item) === i);
+  //             //expandedMenuKeys.value = expanded;
+  //             searchValue.value = value;
+  //             //autoExpandParent.value = true;
+  // });
 
   const lifeTest = ref<number>(0);
   const getLife = ()=> {
@@ -701,6 +730,9 @@ import { life } from '../api/life';
     currdbData.value = data ? JSON.parse(data) : [];
     dbloading.value = false;
   }
+  const clearData = ()=> {
+    optValue.value = ''
+  }
 
   // 表格主查询
   const searchData = () => {
@@ -784,11 +816,13 @@ import { life } from '../api/life';
     background: #fff;
   }
   .main {
-    margin-top: 30px;
+    //margin-top: 30px;
     width: 100%;
-    height: calc(100vh - 30px);
+    height: 100%;
     overflow-y: hidden;
     overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
 
     .header {
         height: 50px;
@@ -800,6 +834,7 @@ import { life } from '../api/life';
         flex-direction: row;
         align-items: center;
         justify-content: space-between;
+        background-color: rgb(24, 24, 40);
 
         .btn {
           width: 150px;
@@ -820,92 +855,120 @@ import { life } from '../api/life';
           }
         }
     }
-    .menu {
-        width: 300px !important;
-        max-width: 300px !important;
-        min-width: 300px !important;
-        height: calc(100% - 16px);
-        display: flex;
-        flex-direction: column;
-        padding: 8px;
-        background-color: #fff;
 
-        .search {
-            height: 45px;
-            width: 100%;
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            justify-content: center;
-        }
+    .content{
+      height: calc(100% - 50px);
+      width: 100%;
+      display: flex;
+      flex-direction: row;
 
-        .tree {
-            width: 100%;
-            max-height: calc(100vh - 45px);
-            overflow-y: auto;
-        }
-    }
-    .work {
-        height: calc(100vh - 80px);
-        width: calc(100% - 350px);    
+      
+      .menu {
+          height: calc(100% - 16px);
+          display: flex;
+          flex-direction: column;
+          padding: 8px;
+          background-color: #fff;
 
-        .tools {
-            width: 100%;
-            height: 40px;
-            padding: 0 12px;
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            justify-content: flex-start;
-        }
-        .content {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            padding: 0;
-            margin: 0;
+          .search {
+              height: 45px;
+              width: 100%;
+              display: flex;
+              flex-direction: row;
+              align-items: center;
+              justify-content: center;
+          }
 
-            .sql {
-                width: 100%;
-                min-height: 105px;
-                .input {
-                    height: calc(100% - 8px);
-                    margin: 4px;
-                    width: calc(100% - 8px);
-                }
-            }
-            .data {
-                width: 100%;
-                height: 100%;
+          .tree {
+              width: 100%;
+              max-height: calc(100vh - 45px);
+              overflow-y: auto;
+          }
+      }
+      .drap-line {
+        height: 100%;
+        width: 5px;
+        background-color: #f5f5f5;
+        cursor: col-resize;
+        z-index: 999;
+      }
+      .drap-line-left {
+        border-left: #979797 2px solid;
+      }
+      .drap-line-right {
+        border-right: #979797 2px solid;
+      }
+      .work {
+          height: calc(100vh - 50px);
+          padding: 0;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
 
-                .table {
+          .tools {
+              width: 100%;
+              height: 40px;
+              padding: 0 12px;
+              display: flex;
+              flex-direction: row;
+              align-items: center;
+              justify-content: flex-start;
+          }
+          .context {
+              width: 100%;
+              height: calc(100% - 40px);
+              display: flex;
+              flex-direction: column;
+              padding: 0;
+              margin: 0;
+              background: '#fff'; 
+              padding: '6px'; 
+              min-height: '280px';
+
+              .sql {
                   width: 100%;
-                  height: calc(100% - 30px);
-                }
-                .table-line {
-                  width: 100%;
-                  height: 30px;
-                  font-size: 12px;
-                  color: #333333;
-                  padding: 0 6px;
-                  display: flex;
-                  flex-direction: row;
-                  align-items: center;
-                  justify-content: flex-start;
-                  background-color: #f5f5f5;
-                }
+                  min-height: 105px;
 
-                .msg {
+                  .input {
+                      height: calc(100% - 8px);
+                      margin: 4px;
+                      width: calc(100% - 8px);
+                  }
+              }
+              .data {
                   width: 100%;
-                  height: 100%;
-                  display: flex;
-                  flex-direction: column;
-                  align-items: flex-start;
-                  justify-content: flex-start;
-                }
-            }
-        }
+                  flex : 1;
+
+                  .table {
+                    width: 100%;
+                    height: calc(100% - 30px);
+                    padding: 0;
+                    margin: 0;
+                  }
+                  .table-line {
+                    width: 100%;
+                    height: 30px;
+                    font-size: 12px;
+                    color: #333333;
+                    padding: 0 6px;
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+                    justify-content: flex-start;
+                    background-color: #f5f5f5;
+                  }
+
+                  .msg {
+                    width: 100%;
+                    height: 100%;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: flex-start;
+                    justify-content: flex-start;
+                  }
+              }
+          }
+      }
     }
   }
   .db-dialog {

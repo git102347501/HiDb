@@ -11,9 +11,13 @@ namespace HiDb.DataProvider.MySql
     /// </summary>
     public class MenuDataProvider : MainDataProvider, IMenuDataProvider
     {
-        public List<MenuDataBaseOutput> GetDataBaseList()
+        public List<MenuDataBaseOutput> GetDataBaseList(string? name = "")
         {
             var res = GetList<MySqlDataBaseList>("SHOW DATABASES;");
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                return res.Where(c=> c.Database.Contains(name)).Select(c => new MenuDataBaseOutput() { Name = c.Database }).ToList();
+            }
             return res.Select(c => new MenuDataBaseOutput() { Name = c.Database }).ToList();
         }
 

@@ -12,6 +12,6 @@ export default {
   DllFolder: "",
   HotUpdateFolder: "update",
   UseStartupChart: true,
-  IsUseSysTitle: false,
+  IsUseSysTitle: true, // 是否显示菜单标题栏
   BuiltInServerPort: 25565,
 };

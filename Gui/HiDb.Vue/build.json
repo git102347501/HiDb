@@ -7,7 +7,7 @@
       "url": "http://127.0.0.1"
     }
   ],
-  "productName": "hidb",
+  "productName": "HiDb",
   "appId": "conchsoft.magicalconch.hidb",
   "directories": {
     "output": "build"

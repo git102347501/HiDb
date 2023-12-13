@@ -9,9 +9,14 @@ namespace HiDb.DataProvider.SqlServer
     /// </summary>
     public class MenuDataProvider : MainDataProvider, IMenuDataProvider
     {
-        public List<MenuDataBaseOutput> GetDataBaseList()
+        public List<MenuDataBaseOutput> GetDataBaseList(string? name = "")
         {
-            return GetList<MenuDataBaseOutput>("SELECT name AS Name FROM sys.databases");
+            var sql = "SELECT name AS Name FROM sys.databases";
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                sql = @$"SELECT name AS Name FROM sys.databases where name like '%{name}%'";
+            }
+            return GetList<MenuDataBaseOutput>(sql);
         }
 
         public List<MenuDbTableOutput> GetDbTableList(string database, string mode)

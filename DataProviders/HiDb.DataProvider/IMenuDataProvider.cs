@@ -9,7 +9,7 @@ namespace HiDb.DataProvider
         /// 获取菜单-数据库列表
         /// </summary>
         /// <returns></returns>
-        public List<MenuDataBaseOutput> GetDataBaseList();
+        public List<MenuDataBaseOutput> GetDataBaseList(string? name = "");
 
         /// <summary>
         /// 获取菜单-数据库-表列表
