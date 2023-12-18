@@ -13,6 +13,7 @@ let childProcess;
 function runAppInBackground() {
   const assetsPath = path.join(__dirname, '..', 'publish');
   const exePath = path.join(assetsPath, 'HiDb.Api.exe');
+  console.log(exePath);
   const options = {
     detached: true,
     windowsHide: true

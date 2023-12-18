@@ -109,12 +109,9 @@
             </div>
             <div class="context" >
               <div class="sql">
-                  <a-textarea class="input" ref="textarea" 
-                      v-model:value="optValue" @click="handleClick"
-                      placeholder="输入SQL语句后执行"
-                      :auto-size="{ minRows: 4, maxRows: 15 }" />
+                  <div ref="editorContainer" class="editor" style="height:100%; width: 100%;"></div>
               </div>
-              <div class="data">
+              <div class="data" v-if="!currloading">
                   <a-table class="table"
                       v-if="isQuery"
                       :columns="columns" 
@@ -127,10 +124,10 @@
                     <template #headerCell="{ column }"/>
                   </a-table>
                   <div class="msg" v-if="!isQuery">
-                    影响行数: {{executeNum}}
+                    影响行数: {{executeNum}}| 执行耗时：{{ elapsedTimeRef }} ms
                   </div>
-                  <div  v-if="isQuery && pagination.total" class="table-line">
-                    总记录行数:{{ pagination.total }} | 当前查询页大小:{{ pagination.pageSize }}
+                  <div v-if="isQuery && pagination.total" class="table-line">
+                    总记录行数:{{ pagination.total }} | 当前查询页大小:{{ pagination.pageSize }} | 查询耗时：{{ elapsedTimeRef }} ms
                   </div>
               </div>
             </div>
@@ -257,21 +254,58 @@ import { ConnectDbInput } from './model/MainPageMode';
 import { DataType } from 'vue-request';
 import { getGuid } from '@renderer/utils/guid';
 import { life } from '../api/life';
+import * as monaco from 'monaco-editor';
 
   const sh = 280;
   const pageHeight = ref(0);
   const loading = ref(false);
   const dbloading = ref(false);
+  const editorContainer = ref<any>(null)
+  let editor = null;
   onMounted(() => {
     pageHeight.value = document.body.clientHeight - sh;
-    console.log('onMounted:' + pageHeight.value);
-    window.addEventListener('resize', onResize)
+    window.addEventListener('resize', onResize);
+    editor = monaco.editor.create(editorContainer.value, {
+      value: "",
+      language:"sql",
+      folding: true, // 是否折叠
+      foldingHighlight: true, // 折叠等高线
+      foldingStrategy: "indentation", // 折叠方式  auto | indentation
+      showFoldingControls: "always", // 是否一直显示折叠 always | mouseover
+      disableLayerHinting: true, // 等宽优化
+      emptySelectionClipboard: false, // 空选择剪切板
+      selectionClipboard: false, // 选择剪切板
+      automaticLayout: true, // 自动布局
+      codeLens: false, // 代码镜头
+      scrollBeyondLastLine: false, // 滚动完最后一行后再滚动一屏幕
+      colorDecorators: true, // 颜色装饰器
+      accessibilitySupport: "off", // 辅助功能支持  "auto" | "off" | "on"
+      lineNumbers: "on", // 行号 取值： "on" | "off" | "relative" | "interval" | function
+      lineNumbersMinChars: 3, // 行号最小字符   number
+      readOnly: false, //是否只读  取值 true | false
+    })
+    monaco.languages.registerCompletionItemProvider('sql', {
+      triggerCharacters: ['from', 'FROM'],
+      provideCompletionItems: (model, position) => {
+        let suggestions = []
+        suggestions = tables.map((item: any) => {
+          return {
+            label: item,
+            kind: item,
+            insertText: item
+          }
+        })
+        return {
+          suggestions,
+        }
+      }
+    })
   });
+  const tables = ['table1','table2'];
   const onResize = () => {
     pageHeight.value = document.body.clientHeight - sh;
     console.log('onResize:' + pageHeight.value);
   };
-  const optValue = ref<string>(''); // 执行SQL
   const searchValue = ref<string>(''); // 左侧搜索内容
   const expandedMenuKeys = ref<string[]>([]); // tree搜索key
   const selectedMenuKeys = ref<string[]>([]); // tree选择key
@@ -320,7 +354,7 @@ import { life } from '../api/life';
   const mouseEventX =  ref<number>(0);
   
   const leftResize = (e: MouseEvent) => {
-    //解决拖动会选中文字的问题\
+    // 处理拖动选中字问题
     document.onselectstart = function () {
       return false;
     }; 
@@ -424,7 +458,7 @@ import { life } from '../api/life';
     selectedMenuKeys.value = [];
     searchValue.value = '';
     isQuery.value = true;
-    optValue.value = '';
+    editor.setValue('');
     pagination.value.total = 0;
     pagination.value.pageSize = 100;
     currDbName.value = '';
@@ -619,29 +653,16 @@ import { life } from '../api/life';
     if (e && e.node) {
       if (e.node.dataRef.type === 'table') {
         if (currDatabase.value.type == 0) {
-          optValue.value = 'select * from ' + e.node.dataRef.title;
+          editor.setValue('select * from ' + e.node.dataRef.title);
         } else if (currDatabase.value.type == 1) {
-          optValue.value = 'select * from ' + e.node.dataRef.title;
+          editor.setValue( 'select * from ' + e.node.dataRef.title);
         }
       }
     }
   }
 
-  // // 数据监听
-  // watch(searchValue, value => {
-  //     const expanded = treeData.value
-  //         .map((item: TreeProps['treeData'][number]) => {
-  //           if (item.title.indexOf(value) > -1) {
-  //               //return getParentKey(item.key, gData.value);
-  //           }
-  //           return null;
-  //         }).filter((item, i, self) => item && self.indexOf(item) === i);
-  //             //expandedMenuKeys.value = expanded;
-  //             searchValue.value = value;
-  //             //autoExpandParent.value = true;
-  // });
-
   const lifeTest = ref<number>(0);
+  // 监听连接
   const getLife = ()=> {
     lifeTest.value = 1;
     life().then(res=>{
@@ -706,20 +727,22 @@ import { life } from '../api/life';
     total: null,
     pageSize: 100
   });
-  const textarea = ref(null);
-  const handleClick = ()=>{
-    textarea.value.focus();
-  }
   const getSelectedText = () => {
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    
-    if (start !== end) {
-      textarea.setSelectionRange(start, end);
-      const selectedText = textarea.value.substring(start, end);
-      return selectedText;
+    console.log('getSelectedText');
+    const selection = editor.getSelection(); // 获取光标选中的值 
+    const { startLineNumber, endLineNumber, startColumn, endColumn } = selection; 
+    const value = editor.getModel().getValueInRange({
+      startLineNumber: startLineNumber, 
+      startColumn: startColumn, 
+      endLineNumber: endLineNumber, 
+      endColumn: endColumn
+    });
+    console.log('getValueInRange-res' + value);
+    // 如果有选中文本
+    if (!value) {
+      return editor.getValue();
     } else {
-      return optValue.value;
+      return value;
     }
   }
 
@@ -731,9 +754,11 @@ import { life } from '../api/life';
     dbloading.value = false;
   }
   const clearData = ()=> {
-    optValue.value = ''
+    editor.setValue('');
   }
 
+  // 执行耗时/毫秒
+  const elapsedTimeRef = ref<number>(0);
   // 表格主查询
   const searchData = () => {
     let sql = getSelectedText();
@@ -749,7 +774,8 @@ import { life } from '../api/life';
         sql: sql
       }, currDatabase.value.type).then(res => {
         loading.value = false;
-        executeNum.value = res.data;
+        executeNum.value = res.data.changeCount;
+        elapsedTimeRef.value = res.data.elapsedTime;
       }, err => {
         loading.value = false;
         message.error(err && err.message ? err.message : '执行失败');
@@ -763,10 +789,10 @@ import { life } from '../api/life';
         pageSize: pagination.value.pageSize
       }, currDatabase.value.type).then(res => {
         loading.value = false;
+        elapsedTimeRef.value = res.data.elapsedTime;
         console.log(res);
         if (res && res.data && res.data.list && res.data.list.length > 0) {
           let obj  = res.data.list[0];
-          let len = Object.keys(obj).length;
           columns.value = Object.keys(obj).map(key => ({
             title: key,
             dataIndex: key,
@@ -919,6 +945,7 @@ import { life } from '../api/life';
               height: calc(100% - 40px);
               display: flex;
               flex-direction: column;
+              align-items: center;
               padding: 0;
               margin: 0;
               background: '#fff'; 
@@ -926,11 +953,19 @@ import { life } from '../api/life';
               min-height: '280px';
 
               .sql {
-                  width: 100%;
-                  min-height: 105px;
+                  width: calc(100% - 12px);
+                  height: 105px;
+                  border: #cccccc 1px solid;
+                  border-radius: 4px;
+                  padding: 6px;
 
                   .input {
                       height: calc(100% - 8px);
+                      margin: 4px;
+                      width: calc(100% - 8px);
+                  }
+                  .editor {
+                      height: 105px;
                       margin: 4px;
                       width: calc(100% - 8px);
                   }
@@ -941,7 +976,7 @@ import { life } from '../api/life';
 
                   .table {
                     width: 100%;
-                    height: calc(100% - 30px);
+                    height: calc(100% - 40px);
                     padding: 0;
                     margin: 0;
                   }
@@ -959,12 +994,14 @@ import { life } from '../api/life';
                   }
 
                   .msg {
-                    width: 100%;
-                    height: 100%;
+                    width: calc(100% - 16px);
+                    height: calc(100% - 16px);
                     display: flex;
                     flex-direction: column;
                     align-items: flex-start;
                     justify-content: flex-start;
+                    padding: 8px;
+                    font-size: 12px;
                   }
               }
           }
@@ -986,6 +1023,9 @@ import { life } from '../api/life';
         width: 100%;
       }
     }
+  }
+  .monaco-editor .margin {
+    width: 12px !important;
   }
 </style>
   
