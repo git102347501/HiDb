@@ -4,6 +4,7 @@ using HiDb.DataProvider.Dtos.Search;
 using HiDb.DataProvider.Factory;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
 
 namespace HiDb.Api.Controllers
 {
@@ -27,13 +28,20 @@ namespace HiDb.Api.Controllers
         [HttpGet]
         public SearchOutput Get(string sql, int? pageSize = null, string? database = "")
         {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             sql = sql.Replace("\n", "");
-            return GetService(ServiceFactory.GetSearch).GetSearchData(new SearchInput()
+
+            var res = GetService(ServiceFactory.GetSearch).GetSearchData(new SearchInput()
             {
                 DataBase = database,
                 Sql = sql,
                 PageSize = pageSize
             });
+            stopwatch.Stop();
+            res.ElapsedTime = stopwatch.Elapsed.TotalMilliseconds;
+            return res;
         }
 
         /// <summary>
@@ -42,14 +50,22 @@ namespace HiDb.Api.Controllers
         /// <param name="sql"></param>
         /// <param name="database"></param>
         /// <returns></returns>
-        [HttpPost("Execute")]
-        public int Execute(string sql, string? database = "")
+        [HttpPost("execute")]
+        public ExecuteOutput Execute(string sql, string? database = "")
         {
-            return GetService(ServiceFactory.GetSearch).Execute(new SearchInput()
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+            var count = GetService(ServiceFactory.GetSearch).Execute(new SearchInput()
             {
                 DataBase = database,
                 Sql = sql
             });
+            stopwatch.Stop();
+            return new ExecuteOutput()
+            {
+                ChangeCount = count,
+                ElapsedTime = stopwatch.Elapsed.TotalMilliseconds,
+            };
         }
     }
 }

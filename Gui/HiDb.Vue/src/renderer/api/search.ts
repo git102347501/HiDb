@@ -15,7 +15,7 @@ export function getSearch(params, dbtype) {
 // 执行命令
 export function execute(params, dbtype) {
   return request({
-    url: '/execute',
+    url: '/search/execute',
     method: 'post',
     params: params,
     headers: {

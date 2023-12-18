@@ -6,17 +6,12 @@ using System.Threading.Tasks;
 
 namespace HiDb.DataProvider.Dtos.Search
 {
-    public class SearchOutput
+    public class ExecuteOutput
     {
         /// <summary>
-        /// 数据
+        /// 毫秒
         /// </summary>
-        public List<dynamic> List { get; set; }
-
-        /// <summary>
-        /// 总行数
-        /// </summary>
-        public long Count { get; set; }
+        public int ChangeCount { get; set; }
 
         /// <summary>
         /// 耗时毫秒
