@@ -101,10 +101,10 @@
             <div class="tools">
                 <a-tooltip title="执行SQL区域内的SQL">
                     <a-button @click="searchData" 
-                      :icon="h(CaretRightOutlined)" style="margin-right: 6px;">执行</a-button>
+                      :icon="h(CaretRightOutlined)" :disabled="!currDatabase || !currDatabase.key" style="margin-right: 6px;">执行</a-button>
                 </a-tooltip>
                 <a-tooltip title="清空SQL区域内容">
-                    <a-button @click="clearData"  :icon="h(RedoOutlined)">清空</a-button>
+                    <a-button @click="clearData" :disabled="!currDatabase || !currDatabase.key" :icon="h(RedoOutlined)">清空</a-button>
                 </a-tooltip>
             </div>
             <div class="context" >
@@ -113,7 +113,7 @@
               </div>
               <div class="data" v-if="!currloading">
                   <a-table class="table"
-                      v-if="isQuery"
+                      v-if="isQuery && !errorMsg"
                       :columns="columns" 
                       size="small"
                       :data-source="currData"
@@ -123,10 +123,13 @@
                   >
                     <template #headerCell="{ column }"/>
                   </a-table>
-                  <div class="msg" v-if="!isQuery">
+                  <div class="msg" v-if="!isQuery && !errorMsg">
                     影响行数: {{executeNum}}| 执行耗时：{{ elapsedTimeRef }} ms
                   </div>
-                  <div v-if="isQuery && pagination.total" class="table-line">
+                  <div class="msg error" v-if="errorMsg">
+                    执行错误: {{errorMsg}}
+                  </div>
+                  <div v-if="isQuery && pagination.total && !errorMsg" class="table-line">
                     总记录行数:{{ pagination.total }} | 当前查询页大小:{{ pagination.pageSize }} | 查询耗时：{{ elapsedTimeRef }} ms
                   </div>
               </div>
@@ -311,6 +314,7 @@ import * as monaco from 'monaco-editor';
   const selectedMenuKeys = ref<string[]>([]); // tree选择key
   const executeNum = ref(0); // 影响行数
   const isQuery = ref(true); // 是否走查询
+  const errorMsg = ref(''); // 错误消息
   const dbTypeOptions = [{
     value: 0,
     label: 'SqlServer',
@@ -776,6 +780,7 @@ import * as monaco from 'monaco-editor';
         loading.value = false;
         executeNum.value = res.data.changeCount;
         elapsedTimeRef.value = res.data.elapsedTime;
+        errorMsg.value = res.data.message;
       }, err => {
         loading.value = false;
         message.error(err && err.message ? err.message : '执行失败');
@@ -790,6 +795,7 @@ import * as monaco from 'monaco-editor';
       }, currDatabase.value.type).then(res => {
         loading.value = false;
         elapsedTimeRef.value = res.data.elapsedTime;
+        errorMsg.value = res.data.message;
         console.log(res);
         if (res && res.data && res.data.list && res.data.list.length > 0) {
           let obj  = res.data.list[0];
@@ -976,7 +982,7 @@ import * as monaco from 'monaco-editor';
 
                   .table {
                     width: 100%;
-                    height: calc(100% - 40px);
+                    height: calc(100% - 34px);
                     padding: 0;
                     margin: 0;
                   }
@@ -1002,6 +1008,9 @@ import * as monaco from 'monaco-editor';
                     justify-content: flex-start;
                     padding: 8px;
                     font-size: 12px;
+                  }
+                  .error {
+                    color: rgb(249, 57, 57);
                   }
               }
           }

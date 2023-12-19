@@ -17,5 +17,9 @@ namespace HiDb.DataProvider.Dtos.Search
         /// 耗时毫秒
         /// </summary>
         public double ElapsedTime { get; set; }
+
+
+        public bool Success { get; set; }
+        public string Message { get; set; }
     }
 }
