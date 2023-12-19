@@ -5,6 +5,7 @@ using HiDb.DataProvider.Factory;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using System.Drawing.Printing;
 
 namespace HiDb.Api.Controllers
 {
@@ -33,15 +34,29 @@ namespace HiDb.Api.Controllers
 
             sql = sql.Replace("\n", "");
 
-            var res = GetService(ServiceFactory.GetSearch).GetSearchData(new SearchInput()
+            try
             {
-                DataBase = database,
-                Sql = sql,
-                PageSize = pageSize
-            });
-            stopwatch.Stop();
-            res.ElapsedTime = stopwatch.Elapsed.TotalMilliseconds;
-            return res;
+                var res = GetService(ServiceFactory.GetSearch).GetSearchData(new SearchInput()
+                {
+                    DataBase = database,
+                    Sql = sql,
+                    PageSize = pageSize
+                });
+                stopwatch.Stop();
+                res.ElapsedTime = stopwatch.Elapsed.TotalMilliseconds;
+                return res;
+            }
+            catch (Exception ex)
+            {
+                var res = new SearchOutput()
+                {
+                    Message = ex.Message,
+                    Success = false
+                };
+                stopwatch.Stop();
+                res.ElapsedTime = stopwatch.Elapsed.TotalMilliseconds;
+                return res;
+            }
         }
 
         /// <summary>
@@ -55,17 +70,32 @@ namespace HiDb.Api.Controllers
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
-            var count = GetService(ServiceFactory.GetSearch).Execute(new SearchInput()
+
+            try
             {
-                DataBase = database,
-                Sql = sql
-            });
-            stopwatch.Stop();
-            return new ExecuteOutput()
+                var count = GetService(ServiceFactory.GetSearch).Execute(new SearchInput()
+                {
+                    DataBase = database,
+                    Sql = sql
+                });
+                stopwatch.Stop();
+                return new ExecuteOutput()
+                {
+                    ChangeCount = count,
+                    ElapsedTime = stopwatch.Elapsed.TotalMilliseconds,
+                };
+            }
+            catch (Exception ex)
             {
-                ChangeCount = count,
-                ElapsedTime = stopwatch.Elapsed.TotalMilliseconds,
-            };
+                var res = new ExecuteOutput()
+                {
+                    Message = ex.Message,
+                    Success = false
+                };
+                stopwatch.Stop();
+                res.ElapsedTime = stopwatch.Elapsed.TotalMilliseconds;
+                return res;
+            }
         }
     }
 }
