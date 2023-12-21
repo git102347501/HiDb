@@ -190,6 +190,7 @@
             <a-form-item label="数据库类型" name="type"
                 :rules="[{ required: true, message: '请选择数据库类型!' }]">
               <a-select
+                @change="typeChange"
                 v-model:value="openDbModel.type"
                 style="width: 100%"
                 placeholder="请选择数据库类型"
@@ -198,7 +199,8 @@
             </a-form-item>
             <a-form-item label="数据库地址" name="address"
                 :rules="[{ required: true, message: '请输入数据库地址' }]">
-              <a-input v-model:value="openDbModel.address" placeholder="请输入数据库地址" />
+              <a-input style="width: 190px;" v-model:value="openDbModel.address" placeholder="请输入数据库地址" />
+              <a-input style="width: 80px; margin-left: 4px;" v-model:value="openDbModel.port" placeholder="端口" />
             </a-form-item>
             <a-form-item label="登录名" name="account"
                 :rules="[{ required: true, message: '请输入登录名!' }]">
@@ -512,10 +514,15 @@ import * as monaco from 'monaco-editor';
     console.log('saveDbByLocal');
     // 寻找相同地址，账号和类型的本地记录
     let index = currdbData.value.findIndex(c=> c.key == data.key);
+    if (!data.name || data.name.length < 1) {
+      // 默认名称为地址
+      data.name = data.address;
+    }
     if (data.saveLocal){
       if (index != -1) {
         // 更新本地
         currdbData.value[index].passWord = data.passWord;
+        currdbData.value[index].name = data.name;
         currdbData.value[index].port = data.port;
         currdbData.value[index].trustCert = data.trustCert;
         currdbData.value[index].trustedConnection = data.trustedConnection;
@@ -533,12 +540,22 @@ import * as monaco from 'monaco-editor';
         currdbData.value.splice(index, 1);
       }
     }
+    console.log('save-local:' + JSON.stringify(currdbData.value));
     localStorage.setItem('hidbdata', JSON.stringify(currdbData.value));
   }
   // 打开数据库列表
   const submitOpenDbList = ()=>{
     openDbListDialog.value = true;
     searchDbData();
+  }
+  const typeChange = (e)=>{
+    if (e == 0) {
+      openDbModel.port = 1433;
+    } else if (e == 1) {
+      openDbModel.port = 3306;
+    } else if (e == 2){
+      openDbModel.port = 5432;
+    }
   }
   const currloading = ref<boolean>(false);
   const selectDb = (openDialog)=> {
@@ -754,6 +771,7 @@ import * as monaco from 'monaco-editor';
   const searchDbData = ()=> {
     dbloading.value = true;
     let data = localStorage.getItem('hidbdata');
+    console.log('get-local:' + data);
     currdbData.value = data ? JSON.parse(data) : [];
     dbloading.value = false;
   }
