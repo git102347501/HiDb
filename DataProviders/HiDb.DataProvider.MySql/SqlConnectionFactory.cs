@@ -76,7 +76,7 @@ namespace HiDb.DataProvider.MySql
             connectionString.Append("Server=");
             if (input.Port > 0)
             {
-                connectionString.Append(input.Address + ";" + "Port=3306");
+                connectionString.Append(input.Address + ";" + $"Port={input.Port}");
             }
             else
             {
