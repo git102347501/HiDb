@@ -6,6 +6,10 @@ namespace HiDb.DataProvider.MySql
     {
         public List<T> GetList<T>(string sql, string database = "")
         {
+            if (string.IsNullOrWhiteSpace(sql))
+            {
+                return new List<T>();
+            }
             var connection = SqlConnectionFactory.GetConnection(database);
             var result = connection.Query<T>(sql);
             return result.ToList();
@@ -13,6 +17,10 @@ namespace HiDb.DataProvider.MySql
 
         public long GetCount(string sql, string database = "")
         {
+            if (string.IsNullOrWhiteSpace(sql))
+            {
+                return 0;
+            }
             var connection = SqlConnectionFactory.GetConnection(database);
             var result = connection.QueryFirstOrDefault<long>(sql);
             return result;
@@ -20,13 +28,21 @@ namespace HiDb.DataProvider.MySql
 
         public List<dynamic> GetList(string sql, string database = "")
         {
+            if (string.IsNullOrWhiteSpace(sql))
+            {
+                return new List<dynamic>();
+            }
             var connection = SqlConnectionFactory.GetConnection(database);
             var result = connection.Query<dynamic>(sql);
             return result.ToList();
         }
 
-        public T GetFirst<T>(string sql, string database = "")
+        public T GetFirst<T>(string sql, string database = "") where T : new ()
         {
+            if (string.IsNullOrWhiteSpace(sql))
+            {
+                return new T();
+            }
             var connection = SqlConnectionFactory.GetConnection(database);
             var result = connection.QueryFirst<T>(sql);
             return result;

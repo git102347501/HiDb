@@ -781,6 +781,15 @@ import * as monaco from 'monaco-editor';
 
   // 执行耗时/毫秒
   const elapsedTimeRef = ref<number>(0);
+  const isSelect = (val)=>{
+    if(val.includes('select') ){
+      return true;
+    }
+    if(val.includes('show') ){
+      return true;
+    }
+    return false;
+  }
   // 表格主查询
   const searchData = () => {
     let sql = getSelectedText();
@@ -788,7 +797,7 @@ import * as monaco from 'monaco-editor';
       message.error('执行语句不能为空!');
       return;
     }
-    if ((sql as any).toLowerCase().indexOf('select') == -1) {
+    if (!isSelect((sql as any).toLowerCase())) {
       isQuery.value = false;
       loading.value = true;
       execute({
