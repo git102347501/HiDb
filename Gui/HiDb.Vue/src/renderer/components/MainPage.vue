@@ -29,7 +29,7 @@
             <span style="margin-left: 10px;">|</span>
           </span>
           <span v-if="currDatabase.type != null && currDatabase.type!= undefined" class="info">
-            <span style="color:#fff">{{ currDatabase.type === 1 ? 'MySQL' : 'SQL Server' }}</span>
+            <span style="color:#fff">{{ dbTypeOptions.find(c=> c.value == currDatabase.type).label }}</span>
             <span style="margin-left: 10px;">|</span>
           </span>
           <span v-if="currDatabase.name" class="info">
@@ -156,7 +156,14 @@
                       style="margin: -5px 0"
                     />
                     <template v-else>
-                      {{ text }}
+                      <span>
+                        <span v-if="column.dataIndex == 'name'">
+                          <sql-server v-if="record.type == 0"></sql-server>
+                          <my-sql v-if="record.type == 1"></my-sql>
+                          <pg-sql v-if="record.type == 2"></pg-sql>
+                        </span>
+                        {{ text }}
+                      </span>
                     </template>
                   </div>
                 </template>
@@ -184,18 +191,21 @@
           <a-button key="submit" type="primary" @click="selectDbAndOpen">连接</a-button>
         </template>
       </a-modal>
-      <a-modal v-model:open="openDbDialog" title="数据库连接">
+      <a-modal v-model:open="openDbDialog" title="连接数据库">
         <div class="db-dialog">
-          <a-form :model="openDbModel" :label-col="{ style: { width: '150px' } }" :wrapper-col="{ span: 14 }">
+          <a-form :model="openDbModel" :label-col="{ style: { width: '140px' } }" :wrapper-col="{ span: 14 }">
             <a-form-item label="数据库类型" name="type"
                 :rules="[{ required: true, message: '请选择数据库类型!' }]">
               <a-select
                 @change="typeChange"
                 v-model:value="openDbModel.type"
-                style="width: 100%"
+                style="width: 245px; margin-right: 6px;"
                 placeholder="请选择数据库类型"
                 :options="dbTypeOptions"
               ></a-select>
+              <sql-server v-if="openDbModel.type == 0"></sql-server>
+              <my-sql v-if="openDbModel.type == 1"></my-sql>
+              <pg-sql v-if="openDbModel.type == 2"></pg-sql>
             </a-form-item>
             <a-form-item label="数据库地址" name="address"
                 :rules="[{ required: true, message: '请输入数据库地址' }]">
@@ -249,6 +259,9 @@
 <script lang="ts" setup>
 import { cloneDeep } from 'lodash-es';
 import { h, ref, watch, onMounted, UnwrapRef, reactive  } from 'vue';
+import MySql from './icons/MySql.vue';
+import SqlServer from './icons/SqlServer.vue';
+import PgSql from './icons/PgSql.vue';
 import { WifiOutlined,ApiOutlined,UserOutlined,BorderlessTableOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownOutlined, FrownFilled  } from '@ant-design/icons-vue';
 import { getDb,getMode,getTable } from '../api/menu';
 import { getSearch,execute} from '../api/search';
