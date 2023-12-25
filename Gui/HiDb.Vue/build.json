@@ -38,5 +38,11 @@
   },
   "linux": {
     "icon": "build/icons"
+  },
+  "nsis": {
+    "allowElevation": false,
+    "allowToChangeInstallationDirectory": true,
+    "oneClick": false,
+    "perMachine": true
   }
 }

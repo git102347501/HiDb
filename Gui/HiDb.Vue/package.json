@@ -72,5 +72,11 @@
     "electron",
     "vue3",
     "rollup"
-  ]
+  ],
+  "nsis": {
+    "allowElevation": false,
+    "allowToChangeInstallationDirectory": true,
+    "oneClick": false,
+    "perMachine": true
+  }
 }
