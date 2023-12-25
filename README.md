@@ -8,7 +8,8 @@ Modern Database Management Desktop Software Based on Electron
 
 Supports multiple platforms on Windows and Mac, runs completely offline locally, and is a pure tool application
 
-![hidb](https://github.com/git102347501/HiDb/assets/37917403/301dcdcd-10a7-402b-b9b0-fe659b5d5b71)
+![image](https://github.com/git102347501/HiDb/assets/37917403/7f50b4fe-82ca-4e32-87c5-04637c60fe88)
+
 
 # Run env
 - Net 8.0 [download](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
