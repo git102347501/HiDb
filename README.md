@@ -1,9 +1,14 @@
 # HiDb
-![hidb](https://github.com/git102347501/HiDb/assets/37917403/301dcdcd-10a7-402b-b9b0-fe659b5d5b71)
 
 Modern Database Management Desktop Software Based on Electron
 
-# Run Env
+基于Electron的现代数据库管理桌面软件
+
+支持windows, Mac多平台，完全本地离线运行，纯工具应用
+
+Supports multiple platforms on Windows and Mac, runs completely offline locally, and is a pure tool application
+
+# Run env
 - Net 8.0 [download](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
 
 # Gui
