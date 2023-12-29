@@ -848,6 +848,7 @@ import * as monaco from 'monaco-editor';
           currData.value = res.data.list;
           pagination.value.total = res.data.count;
         } else {
+          columns.value = [];
           currData.value = [];
           pagination.value.total = 0;
         }
