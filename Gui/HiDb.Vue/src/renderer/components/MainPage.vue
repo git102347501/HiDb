@@ -148,7 +148,7 @@
                 :pagination="false">
                 
               <template #bodyCell="{ column, text, record }">
-                <template v-if="['name', 'age', 'address'].includes(column.dataIndex)">
+                <template v-if="['name', 'account', 'address'].includes(column.dataIndex)">
                   <div>
                     <a-input
                       v-if="editableData[record.key]"
@@ -446,6 +446,7 @@ import * as monaco from 'monaco-editor';
   const save = (key: string) => {
     Object.assign(currdbData.value.filter(item => key === item.key)[0], editableData[key]);
     delete editableData[key];
+    console.log('save : ' + JSON.stringify(currdbData.value))
     localStorage.setItem('hidbdata', JSON.stringify(currdbData.value));
   };
   const cancel = (key: string) => {
@@ -574,16 +575,11 @@ import * as monaco from 'monaco-editor';
   const selectDb = (openDialog)=> {
     if (!currSelectDb.value || !currSelectDb.value.key) {
       message.error('请选择一个数据库');
-      return;
+      return false;
     }
-    let data = currSelectDb.value;
-    if (openDialog) {
-      openDbListDialog.value = false;
-      openDbDialog.value = true;
-    } else {
-      openDbDialog.value = false;
-      openDbListDialog.value = false;
-    }
+    let data = currdbData.value.filter(item => currSelectDb.value.key === item.key)[0];
+    console.log('selectDb');
+    console.log(data);
     openDbModel.key = data.key;
     openDbModel.account = data.account;
     openDbModel.passWord = data.passWord;
@@ -593,10 +589,20 @@ import * as monaco from 'monaco-editor';
     openDbModel.trustCert = data.trustCert;
     openDbModel.trustedConnection = data.trustedConnection;
     openDbModel.encrypt = data.encrypt;
+    console.log(openDbModel);
+    if (openDialog) {
+      openDbListDialog.value = false;
+      openDbDialog.value = true;
+    } else {
+      openDbDialog.value = false;
+      openDbListDialog.value = false;
+    }
+    return true;
   }
   const selectDbAndOpen = ()=>{
-    selectDb(false);
-    submitOpenDb();
+    if (selectDb(false)) {
+      submitOpenDb();
+    }
   }
   const currSelectDb = ref<DataType>();
   const rowSelection: TableProps['rowSelection'] = {
