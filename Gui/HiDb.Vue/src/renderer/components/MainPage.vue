@@ -5,7 +5,7 @@
           <a-dropdown>
             <a-button ghost>操作</a-button>
             <template #overlay>
-              <a-menu @click="selectedMenu">
+              <a-menu value="1" @click="selectedMenu">
                 <a-menu-item key="1">数据库列表</a-menu-item>
                 <a-menu-item key="2">新的连接</a-menu-item>
               </a-menu>
@@ -59,7 +59,7 @@
         </div>
       </div>
       <div class="content"> 
-          <div class="menu" :key="refreshKey1" :style="{ 'width': menuWidth + 'px' }">
+          <div class="menu" :style="{ 'width': menuWidth + 'px' }">
             <a-spin :spinning="currloading">
               <div class="search">
                 <a-input-search v-model:value="searchValue" 
@@ -121,49 +121,58 @@
             </a-spin>
           </div>
           <div :class="menuWidth <= 350 ? 'drap-line drap-line-left' : menuWidth >= 850 ? 'drap-line drap-line-right': 'drap-line'" @mousedown="leftResize"></div>
-          <div v-if="viewMode == 0" class="work" :key="refreshKey2"  :style="{ 'width': bodyWidth }">
-            <div class="tools">
+          <div class="work" :style="{ 'width': bodyWidth }">
+            <div v-show="viewMode == 0">
+              <div class="tools">
                 <a-tooltip title="执行SQL区域内的SQL">
                     <a-button @click="searchData" 
-                      :icon="h(CaretRightOutlined)" :disabled="!currDatabase || !currDatabase.key" style="margin-right: 6px;">执行</a-button>
+                      :icon="h(CaretRightOutlined)" :disabled="!currDatabase || !currDatabase.key" 
+                      style="margin-right: 6px;">执行</a-button>
                 </a-tooltip>
                 <a-tooltip title="清空SQL区域内容">
-                    <a-button @click="clearData" :disabled="!currDatabase || !currDatabase.key" :icon="h(RedoOutlined)">清空</a-button>
+                    <a-button @click="clearData" :disabled="!currDatabase || !currDatabase.key" 
+                    :icon="h(RedoOutlined)">清空</a-button>
                 </a-tooltip>
-            </div>
-            <div class="context" >
-              <div class="sql">
-                  <div ref="editorContainer" class="editor" style="height:100%; width: 100%;"></div>
               </div>
-              <div class="data" v-if="!currloading">
-                  <a-table class="table"
-                      v-if="isQuery && !errorMsg"
-                      :columns="columns" 
-                      size="small"
-                      :data-source="currData"
-                      :scroll="{ y: pageHeight, x: '(100% - ' + (menuWidth + 30) + ')'}"
-                      :loading="loading"
-                      :pagination="false"
-                  >
-                    <template #headerCell="{ column }"/>
-                  </a-table>
-                  <div class="msg" v-if="!isQuery && !errorMsg">
-                    影响行数: {{executeNum}}| 执行耗时：{{ elapsedTimeRef }} ms
-                  </div>
-                  <div class="msg error" v-if="errorMsg">
-                    执行错误: {{errorMsg}}
-                  </div>
-                  <div v-if="isQuery && pagination.total && !errorMsg" class="table-line">
-                    总记录行数:{{ pagination.total }} | 当前查询页大小:{{ pagination.pageSize }} | 查询耗时：{{ elapsedTimeRef }} ms
-                  </div>
+              <div class="context" >
+                <div class="sql" :style="{ 'height': editHeight + 'px' }">
+                    <div ref="editorContainer" class="editor" style="height:100%; width: 100%;"></div>
+                </div>
+                <div :class="menuWidth <= 350 ? 
+                  'drap-line drap-line-left' : menuWidth >= 850 ? 
+                  'drap-line drap-line-right': 'drap-line'" 
+                  @mousedown="editResize"></div>
+                <div class="data"  :style="{ 'height': editBodyHeight }" 
+                    v-if="!currloading">
+                    <a-table class="table"
+                        v-if="isQuery && !errorMsg"
+                        :columns="columns" 
+                        size="small"
+                        :data-source="currData"
+                        :scroll="{ y: pageHeight, x: '(100% - ' + (menuWidth + 30) + ')'}"
+                        :loading="loading"
+                        :pagination="false"
+                    >
+                      <template #headerCell="{ column }"/>
+                    </a-table>
+                    <div class="msg" v-if="!isQuery && !errorMsg">
+                      影响行数: {{executeNum}}| 执行耗时：{{ elapsedTimeRef }} ms
+                    </div>
+                    <div class="msg error" v-if="errorMsg">
+                      执行错误: {{errorMsg}}
+                    </div>
+                    <div v-if="isQuery && pagination.total && !errorMsg" class="table-line">
+                      总记录行数:{{ pagination.total }} | 当前查询页大小:{{ pagination.pageSize }} | 查询耗时：{{ elapsedTimeRef }} ms
+                    </div>
+                </div>
               </div>
             </div>
-          </div>
-          <div  v-if="viewMode == 3" class="work" :key="refreshKey2"  :style="{ 'width': bodyWidth }">
-            编辑表结构
-          </div>
-          <div  v-if="viewMode == 1" class="work" :key="refreshKey2"  :style="{ 'width': bodyWidth }">
-            编辑数据库
+            <div  v-show="viewMode == 3" class="work" :key="refreshKey2"  :style="{ 'width': bodyWidth }">
+              编辑表结构
+            </div>
+            <div  v-show="viewMode == 1" class="work" :key="refreshKey2"  :style="{ 'width': bodyWidth }">
+              编辑数据库
+            </div>
           </div>
       </div>
       <a-modal v-model:open="openDbListDialog" title="数据库列表" width="680px" height="550px">
@@ -313,9 +322,13 @@ import * as monaco from 'monaco-editor';
   onMounted(() => {
     pageHeight.value = document.body.clientHeight - sh;
     window.addEventListener('resize', onResize);
+    initEdit();
+  });
+  const initEdit = (val = '')=>{
+    console.log('initEdit')
     editor = monaco.editor.create(editorContainer.value, {
-      value: "",
-      language:"sql",
+      value: val,
+      language: "sql",
       folding: true, // 是否折叠
       foldingHighlight: true, // 折叠等高线
       foldingStrategy: "indentation", // 折叠方式  auto | indentation
@@ -331,6 +344,10 @@ import * as monaco from 'monaco-editor';
       lineNumbers: "on", // 行号 取值： "on" | "off" | "relative" | "interval" | function
       lineNumbersMinChars: 3, // 行号最小字符   number
       readOnly: false, //是否只读  取值 true | false
+      minimap: {
+        enabled: false,
+        
+      }
     })
     monaco.languages.registerCompletionItemProvider('sql', {
       triggerCharacters: ['from', 'FROM'],
@@ -348,7 +365,7 @@ import * as monaco from 'monaco-editor';
         }
       }
     })
-  });
+  }
   const tables = ['table1','table2'];
   const onResize = () => {
     pageHeight.value = document.body.clientHeight - sh;
@@ -403,8 +420,6 @@ import * as monaco from 'monaco-editor';
   }
   const menuWidth =  ref(350); // 菜单宽度
   const bodyWidth =  ref('calc(100% - 350px)'); // 内容宽度
-  const refreshKey1 =  ref<number>(0);
-  const refreshKey2 =  ref<number>(0);
   const mouseEventX =  ref<number>(0);
   
   const leftResize = (e: MouseEvent) => {
@@ -416,8 +431,6 @@ import * as monaco from 'monaco-editor';
       let width = documentE.clientX < 350 ? 350 : documentE.clientX > 850 ? 850 : documentE.clientX;
       menuWidth.value = width;
       bodyWidth.value = 'calc(100% - ' + menuWidth.value + 'px)';
-      refreshKey1.value = refreshKey1.value + 1;
-      refreshKey2.value = refreshKey1.value + 1;
     };
     const mouseMove = (documentE: MouseEvent) => {
       mouseEventX.value = documentE.clientX;
@@ -454,6 +467,35 @@ import * as monaco from 'monaco-editor';
     isMore.value =!isMore.value;
   };
 
+  const editHeight =  ref(105); // 菜单宽度
+  const editBodyHeight =  ref('calc(100% - 105px)'); // 内容宽度
+  const mouseEventY =  ref<number>(0);
+  const editResize = (e: MouseEvent) => {
+    // 处理拖动选中字问题
+    document.onselectstart = function () {
+      return false;
+    }; 
+    const changeWidth = (documentE: MouseEvent) => {
+      let y = documentE.clientY - 100;
+      let height =y < 105 ? 105 : y > 850 ? 850 : y;
+      editHeight.value = height;
+      editBodyHeight.value = 'calc(100% - ' + menuWidth.value + 'px)';
+    };
+    const mouseMove = (documentE: MouseEvent) => {
+      mouseEventY.value = documentE.clientY;
+      changeWidth(documentE);
+    };
+    const mouseUp = () => {
+      document.removeEventListener('mousemove', mouseMove);
+      document.removeEventListener('mouseup', mouseUp);
+      // 拖拽完记得重新设置可以选中
+      document.onselectstart = function () {
+        return true;
+      };
+    };
+    document.addEventListener('mousemove', mouseMove);
+    document.addEventListener('mouseup', mouseUp);
+  }
   // 加载数据库列表
   const loadDataBase = ()=>{
     currloading.value = true;
@@ -622,6 +664,7 @@ import * as monaco from 'monaco-editor';
     openDbListDialog.value = true;
     searchDbData();
   }
+  // 数据库类型更改默认端口
   const typeChange = (e)=>{
     if (e == 0) {
       openDbModel.port = 1433;
@@ -631,7 +674,9 @@ import * as monaco from 'monaco-editor';
       openDbModel.port = 5432;
     }
   }
+  // 全局加载
   const currloading = ref<boolean>(false);
+  // 选择db
   const selectDb = (openDialog)=> {
     if (!currSelectDb.value || !currSelectDb.value.key) {
       message.error('请选择一个数据库');
@@ -659,12 +704,15 @@ import * as monaco from 'monaco-editor';
     }
     return true;
   }
+  // 选择数据库并打开连接
   const selectDbAndOpen = ()=>{
     if (selectDb(false)) {
       submitOpenDb();
     }
   }
+  // 当前选择数据库
   const currSelectDb = ref<DataType>();
+  // 选择数据库事件
   const rowSelection: TableProps['rowSelection'] = {
     onChange: (selectedRowKeys: string[], selectedRows: DataType[]) => {
       console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows);
@@ -677,7 +725,7 @@ import * as monaco from 'monaco-editor';
     type: 'radio',
     fixed: true
   };
-  // 搜索
+  // 左侧菜单搜索事件
   const onSearch = () => {
     treeData.value = [];
     currData.value = [];
@@ -700,6 +748,7 @@ import * as monaco from 'monaco-editor';
         console.log(treeNode);
         if (treeNode.dataRef.type === 'db') {
           currDbName.value = treeNode.title;
+          console.log(' currDbName.value:' +  currDbName.value);
           getMode(treeNode.title, currDatabase.value.type).then(res=>{
             treeNode.dataRef.children = res.data.map(c => {
               return {            
@@ -727,12 +776,15 @@ import * as monaco from 'monaco-editor';
                 type: 'tablenull',
               }];
             } else {
+              console.log('getTable:' + JSON.stringify(res.data));
+              console.log(res.data);
               treeNode.dataRef.children = res.data.map(c => {
                 return {            
                   title: c.name,
                   key: c.name,
                   isLeaf: true,
                   type: 'table',
+                  database: treeNode.type == 'db' ? treeNode.title : treeNode.type == 'mode' ?  treeNode.parent.key : ''
                 }
               });
             }
@@ -747,9 +799,11 @@ import * as monaco from 'monaco-editor';
 
   // 选中表
   const currDbName = ref('');
+  // 树目录选择事件
   const onSelect = (selectedKeys, e)=>{
     console.log('onSelect');
     console.log(e);
+
     if (e && e.node) {
       if (e.node.dataRef.type === 'table') {
         if (currDatabase.value.type == 0) {
@@ -757,10 +811,12 @@ import * as monaco from 'monaco-editor';
         } else if (currDatabase.value.type == 1) {
           editor.setValue( 'select * from ' + e.node.dataRef.title);
         }
+        currDbName.value = e.node.dataRef.database;
+        console.log('currDbName' + currDbName.value);
       }
     }
   }
-
+  // 后台存活监听
   const lifeTest = ref<number>(0);
   // 监听连接
   const getLife = ()=> {
@@ -909,7 +965,7 @@ import * as monaco from 'monaco-editor';
             title: key,
             dataIndex: key,
             sorter: false,
-            width: 30 + (getMaxLength(res.data.list, key) * 7)
+            width: 30 + (getMaxLength(res.data.list, key) * 10)
           }));
           currData.value = res.data.list;
           pagination.value.total = res.data.count;
@@ -1027,15 +1083,15 @@ import * as monaco from 'monaco-editor';
       .drap-line {
         height: 100%;
         width: 5px;
-        background-color: #f5f5f5;
+        background-color: #fffefe;
         cursor: col-resize;
         z-index: 999;
       }
       .drap-line-left {
-        border-left: #979797 2px solid;
+        border-left: #dbd7d7 2px solid;
       }
       .drap-line-right {
-        border-right: #979797 2px solid;
+        border-right: #dbd7d7 2px solid;
       }
       .work {
           height: calc(100vh - 50px);
@@ -1065,9 +1121,24 @@ import * as monaco from 'monaco-editor';
               padding: '6px'; 
               min-height: '280px';
 
+              .drap-line {
+                width: calc(100% - 12px);
+                height: 1px;
+                background-color: #fffefe;
+                cursor: row-resize;
+                z-index: 999;
+                margin: 4px 0;
+              }
+              .drap-line-left {
+                border-top: #dbd7d7 2px solid;
+              }
+              .drap-line-right {
+                border-bottom: #dbd7d7 2px solid;
+              }
+
               .sql {
                   width: calc(100% - 12px);
-                  height: 105px;
+                  height: auto;
                   border: #cccccc 1px solid;
                   border-radius: 4px;
                   padding: 6px;
@@ -1085,7 +1156,6 @@ import * as monaco from 'monaco-editor';
               }
               .data {
                   width: 100%;
-                  flex : 1;
 
                   .table {
                     width: 100%;
