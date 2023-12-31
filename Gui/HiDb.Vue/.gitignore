@@ -15,3 +15,5 @@ build/
 *.ntvs*
 *.njsproj
 *.sln
+
+`/.electron-vite/log/`

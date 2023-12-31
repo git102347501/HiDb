@@ -70,6 +70,7 @@
                 <a-tree style="height: 100%;"
                     v-model:expandedKeys="expandedMenuKeys"
                     v-model:selectedKeys="selectedMenuKeys"
+                    @rightClick="menuRightClick"
                     :load-data="onLoadData" show-icon
                     @select="onSelect"
                     :tree-data="treeData"
@@ -91,13 +92,36 @@
                       <borderless-table-outlined />
                     </template>
                   </template>
+                  <template #title="{ key: treeKey, title }">
+                    <a-dropdown :trigger="['contextmenu']">
+                      <span>{{ title }}</span>
+                      <template #overlay>
+                        <a-menu @click="({ key: menuKey }) => onContextMenuClick(treeKey, menuKey)">
+                          <div v-if="currRightData.type == 'db'">
+                            <a-menu-item key="11">查看数据库</a-menu-item>
+                            <a-menu-item key="12">删除数据库</a-menu-item>
+                          </div>
+                          <!-- <div v-if="currRightData.type == 'mode'">
+                            <a-menu-item key="2">查看模式</a-menu-item>
+                            <a-menu-item key="3">删除模式</a-menu-item>
+                          </div> -->
+                          <div v-if="currRightData.type == 'table'">
+                            <a-menu-item key="31">查看表数据</a-menu-item>
+                            <a-menu-item key="32">编辑表结构</a-menu-item>
+                            <a-menu-item key="33">删除表</a-menu-item>
+                            <a-menu-item key="34">归档表</a-menu-item>
+                          </div>
+                        </a-menu>
+                      </template>
+                    </a-dropdown>
+                  </template>
                 </a-tree>
                 <a-empty v-if="!treeData.length" description="暂无数据库列表" />
               </div>
             </a-spin>
           </div>
           <div :class="menuWidth <= 350 ? 'drap-line drap-line-left' : menuWidth >= 850 ? 'drap-line drap-line-right': 'drap-line'" @mousedown="leftResize"></div>
-          <div class="work" :key="refreshKey2"  :style="{ 'width': bodyWidth }">
+          <div v-if="viewMode == 0" class="work" :key="refreshKey2"  :style="{ 'width': bodyWidth }">
             <div class="tools">
                 <a-tooltip title="执行SQL区域内的SQL">
                     <a-button @click="searchData" 
@@ -134,6 +158,12 @@
                   </div>
               </div>
             </div>
+          </div>
+          <div  v-if="viewMode == 3" class="work" :key="refreshKey2"  :style="{ 'width': bodyWidth }">
+            编辑表结构
+          </div>
+          <div  v-if="viewMode == 1" class="work" :key="refreshKey2"  :style="{ 'width': bodyWidth }">
+            编辑数据库
           </div>
       </div>
       <a-modal v-model:open="openDbListDialog" title="数据库列表" width="680px" height="550px">
@@ -324,12 +354,17 @@ import * as monaco from 'monaco-editor';
     pageHeight.value = document.body.clientHeight - sh;
     console.log('onResize:' + pageHeight.value);
   };
+  const viewMode = ref(0); // 视图模式，0数据视图，1 编辑表视图 2编辑模式视图 3编辑数据库视图
   const searchValue = ref<string>(''); // 左侧搜索内容
   const expandedMenuKeys = ref<string[]>([]); // tree搜索key
   const selectedMenuKeys = ref<string[]>([]); // tree选择key
   const executeNum = ref(0); // 影响行数
   const isQuery = ref(true); // 是否走查询
   const errorMsg = ref(''); // 错误消息
+  // // 菜单展开事件
+  // watch(expandedMenuKeys, () => {
+  //   console.log('expandedKeys', expandedMenuKeys);
+  // });
   const dbTypeOptions = [{
     value: 0,
     label: 'SqlServer',
@@ -439,7 +474,10 @@ import * as monaco from 'monaco-editor';
     })
   };
   const editableData: UnwrapRef<Record<string, ConnectDbInput>> = reactive({});
-
+  const currRightData = ref<any>(null);
+  const menuRightClick = (e)=>{
+    currRightData.value = e.node;
+  }
   const edit = (key: string) => {
     editableData[key] = cloneDeep(currdbData.value.filter(item => key === item.key)[0]);
   };
@@ -470,6 +508,28 @@ import * as monaco from 'monaco-editor';
     encrypt: true,
     saveLocal: true
   });
+  const onContextMenuClick = (treeKey: string, menuKey: string | number) => {
+    console.log(`treeKey: ${treeKey}, menuKey: ${menuKey}`);
+    if (menuKey == '11') {
+      viewMode.value = 1;
+    } else if (menuKey == '12') {
+      viewMode.value = 1;
+    } else if (menuKey == '31') {
+      viewMode.value = 0;
+      if (currDatabase.value.type == 0) {
+        editor.setValue('select * from ' + currRightData.value.title);
+      } else if (currDatabase.value.type == 1) {
+        editor.setValue( 'select * from ' + currRightData.value.title);
+      }
+      searchData();
+    } else if (menuKey == '32') {
+      viewMode.value = 3;
+    } else if (menuKey == '33') {
+      viewMode.value = 3;
+    } else if (menuKey == '34') {
+      viewMode.value = 3;
+    }
+  };
   // 清空当前数据库数据
   const clearCurrDbData = () => {
     treeData.value = [];
