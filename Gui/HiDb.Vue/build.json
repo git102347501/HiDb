@@ -34,7 +34,12 @@
     "icon": "build/icons/icon.icns"
   },
   "win": {
-    "icon": "build/icons/icon.ico"
+    "icon": "build/icons/icon.ico",
+    "signDlls": true,
+    "signingHashAlgorithms": ["sha256"],
+    "rfc3161TimeStampServer":"http://timestamp.comodoca.com/rfc3161",
+    "certificateFile": "dist/electron/hidb.magicalconch.com.pfx",
+    "certificatePassword": "q084hx9oxu"
   },
   "linux": {
     "icon": "build/icons"

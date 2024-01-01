@@ -110,9 +110,9 @@
                           </div> -->
                           <div v-if="currRightData.type == 'table'">
                             <a-menu-item key="31">查看表数据</a-menu-item>
-                            <a-menu-item key="32">编辑表结构</a-menu-item>
+                            <!-- <a-menu-item key="32">编辑表结构</a-menu-item>
                             <a-menu-item key="33">删除表</a-menu-item>
-                            <a-menu-item key="34">归档表</a-menu-item>
+                            <a-menu-item key="34">归档表</a-menu-item> -->
                           </div>
                         </a-menu>
                       </template>
