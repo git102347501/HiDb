@@ -124,15 +124,29 @@
           <div class="work" :style="{ 'width': bodyWidth }">
             <div v-show="viewMode == 0">
               <div class="tools">
-                <a-tooltip title="执行SQL区域内的SQL">
-                    <a-button @click="searchData" 
-                      :icon="h(CaretRightOutlined)" :disabled="!currDatabase || !currDatabase.key" 
-                      style="margin-right: 6px;">执行</a-button>
-                </a-tooltip>
-                <a-tooltip title="清空SQL区域内容">
-                    <a-button @click="clearData" :disabled="!currDatabase || !currDatabase.key" 
-                    :icon="h(RedoOutlined)">清空</a-button>
-                </a-tooltip>
+                <div>
+                  <a-tooltip title="执行SQL区域内的SQL">
+                      <a-button @click="searchData" 
+                        :icon="h(CaretRightOutlined)" :disabled="!currDatabase || !currDatabase.key" 
+                        style="margin-right: 6px;">执行</a-button>
+                  </a-tooltip>
+                  <a-tooltip title="清空SQL区域内容">
+                      <a-button @click="clearData" :disabled="!currDatabase || !currDatabase.key" 
+                      :icon="h(RedoOutlined)">清空</a-button>
+                  </a-tooltip>
+                </div>
+                <div class="tool-right">
+                  <DatabaseOutlined style="margin-right: 6px;" />
+                  <a-select
+                    v-model:value="currDbName"
+                    :disabled="!currDatabase || !currDatabase.key" 
+                    show-search
+                    placeholder="选择当前数据库"
+                    style="width: 200px"
+                    :options="selectDbData"
+                    :filter-option="selectDbfilterOption"
+                  ></a-select>
+                </div>
               </div>
               <div class="context" >
                 <div class="sql" :style="{ 'height': editHeight + 'px' }">
@@ -509,11 +523,20 @@ import * as monaco from 'monaco-editor';
           type: 'db'
         }});
       console.log(treeData.value);
+      selectDbData.value = res.data.map(c=> {
+        return {
+          value: c.name,
+          label: c.name
+        }});
       currloading.value = false;
     }, err => {
       message.error(err.message);
       currloading.value = false;
     })
+  };
+  const selectDbData = ref<Array<string>>([]);
+  const selectDbfilterOption = (input: string, option: any) => {
+    return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0;
   };
   const editableData: UnwrapRef<Record<string, ConnectDbInput>> = reactive({});
   const currRightData = ref<any>(null);
@@ -584,6 +607,7 @@ import * as monaco from 'monaco-editor';
     pagination.value.total = 0;
     pagination.value.pageSize = 100;
     currDbName.value = '';
+    selectDbData.value = [];
     currDatabase.value = {
       key: null,
       name: '',
@@ -1107,7 +1131,10 @@ import * as monaco from 'monaco-editor';
               display: flex;
               flex-direction: row;
               align-items: center;
-              justify-content: flex-start;
+              justify-content: space-between;
+
+              .tool-right {
+              }
           }
           .context {
               width: 100%;
