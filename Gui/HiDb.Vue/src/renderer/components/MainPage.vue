@@ -85,6 +85,9 @@
                     <template v-if="type === 'mode'">
                       <tablet-outlined />
                     </template>
+                    <template v-if="type === 'table-search'">
+                      <a-input placeholder="Basic usage" />
+                    </template>
                     <template v-if="type === 'table'">
                       <table-outlined />
                     </template>
@@ -169,22 +172,27 @@
                     >
                       <template #headerCell="{ column }"/>
                     </a-table>
-                    <div class="msg" v-if="!isQuery && !errorMsg">
-                      影响行数: {{executeNum}}| 执行耗时：{{ elapsedTimeRef }} ms
-                    </div>
-                    <div class="msg error" v-if="errorMsg">
-                      执行错误: {{errorMsg}}
-                    </div>
-                    <div v-if="isQuery && pagination.total && !errorMsg" class="table-line">
-                      总记录行数:{{ pagination.total }} | 当前查询页大小:{{ pagination.pageSize }} | 查询耗时：{{ elapsedTimeRef }} ms
+                    <div class="msg-line">
+                      <div class="msg error" v-if="errorMsg">
+                        执行错误: {{errorMsg}}
+                      </div>
+                      <div class="msg" v-if="isQuery">
+                        总行数: {{ pagination.total }} ｜ 页行数: {{ pagination.pageSize }}
+                      </div>
+                      <div class="msg" v-if="!isQuery">
+                        影响行数: {{executeNum}}
+                      </div>
+                      <div class="msg" v-if="elapsedTimeRef">
+                        执行耗时：{{ elapsedTimeRef }} ms
+                      </div>
                     </div>
                 </div>
               </div>
             </div>
-            <div  v-show="viewMode == 3" class="work" :key="refreshKey2"  :style="{ 'width': bodyWidth }">
+            <div  v-show="viewMode == 3" class="work" :style="{ 'width': bodyWidth }">
               编辑表结构
             </div>
-            <div  v-show="viewMode == 1" class="work" :key="refreshKey2"  :style="{ 'width': bodyWidth }">
+            <div  v-show="viewMode == 1" class="work" :style="{ 'width': bodyWidth }">
               编辑数据库
             </div>
           </div>
@@ -329,12 +337,14 @@ import * as monaco from 'monaco-editor';
 
   const sh = 280;
   const pageHeight = ref(0);
+  const dftPageHeight = ref(0);
   const loading = ref(false);
   const dbloading = ref(false);
   const editorContainer = ref<any>(null)
   let editor = null;
   onMounted(() => {
     pageHeight.value = document.body.clientHeight - sh;
+    dftPageHeight.value = pageHeight.value;
     window.addEventListener('resize', onResize);
     initEdit();
   });
@@ -381,8 +391,10 @@ import * as monaco from 'monaco-editor';
     })
   }
   const tables = ['table1','table2'];
+  // 窗体大小改变事件
   const onResize = () => {
     pageHeight.value = document.body.clientHeight - sh;
+    dftPageHeight.value = pageHeight.value;
     console.log('onResize:' + pageHeight.value);
   };
   const viewMode = ref(0); // 视图模式，0数据视图，1 编辑表视图 2编辑模式视图 3编辑数据库视图
@@ -491,8 +503,10 @@ import * as monaco from 'monaco-editor';
     }; 
     const changeWidth = (documentE: MouseEvent) => {
       let y = documentE.clientY - 100;
-      let height =y < 105 ? 105 : y > 850 ? 850 : y;
+      let height = y < 105 ? 105 : y > 850 ? 850 : y;
       editHeight.value = height;
+      let pgh = dftPageHeight.value - editHeight.value + 105;
+      pageHeight.value = pgh > 100 ? pgh : 100;
       editBodyHeight.value = 'calc(100% - ' + menuWidth.value + 'px)';
     };
     const mouseMove = (documentE: MouseEvent) => {
@@ -1186,26 +1200,25 @@ import * as monaco from 'monaco-editor';
 
                   .table {
                     width: 100%;
-                    height: calc(100% - 34px);
                     padding: 0;
                     margin: 0;
                   }
-                  .table-line {
+                  .msg-line {
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+                    justify-content: flex-start;
                     width: 100%;
                     height: 30px;
                     font-size: 12px;
                     color: #333333;
                     padding: 0 6px;
-                    display: flex;
-                    flex-direction: row;
-                    align-items: center;
-                    justify-content: flex-start;
-                    background-color: #f5f5f5;
                   }
 
                   .msg {
-                    width: calc(100% - 16px);
-                    height: calc(100% - 16px);
+                    width: auto;
+                    height: 100%;
+                    margin-right: 8px;
                     display: flex;
                     flex-direction: column;
                     align-items: flex-start;
@@ -1239,6 +1252,13 @@ import * as monaco from 'monaco-editor';
   }
   .monaco-editor .margin {
     width: 12px !important;
+  }
+
+  .flex-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
   }
 </style>
   
