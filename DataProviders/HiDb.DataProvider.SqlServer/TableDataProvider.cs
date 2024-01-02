@@ -41,13 +41,21 @@ namespace HiDb.DataProvider.SqlServer
             return GetList<TableColumnOutput>(@$"SELECT 
                                 COLUMN_NAME AS Name,
                                 DATA_TYPE AS Type,
-                                IS_NULLABLE AS AllowNull
+                                IS_NULLABLE AS AllowNullStr
                             FROM 
                                 INFORMATION_SCHEMA.COLUMNS
                             WHERE 
                                 TABLE_CATALOG = '{input.DataBase}'
                                 AND TABLE_SCHEMA = '{input.Mode}'
                                 AND TABLE_NAME = '{input.Table}';");
+        }
+
+        public List<TableDbTypeOutput> GetDbTypeList()
+        {
+            return GetList<TableDbTypeOutput>( @$"SELECT name as Name
+                FROM sys.types
+                WHERE is_user_defined = 0
+                ORDER BY name desc");
         }
     }
 }

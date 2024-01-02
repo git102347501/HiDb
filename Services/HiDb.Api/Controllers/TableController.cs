@@ -38,4 +38,11 @@ public class TableController : MainController
         var data = GetService(ServiceFactory.GetTable).GetDbColumnList(input);
         return data;
     }
+
+    [HttpPost("db-type")]
+    public List<TableDbTypeOutput> GetDbTypeList()
+    {
+        var data = GetService(ServiceFactory.GetTable).GetDbTypeList();
+        return data;
+    }
 }

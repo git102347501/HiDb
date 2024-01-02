@@ -191,6 +191,7 @@
             </div>
             <div  v-show="viewMode == 3" class="work" :style="{ 'width': bodyWidth }">
               <my-sql-edit 
+                style="width: 100%; height: 100%"
                 :database="editTableData.database" 
                 :table="editTableData.table" 
                 :mode="editTableData.mode" 

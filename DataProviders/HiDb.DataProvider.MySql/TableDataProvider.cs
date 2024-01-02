@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using HiDb.DataProvider.MySql.Models;
 
 namespace HiDb.DataProvider.MySql
 {
@@ -49,6 +50,12 @@ namespace HiDb.DataProvider.MySql
                                 TABLE_CATALOG = '{input.DataBase}'
                                 AND TABLE_SCHEMA = '{input.Mode}'
                                 AND TABLE_NAME = '{input.Table}';");
+        }
+        
+        public List<TableDbTypeOutput> GetDbTypeList()
+        {
+            var res = GetList<MySqlDbTypeList>( @$"SHOW COLUMNS FROM your_table_name;");
+            return res.Select(c => new TableDbTypeOutput() {Name = c.COLUMNS}).ToList();
         }
     }
 }

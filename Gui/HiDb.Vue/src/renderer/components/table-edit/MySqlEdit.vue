@@ -1,13 +1,13 @@
 <template>
     <div class="content">
         <a-table class="table"
-                :columns="dbColumns" 
-                size="small"
-                :data-source="currdbData"
-                :scroll="{ y: 500 }"
-                :loading="dbloading"
-                :pagination="false">
-                
+              :columns="dbColumns" 
+              size="small"
+              style="width: 100%;"
+              :data-source="currdbData"
+              :scroll="{ y: tableHeight }"
+              :loading="loading"
+              :pagination="false">
               <template #bodyCell="{ column, text, record }">
                 <template v-if="allowEditColumns.includes(column.dataIndex)">
                   <div>
@@ -18,16 +18,22 @@
                     />
                     <template v-else>
                       <span>
-                        <span v-if="column.dataIndex == 'name'">
-                          <sql-server v-if="record.type == 0"></sql-server>
-                          <my-sql v-if="record.type == 1"></my-sql>
-                          <pg-sql v-if="record.type == 2"></pg-sql>
-                        </span>
                         {{ text }}
                       </span>
                     </template>
                   </div>
                 </template>
+                <template v-if="column.dataIndex == 'type'">
+                  <a-select
+                    v-model:value="record.key"
+                    show-search
+                    placeholder="选择字段类型"
+                    style="width: 200px"
+                    :options="dbTypeOptions"
+                    :filter-option="filterOption"
+                  ></a-select>
+                </template>
+                
                 <template v-else-if="column.dataIndex === 'operation'">
                   <div class="editable-row-operations">
                     <span v-if="editableData[record.key]">
@@ -47,12 +53,22 @@
 </template>
 <script setup lang="ts">
 import { cloneDeep } from 'lodash-es';
-import { UnwrapRef, reactive, ref, watchEffect } from 'vue';
+import { UnwrapRef, reactive, ref, watchEffect,onMounted } from 'vue';
 import { ConnectDbInput } from '../model/MainPageMode';
-import { getTableColumnList } from '../../api/table';
+import { getTableColumnList, getDbType } from '../../api/table';
 
 const props = defineProps(['database','mode','table','dbtype'])
-
+const tableHeight = ref(document.body.clientHeight);
+const sh = 280;
+onMounted(() => {
+  tableHeight.value = document.body.clientHeight - sh;
+  window.addEventListener('resize', onResize);
+  loadDbType();
+});
+// 窗体大小改变事件
+const onResize = () => {
+  tableHeight.value = document.body.clientHeight - sh;
+};
 // 表格数据列
 const dbColumns = ref<any[]>([{
     title: '名称',
@@ -63,24 +79,27 @@ const dbColumns = ref<any[]>([{
     title: '字段类型',
     dataIndex: 'type',
     sorter: false,
-    width: 150
+    width: 180
   },
   {
     title: '是否允许null',
     dataIndex: 'allowNull',
     sorter: false,
-    width: 80
+    width: 160
+  },
+  {
+    title: '操作',
+    dataIndex: 'operation',
+    width: 120,
+    fixed: 'right'
   }
 ]);
 // 可编辑的列
-const allowEditColumns = ref<string[]>(['name','type']);
+const allowEditColumns = ref<string[]>(['name','allowNull']);
 // 当前数据库表格数据
 const currdbData = ref<any[]>([]);
-// loading
-const dbloading = ref(false);
 // 编辑数据
-const editableData: UnwrapRef<Record<string, ConnectDbInput>> = reactive({});
-
+const editableData: UnwrapRef<Record<string, any>> = reactive({});
 // 编辑列
 const edit = (key: string) => {
     editableData[key] = cloneDeep(currdbData.value.filter(item => key === item.key)[0]);
@@ -95,7 +114,7 @@ const save = (key: string) => {
 const cancel = (key: string) => {
     delete editableData[key];
 };
-
+// 加载
 const loading = ref(false);
 // 加载字段配置
 const loadTableColumn = ()=>{
@@ -106,13 +125,27 @@ const loadTableColumn = ()=>{
     table: props.table
   }, props.dbtype).then((res: any) => {
     loading.value = false;
-    currdbData.value = res;
+    currdbData.value = res.data;
   },()=> {
     loading.value = false;
   })
 }
+const dbTypeOptions = ref([]);
+const loadDbType = ()=>{
+  getDbType(props.dbtype).then(res=>{
+    dbTypeOptions.value = res.data.map(c => {return { value : c.name, label: c.name}});
+  })
+}
+const filterOption = (input: string, option: any) => {
+  return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0;
+};
+const clearData = ()=>{
+  currdbData.value = [];
+}
+
 watchEffect(()=>{
   console.log('watch');
+  clearData();
   loadTableColumn();
 });
 

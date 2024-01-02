@@ -23,3 +23,15 @@ export function getTableColumnDetail(data, dbtype) {
         }
     })
 }
+
+
+// 获取详情
+export function getDbType(dbtype) {
+    return request({
+        url: '/table/db-type',
+        method: 'post',
+        headers: {
+            'dbtype': dbtype
+        }
+    })
+}

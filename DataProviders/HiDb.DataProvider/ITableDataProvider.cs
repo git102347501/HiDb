@@ -25,5 +25,7 @@ namespace HiDb.DataProvider
         /// <param name="tableName"></param>
         /// <returns></returns>
         public TableColumnFullOutput GetDbColumnFullInfo(TableColumnFullInput input);
+
+        List<TableDbTypeOutput> GetDbTypeList();
     }
 }
