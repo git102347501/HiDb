@@ -99,7 +99,7 @@
                     <a-dropdown :trigger="['contextmenu']">
                       <span>{{ title }}</span>
                       <template #overlay>
-                        <a-menu @click="({ key: menuKey }) => onContextMenuClick(treeKey, menuKey)">
+                        <a-menu @click="({ key: menuKey }) => onContextMenuClick(treeKey, menuKey,currRightData)">
                           <div v-if="currRightData.type == 'db'">
                             <a-menu-item key="11">查看数据库</a-menu-item>
                             <a-menu-item key="12">删除数据库</a-menu-item>
@@ -110,9 +110,9 @@
                           </div> -->
                           <div v-if="currRightData.type == 'table'">
                             <a-menu-item key="31">查看表数据</a-menu-item>
-                            <!-- <a-menu-item key="32">编辑表结构</a-menu-item>
+                            <a-menu-item key="32">编辑表结构</a-menu-item>
                             <a-menu-item key="33">删除表</a-menu-item>
-                            <a-menu-item key="34">归档表</a-menu-item> -->
+                            <a-menu-item key="34">归档表</a-menu-item>
                           </div>
                         </a-menu>
                       </template>
@@ -190,7 +190,11 @@
               </div>
             </div>
             <div  v-show="viewMode == 3" class="work" :style="{ 'width': bodyWidth }">
-              编辑表结构
+              <my-sql-edit 
+                :database="editTableData.database" 
+                :table="editTableData.table" 
+                :mode="editTableData.mode" 
+                :dbtype="editTableData.dbtype"></my-sql-edit>
             </div>
             <div  v-show="viewMode == 1" class="work" :style="{ 'width': bodyWidth }">
               编辑数据库
@@ -319,7 +323,7 @@
 
 <script lang="ts" setup>
 import { cloneDeep } from 'lodash-es';
-import { h, ref, watch, onMounted, UnwrapRef, reactive  } from 'vue';
+import { h, ref, watch, onMounted, UnwrapRef, reactive, defineComponent  } from 'vue';
 import MySql from './icons/MySql.vue';
 import SqlServer from './icons/SqlServer.vue';
 import PgSql from './icons/PgSql.vue';
@@ -334,7 +338,7 @@ import { DataType } from 'vue-request';
 import { getGuid } from '@renderer/utils/guid';
 import { life } from '../api/life';
 import * as monaco from 'monaco-editor';
-
+import MySqlEdit from './table-edit/MySqlEdit.vue';
   const sh = 280;
   const pageHeight = ref(0);
   const dftPageHeight = ref(0);
@@ -398,6 +402,12 @@ import * as monaco from 'monaco-editor';
     console.log('onResize:' + pageHeight.value);
   };
   const viewMode = ref(0); // 视图模式，0数据视图，1 编辑表视图 2编辑模式视图 3编辑数据库视图
+  const editTableData = ref({
+    table: '',
+    database: '',
+    mode: '',
+    dbtype: 0
+  }); // 当前标记表
   const searchValue = ref<string>(''); // 左侧搜索内容
   const expandedMenuKeys = ref<string[]>([]); // tree搜索key
   const selectedMenuKeys = ref<string[]>([]); // tree选择key
@@ -587,8 +597,7 @@ import * as monaco from 'monaco-editor';
     encrypt: true,
     saveLocal: true
   });
-  const onContextMenuClick = (treeKey: string, menuKey: string | number) => {
-    console.log(`treeKey: ${treeKey}, menuKey: ${menuKey}`);
+  const onContextMenuClick = (treeKey: string, menuKey: string | number, data: any) => {
     if (menuKey == '11') {
       viewMode.value = 1;
     } else if (menuKey == '12') {
@@ -602,6 +611,13 @@ import * as monaco from 'monaco-editor';
       }
       searchData();
     } else if (menuKey == '32') {
+      editTableData.value = {
+        database: currRightData.value.database,
+        table: currRightData.value.title,
+        mode: currRightData.value.mode,
+        dbtype: currDatabase.value.type
+      }
+      console.log(editTableData)
       viewMode.value = 3;
     } else if (menuKey == '33') {
       viewMode.value = 3;
@@ -814,14 +830,13 @@ import * as monaco from 'monaco-editor';
                 type: 'tablenull',
               }];
             } else {
-              console.log('getTable:' + JSON.stringify(res.data));
-              console.log(res.data);
               treeNode.dataRef.children = res.data.map(c => {
                 return {            
                   title: c.name,
                   key: c.name,
                   isLeaf: true,
                   type: 'table',
+                  mode: treeNode.title,
                   database: treeNode.type == 'db' ? treeNode.title : treeNode.type == 'mode' ?  treeNode.parent.key : ''
                 }
               });

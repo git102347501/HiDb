@@ -38,8 +38,7 @@ namespace HiDb.DataProvider.SqlServer
 
         public List<TableColumnOutput> GetDbColumnList(TableColumnInput input)
         {
-            var use = @$"use [{input.DataBase}];";
-            return GetList<TableColumnOutput>(use + @$"SELECT 
+            return GetList<TableColumnOutput>(@$"SELECT 
                                 COLUMN_NAME AS Name,
                                 DATA_TYPE AS Type,
                                 IS_NULLABLE AS AllowNull

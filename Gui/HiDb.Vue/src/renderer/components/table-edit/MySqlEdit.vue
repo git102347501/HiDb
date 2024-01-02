@@ -47,15 +47,30 @@
 </template>
 <script setup lang="ts">
 import { cloneDeep } from 'lodash-es';
-import { UnwrapRef, reactive, ref } from 'vue';
+import { UnwrapRef, reactive, ref, watchEffect } from 'vue';
 import { ConnectDbInput } from '../model/MainPageMode';
+import { getTableColumnList } from '../../api/table';
+
+const props = defineProps(['database','mode','table','dbtype'])
 
 // 表格数据列
 const dbColumns = ref<any[]>([{
     title: '名称',
     dataIndex: 'name',
+    sorter: false
+  },
+  {
+    title: '字段类型',
+    dataIndex: 'type',
     sorter: false,
-    width: 150}
+    width: 150
+  },
+  {
+    title: '是否允许null',
+    dataIndex: 'allowNull',
+    sorter: false,
+    width: 80
+  }
 ]);
 // 可编辑的列
 const allowEditColumns = ref<string[]>(['name','type']);
@@ -80,6 +95,26 @@ const save = (key: string) => {
 const cancel = (key: string) => {
     delete editableData[key];
 };
+
+const loading = ref(false);
+// 加载字段配置
+const loadTableColumn = ()=>{
+  loading.value = true;
+  getTableColumnList({
+    database: props.database,
+    mode: props.mode,
+    table: props.table
+  }, props.dbtype).then((res: any) => {
+    loading.value = false;
+    currdbData.value = res;
+  },()=> {
+    loading.value = false;
+  })
+}
+watchEffect(()=>{
+  console.log('watch');
+  loadTableColumn();
+});
 
 </script>
 <style scoped lang="scss">
