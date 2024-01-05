@@ -363,3 +363,4 @@ MigrationBackup/
 FodyWeavers.xsd
 Gui/HiDb.Vue/build
 Gui/HiDb.Vue/dist
+Gui/HiDb.Vue/build.json
