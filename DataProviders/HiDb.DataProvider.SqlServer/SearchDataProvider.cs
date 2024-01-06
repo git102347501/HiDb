@@ -19,11 +19,15 @@ namespace HiDb.DataProvider.SqlServer
         public SearchOutput GetSearchData(SearchInput input)
         {
             var query = GetPageSql(input.Sql, input.PageSize.Value);
-
             if (!string.IsNullOrWhiteSpace(input.DataBase))
             {
-                input.Sql = @$"use [{input.DataBase}];
-                               {input.Sql}";
+                query.Item1 = @$"use [{input.DataBase}];
+                               {query.Item1}";
+                if (!string.IsNullOrWhiteSpace(query.Item2))
+                {
+                    query.Item2 = @$"use [{input.DataBase}];
+                               {query.Item2}";
+                }
             }
             var res = new SearchOutput()
             {

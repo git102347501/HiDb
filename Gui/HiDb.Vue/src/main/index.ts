@@ -23,11 +23,30 @@ function runAppInBackground() {
 
   childProcess.unref(); // 让子进程独立运行，使其不受主进程关闭的影响
 }
+function runAppInMacBackground() {
+  const assetsPath = path.join(__dirname, '..', 'publish');
+  const dllPath = path.join(assetsPath, 'HiDb.Api.dll');
+
+  childProcess = spawn('dotnet', [dllPath], {
+    detached: true,
+    stdio: 'ignore'
+  });
+
+  childProcess.unref();
+}
 function onAppReady() {
   console.log('process.env.NODE_ENV:' + process.env.NODE_ENV)
-  console.log('启动后台子进程-HiDb.Api')
-  runAppInBackground();
-
+  if (process.platform === 'win32') {
+    // 在Windows平台下的逻辑
+    console.log('启动win后台子进程-HiDb.Api')
+    runAppInBackground();
+  } else if (process.platform === 'darwin') {
+    //console.log('启动mac后台子进程-HiDb.Api')
+    //runAppInMacBackground()
+  } else {
+    // 其他平台的逻辑
+  }
+  runAppInMacBackground()
   new InitWindow().initWindow()
   DisableButton.Disablef12()
   if (process.env.NODE_ENV === 'development') {
@@ -49,6 +68,7 @@ app.on('window-all-closed', () => {
   if (childProcess) {
     // 向 HiDb.Api.exe 发送中止信号
     childProcess.kill();
+    console.log('kill-HiDb.Api')
   }
   app.quit()
 })

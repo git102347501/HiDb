@@ -21,6 +21,11 @@ namespace HiDb.DataProvider.Dtos.Tables
         /// <summary>
         /// 是否允许Null
         /// </summary>
-        public bool AllowNull { get; set; }
+        public string AllowNullStr { get; set; }
+        
+        /// <summary>
+        /// 是否允许Null
+        /// </summary>
+        public bool AllowNull => this.AllowNullStr == "YES";
     }
 }

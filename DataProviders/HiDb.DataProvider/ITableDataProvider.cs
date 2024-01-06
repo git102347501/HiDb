@@ -25,5 +25,9 @@ namespace HiDb.DataProvider
         /// <param name="tableName"></param>
         /// <returns></returns>
         public TableColumnFullOutput GetDbColumnFullInfo(TableColumnFullInput input);
+
+        List<TableDbTypeOutput> GetDbTypeList();
+
+        bool DeleteTable(string database, string table);
     }
 }

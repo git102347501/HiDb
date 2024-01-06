@@ -1,6 +1,6 @@
 {
   "name": "hidb",
-  "version": "0.0.3",
+  "version": "0.0.5",
   "main": "./dist/electron/main/main.js",
   "author": "https://github.com/git102347501/HiDb",
   "description": "hidb",
@@ -72,5 +72,11 @@
     "electron",
     "vue3",
     "rollup"
-  ]
+  ],
+  "nsis": {
+    "allowElevation": false,
+    "allowToChangeInstallationDirectory": true,
+    "oneClick": false,
+    "perMachine": true
+  }
 }
