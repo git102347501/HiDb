@@ -104,15 +104,13 @@
                             <a-menu-item key="11">查看数据库</a-menu-item>
                             <a-menu-item key="12">删除数据库</a-menu-item>
                           </div>
-                          <!-- <div v-if="currRightData.type == 'mode'">
-                            <a-menu-item key="2">查看模式</a-menu-item>
-                            <a-menu-item key="3">删除模式</a-menu-item>
-                          </div> -->
+                          <div v-if="currRightData.type == 'mode'">
+                            <a-menu-item key="21">刷新</a-menu-item>
+                          </div>
                           <div v-if="currRightData.type == 'table'">
                             <a-menu-item key="31">查看表数据</a-menu-item>
                             <a-menu-item key="32">编辑表结构</a-menu-item>
                             <a-menu-item key="33">删除表</a-menu-item>
-                            <a-menu-item key="34">归档表</a-menu-item>
                           </div>
                         </a-menu>
                       </template>
@@ -176,7 +174,7 @@
                       <div class="msg error" v-if="errorMsg">
                         执行错误: {{errorMsg}}
                       </div>
-                      <div class="msg" v-if="isQuery">
+                      <div class="msg" v-if="isQuery && pagination.total != null &&  pagination.total != undefined">
                         总行数: {{ pagination.total }} ｜ 页行数: {{ pagination.pageSize }}
                       </div>
                       <div class="msg" v-if="!isQuery">
@@ -189,9 +187,8 @@
                 </div>
               </div>
             </div>
-            <div  v-show="viewMode == 3" class="work" :style="{ 'width': bodyWidth }">
+            <div v-show="viewMode == 3" class="work">
               <my-sql-edit 
-                style="width: 100%; height: 100%"
                 :database="editTableData.database" 
                 :table="editTableData.table" 
                 :mode="editTableData.mode" 
@@ -324,22 +321,23 @@
 
 <script lang="ts" setup>
 import { cloneDeep } from 'lodash-es';
-import { h, ref, watch, onMounted, UnwrapRef, reactive, defineComponent  } from 'vue';
+import { h, ref, watch, onMounted, UnwrapRef, reactive, createVNode, defineComponent  } from 'vue';
 import MySql from './icons/MySql.vue';
 import SqlServer from './icons/SqlServer.vue';
 import PgSql from './icons/PgSql.vue';
-import { WifiOutlined,ApiOutlined,UserOutlined,BorderlessTableOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownOutlined, FrownFilled  } from '@ant-design/icons-vue';
+import { message, Modal } from 'ant-design-vue';
+import { ExclamationCircleOutlined, WifiOutlined,ApiOutlined,UserOutlined,BorderlessTableOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownOutlined, FrownFilled  } from '@ant-design/icons-vue';
 import { getDb,getMode,getTable } from '../api/menu';
 import { getSearch,execute} from '../api/search';
 import { connectDb } from '../api/datasource';
 import type { MenuTheme,TreeProps,TableProps, MenuProps  } from 'ant-design-vue';
-import { message } from 'ant-design-vue';
 import { ConnectDbInput } from './model/MainPageMode';
 import { DataType } from 'vue-request';
 import { getGuid } from '@renderer/utils/guid';
 import { life } from '../api/life';
 import * as monaco from 'monaco-editor';
 import MySqlEdit from './table-edit/MySqlEdit.vue';
+import { deleteTable } from '../api/table';
   const sh = 280;
   const pageHeight = ref(0);
   const dftPageHeight = ref(0);
@@ -603,6 +601,8 @@ import MySqlEdit from './table-edit/MySqlEdit.vue';
       viewMode.value = 1;
     } else if (menuKey == '12') {
       viewMode.value = 1;
+    } else if (menuKey == '21') {
+      refDatabaseTable(currRightData.value.database, currRightData.value.title);
     } else if (menuKey == '31') {
       viewMode.value = 0;
       if (currDatabase.value.type == 0) {
@@ -621,7 +621,8 @@ import MySqlEdit from './table-edit/MySqlEdit.vue';
       console.log(editTableData)
       viewMode.value = 3;
     } else if (menuKey == '33') {
-      viewMode.value = 3;
+      submitDeleteTable(currRightData.value.database, currRightData.value.title,
+      currRightData.value.mode);
     } else if (menuKey == '34') {
       viewMode.value = 3;
     }
@@ -635,7 +636,7 @@ import MySqlEdit from './table-edit/MySqlEdit.vue';
     searchValue.value = '';
     isQuery.value = true;
     editor.setValue('');
-    pagination.value.total = 0;
+    pagination.value.total = undefined;
     pagination.value.pageSize = 100;
     currDbName.value = '';
     selectDbData.value = [];
@@ -851,6 +852,44 @@ import MySqlEdit from './table-edit/MySqlEdit.vue';
       });
   };
 
+  // 刷新模式下表列表
+  const refDatabaseTable = (database, mode) => {
+    let currDb = treeData.value.find(c => c.title == database);
+    if (!currDb || !currDb.children) {
+      message.error('未找到数据库节点信息');
+      return;
+    }
+    let currMode = currDb.children.find(c => c.title == mode);
+    if (!currMode || !currMode.children) {
+      message.error('未找到模式节点信息');
+      return;
+    }
+    getTable(database, mode, currDatabase.value.type).then(res=>{
+      if (!res.data || !res.data || res.data.length < 1) {
+        currMode.children = [{            
+          title: '暂无表数据',
+          key: '暂无表数据',
+          isLeaf: true,
+          disabled: true,
+          type: 'tablenull',
+        }];
+      } else {
+        currMode.children = res.data.map(c => {
+          return {            
+            title: c.name,
+            key: c.name,
+            isLeaf: true,
+            type: 'table',
+            mode: mode,
+            database: database
+          }
+        });
+      }
+      treeData.value = [...treeData.value];
+      message.success('刷新[' + database + '.' + mode + ']成功');
+    });
+  }
+
   // 选中表
   const currDbName = ref('');
   // 树目录选择事件
@@ -1034,6 +1073,31 @@ import MySqlEdit from './table-edit/MySqlEdit.vue';
       })
     }
   }
+  const submitDeleteTable = (database, table, mode)=>{
+    Modal.confirm({
+      title: '确认要删除表[' + table + ']吗？',
+      icon: createVNode(ExclamationCircleOutlined),
+      content: '请谨慎操作，删除不可恢复',
+      okText: '确认',
+      cancelText: '取消',
+      onOk() {
+        return new Promise((resolve, reject) => {
+          deleteTable(currDatabase.value.type, database, table).then(dres=>{
+            if (dres) {
+              message.success('删除成功');
+              refDatabaseTable(database, mode);
+            } else {
+              message.warning('删除失败');
+            }
+            resolve(true);
+          }, () => {
+            message.error('删除错误');
+            reject(false)
+          })
+        }).catch(() => console.log('Oops errors!'));
+      },
+    });
+  }
   const getMaxLength = (objCollection, name)=>{
     let maxLength = 0;
     let length = objCollection.length > 20 ? 20 : objCollection.length;
@@ -1148,6 +1212,7 @@ import MySqlEdit from './table-edit/MySqlEdit.vue';
         border-right: #dbd7d7 2px solid;
       }
       .work {
+          width: 100%;
           height: calc(100vh - 50px);
           padding: 0;
           flex: 1;

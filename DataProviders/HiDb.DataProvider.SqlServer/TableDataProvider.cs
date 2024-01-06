@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Dapper;
 
 namespace HiDb.DataProvider.SqlServer
 {
@@ -56,6 +57,13 @@ namespace HiDb.DataProvider.SqlServer
                 FROM sys.types
                 WHERE is_user_defined = 0
                 ORDER BY name desc");
+        }
+
+        public bool DeleteTable(string database, string table)
+        {
+            var connection = SqlConnectionFactory.GetConnection();
+            return connection.Execute(@$"use [{database}];
+                                            drop table [{table}]") > 1;
         }
     }
 }

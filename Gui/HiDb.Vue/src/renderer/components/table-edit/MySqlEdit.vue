@@ -8,44 +8,29 @@
               :scroll="{ y: tableHeight }"
               :loading="loading"
               :pagination="false">
-              <template #bodyCell="{ column, text, record }">
+              <template #bodyCell="{ column, record }">
                 <template v-if="allowEditColumns.includes(column.dataIndex)">
-                  <div>
+                  <div v-if="column.dataIndex == 'name'">
                     <a-input
-                      v-if="editableData[record.key]"
-                      v-model:value="editableData[record.key][column.dataIndex]"
-                      style="margin: -5px 0"
-                    />
-                    <template v-else>
-                      <span>
-                        {{ text }}
-                      </span>
-                    </template>
+                      v-model:value="record.name"
+                      style="margin: -5px 0" />
                   </div>
                 </template>
                 <template v-if="column.dataIndex == 'type'">
                   <a-select
-                    v-model:value="record.key"
-                    show-search
+                    v-model:value="record.type"
+                    show-search 
                     placeholder="选择字段类型"
                     style="width: 200px"
                     :options="dbTypeOptions"
                     :filter-option="filterOption"
                   ></a-select>
                 </template>
-                
+                <template v-if="column.dataIndex == 'allowNull'">
+                  <a-switch v-model:checked="record.allowNull" />
+                </template>
                 <template v-else-if="column.dataIndex === 'operation'">
-                  <div class="editable-row-operations">
-                    <span v-if="editableData[record.key]">
-                      <a-typography-link @click="save(record.key)" style="margin-right: 8px;">保存</a-typography-link>
-                      <a @click="cancel(record.key)" style="color: #555555">撤销</a>
-                    </span>
-                    <span v-else>
-                      <a-typography-link @click="edit(record.key)"  style="margin-right: 8px;">
-                        编辑
-                      </a-typography-link>
-                    </span>
-                  </div>
+                  <a-typography-link @click="save(record.key)" style="margin-right: 8px;">保存</a-typography-link>
                 </template>
               </template>
         </a-table>
@@ -53,8 +38,7 @@
 </template>
 <script setup lang="ts">
 import { cloneDeep } from 'lodash-es';
-import { UnwrapRef, reactive, ref, watchEffect,onMounted } from 'vue';
-import { ConnectDbInput } from '../model/MainPageMode';
+import { UnwrapRef, reactive, ref, watchEffect,onMounted,createVNode } from 'vue';
 import { getTableColumnList, getDbType } from '../../api/table';
 
 const props = defineProps(['database','mode','table','dbtype'])
@@ -79,13 +63,13 @@ const dbColumns = ref<any[]>([{
     title: '字段类型',
     dataIndex: 'type',
     sorter: false,
-    width: 180
+    width: 220
   },
   {
     title: '是否允许null',
     dataIndex: 'allowNull',
     sorter: false,
-    width: 160
+    width: 180
   },
   {
     title: '操作',
@@ -136,6 +120,7 @@ const loadDbType = ()=>{
     dbTypeOptions.value = res.data.map(c => {return { value : c.name, label: c.name}});
   })
 }
+
 const filterOption = (input: string, option: any) => {
   return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0;
 };
@@ -156,6 +141,7 @@ watchEffect(()=>{
     height: 100%;
     display: flex;
     flex-direction: column;
+
     .table {
         width: 100%;
         height: 100%;

@@ -45,4 +45,11 @@ public class TableController : MainController
         var data = GetService(ServiceFactory.GetTable).GetDbTypeList();
         return data;
     }
+
+    [HttpDelete]
+    public bool DeleteTable(string database, string table)
+    {
+        var data = GetService(ServiceFactory.GetTable).DeleteTable(database, table);
+        return data;
+    }
 }

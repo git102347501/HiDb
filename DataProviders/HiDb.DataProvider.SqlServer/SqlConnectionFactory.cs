@@ -19,6 +19,13 @@ namespace HiDb.DataProvider.SqlServer
             
         }
 
+        public static IDbConnection CreateConnection()
+        {
+            connection = new SqlConnection(_connectionString);
+            connection.Open();
+            return connection;
+        }
+
         public static void InitConnection(string connectionString)
         {
             if (string.IsNullOrWhiteSpace(_connectionString))
