@@ -48,7 +48,7 @@ namespace HiDb.DataProvider.SqlServer
                             WHERE 
                                 TABLE_CATALOG = '{input.DataBase}'
                                 AND TABLE_SCHEMA = '{input.Mode}'
-                                AND TABLE_NAME = '{input.Table}';");
+                                AND TABLE_NAME = '{input.Table}';", input.DataBase);
         }
 
         public List<TableDbTypeOutput> GetDbTypeList()
@@ -59,11 +59,24 @@ namespace HiDb.DataProvider.SqlServer
                 ORDER BY name desc");
         }
 
-        public bool DeleteTable(string database, string table)
+        public bool DeleteTable(string database, string mode, string table)
         {
-            var connection = SqlConnectionFactory.GetConnection();
-            return connection.Execute(@$"use [{database}];
-                                            drop table [{table}]") > 1;
+            using var connection = SqlConnectionFactory.Get().CreateConnection();
+            return connection.Execute(@$"DROP TABLE {database}.{mode}.{table}") > 1;
+        }
+
+        public bool UpdateColumnConfig(UpdateTableColumnInput input)
+        {
+            using var connection = SqlConnectionFactory.Get().CreateConnection();
+            var sql = @$"ALTER TABLE [{input.DataBase}].[{input.Mode}].[{input.Table}];";
+            var update = @$"ALTER COLUMN [{input.Column}] [{input.Type}] {(input.Required ? "NOT NULL" : "NULL")}";
+            return connection.Execute(sql + update) > 1;
+        }
+        
+        public bool ClearTable(string database, string mode, string table)
+        {
+            using var connection = SqlConnectionFactory.Get().CreateConnection();
+            return connection.Execute(@$"TRUNCATE TABLE {database}.{mode}.{table}") > 1;
         }
     }
 }

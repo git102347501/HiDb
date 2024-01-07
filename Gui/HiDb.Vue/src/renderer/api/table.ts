@@ -37,7 +37,7 @@ export function getDbType(dbtype) {
 }
 
 // 获取详情
-export function deleteTable(dbtype, database, table) {
+export function deleteTable(dbtype, database, mode, table) {
     return request({
         url: '/table',
         method: 'delete',
@@ -46,7 +46,8 @@ export function deleteTable(dbtype, database, table) {
         },
         params: {
             database,
-            table
+            table,
+            mode
         }
     })
 }

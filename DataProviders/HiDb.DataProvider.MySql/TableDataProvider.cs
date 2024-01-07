@@ -59,10 +59,20 @@ namespace HiDb.DataProvider.MySql
             return res.Select(c => new TableDbTypeOutput() {Name = c.COLUMNS}).ToList();
         }
 
-        public bool DeleteTable(string database, string table)
+        public bool DeleteTable(string database, string mode, string table)
         {
             var connection = SqlConnectionFactory.GetConnection();
             return connection.Execute(@$"DROP TABLE {database}.{table};") > 1;
+        }
+
+        public bool UpdateColumnConfig(UpdateTableColumnInput input)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool ClearTable(string database, string mode, string table)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -43,11 +43,13 @@ import { getTableColumnList, getDbType } from '../../api/table';
 
 const props = defineProps(['database','mode','table','dbtype'])
 const tableHeight = ref(document.body.clientHeight);
-const sh = 280;
+const sh = 80;
+
 onMounted(() => {
   tableHeight.value = document.body.clientHeight - sh;
   window.addEventListener('resize', onResize);
   loadDbType();
+  loadTableColumn();
 });
 // 窗体大小改变事件
 const onResize = () => {
@@ -111,6 +113,7 @@ const loadTableColumn = ()=>{
     loading.value = false;
     currdbData.value = res.data;
   },()=> {
+    currdbData.value = [];
     loading.value = false;
   })
 }
@@ -130,10 +133,8 @@ const clearData = ()=>{
 
 watchEffect(()=>{
   console.log('watch');
-  clearData();
   loadTableColumn();
 });
-
 </script>
 <style scoped lang="scss">
 .content {

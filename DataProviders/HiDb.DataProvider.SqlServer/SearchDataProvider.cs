@@ -44,15 +44,15 @@ namespace HiDb.DataProvider.SqlServer
         /// <returns></returns>
         public int Execute(SearchInput input)
         {
-            var connection = SqlConnectionFactory.GetConnection();
             if (string.IsNullOrWhiteSpace(input.DataBase))
             {
+                using var connection = SqlConnectionFactory.Get().CreateConnection();
                 return connection.Execute(input.Sql);
             }
             else
             {
-                return connection.Execute(@$"use [{input.DataBase}];
-                                            {input.Sql}");
+                using var connection = SqlConnectionFactory.Get().CreateConnection(input.DataBase);
+                return connection.Execute(@$"{input.Sql}");
             }
         }
 

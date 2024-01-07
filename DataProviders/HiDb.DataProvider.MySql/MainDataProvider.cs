@@ -32,8 +32,9 @@ namespace HiDb.DataProvider.MySql
             {
                 return new List<dynamic>();
             }
-            var connection = SqlConnectionFactory.GetConnection(database);
+            using var connection = SqlConnectionFactory.GetConnection(database);
             var result = connection.Query<dynamic>(sql);
+            connection.Close();
             return result.ToList();
         }
 
@@ -43,8 +44,9 @@ namespace HiDb.DataProvider.MySql
             {
                 return new T();
             }
-            var connection = SqlConnectionFactory.GetConnection(database);
+            using var connection = SqlConnectionFactory.GetConnection(database);
             var result = connection.QueryFirst<T>(sql);
+            connection.Close();
             return result;
         }
     }

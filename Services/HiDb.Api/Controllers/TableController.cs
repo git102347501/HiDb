@@ -47,9 +47,24 @@ public class TableController : MainController
     }
 
     [HttpDelete]
-    public bool DeleteTable(string database, string table)
+    public bool DeleteTable(string database, string mode, string table)
     {
-        var data = GetService(ServiceFactory.GetTable).DeleteTable(database, table);
+        var data = GetService(ServiceFactory.GetTable).DeleteTable(database, mode, table);
+        return data;
+    }
+    
+    [HttpPut("clear")]
+    [HttpPut]
+    public bool ClearTable(string database, string mode, string table)
+    {
+        var data = GetService(ServiceFactory.GetTable).ClearTable(database, mode, table);
+        return data;
+    }
+
+    [HttpPut("column/config")]
+    public bool UpdateColumnConfig(UpdateTableColumnInput input)
+    {
+        var data = GetService(ServiceFactory.GetTable).UpdateColumnConfig(input);
         return data;
     }
 }

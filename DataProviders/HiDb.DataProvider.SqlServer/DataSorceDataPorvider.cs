@@ -2,6 +2,7 @@
 using HiDb.DataProvider.Dtos.Connect;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
@@ -18,8 +19,8 @@ namespace HiDb.DataProvider.SqlServer
         {
             try
             {
-                SqlConnectionFactory.InitConnection(dataSource);
-                return new ConnectDbOutput() { Success = true };
+                var res = SqlConnectionFactory.Get().Init(dataSource);
+                return new ConnectDbOutput() { Success = res };
             }
             catch (Exception ex)
             {
@@ -31,7 +32,5 @@ namespace HiDb.DataProvider.SqlServer
         {
             return ConnectDb(SqlConnectionFactory.GeneratorDataSource(input));
         }
-
-
     }
 }

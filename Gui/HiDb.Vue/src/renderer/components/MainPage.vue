@@ -187,12 +187,12 @@
                 </div>
               </div>
             </div>
-            <div v-show="viewMode == 3" class="work">
-              <my-sql-edit 
+            <div v-if="viewMode == 3" class="work">
+              <table-edit
                 :database="editTableData.database" 
                 :table="editTableData.table" 
                 :mode="editTableData.mode" 
-                :dbtype="editTableData.dbtype"></my-sql-edit>
+                :dbtype="editTableData.dbtype" />
             </div>
             <div  v-show="viewMode == 1" class="work" :style="{ 'width': bodyWidth }">
               编辑数据库
@@ -336,7 +336,7 @@ import { DataType } from 'vue-request';
 import { getGuid } from '@renderer/utils/guid';
 import { life } from '../api/life';
 import * as monaco from 'monaco-editor';
-import MySqlEdit from './table-edit/MySqlEdit.vue';
+import TableEdit from './table-edit/TableEdit.vue';
 import { deleteTable } from '../api/table';
   const sh = 280;
   const pageHeight = ref(0);
@@ -596,6 +596,11 @@ import { deleteTable } from '../api/table';
     encrypt: true,
     saveLocal: true
   });
+  const childComponentRef = ref(null) // 创建一个ref对象
+  // // 触发子组件方法
+  // const triggerChildMethod = () => {
+  //   childComponentRef.value.loadTableColumn();
+  // }
   const onContextMenuClick = (treeKey: string, menuKey: string | number, data: any) => {
     if (menuKey == '11') {
       viewMode.value = 1;
@@ -612,12 +617,10 @@ import { deleteTable } from '../api/table';
       }
       searchData();
     } else if (menuKey == '32') {
-      editTableData.value = {
-        database: currRightData.value.database,
-        table: currRightData.value.title,
-        mode: currRightData.value.mode,
-        dbtype: currDatabase.value.type
-      }
+      editTableData.value.database = currRightData.value.database;
+      editTableData.value.table = currRightData.value.title;
+      editTableData.value.mode = currRightData.value.mode;
+      editTableData.value.dbtype = currDatabase.value.type;
       console.log(editTableData)
       viewMode.value = 3;
     } else if (menuKey == '33') {
@@ -853,7 +856,7 @@ import { deleteTable } from '../api/table';
   };
 
   // 刷新模式下表列表
-  const refDatabaseTable = (database, mode) => {
+  const refDatabaseTable = (database, mode, msg = true) => {
     let currDb = treeData.value.find(c => c.title == database);
     if (!currDb || !currDb.children) {
       message.error('未找到数据库节点信息');
@@ -886,7 +889,9 @@ import { deleteTable } from '../api/table';
         });
       }
       treeData.value = [...treeData.value];
-      message.success('刷新[' + database + '.' + mode + ']成功');
+      if (msg) {
+        message.success('刷新[' + database + '.' + mode + ']成功');
+      }
     });
   }
 
@@ -1082,10 +1087,10 @@ import { deleteTable } from '../api/table';
       cancelText: '取消',
       onOk() {
         return new Promise((resolve, reject) => {
-          deleteTable(currDatabase.value.type, database, table).then(dres=>{
+          deleteTable(currDatabase.value.type, database, mode, table).then(dres=>{
             if (dres) {
               message.success('删除成功');
-              refDatabaseTable(database, mode);
+              refDatabaseTable(database, mode, false);
             } else {
               message.warning('删除失败');
             }

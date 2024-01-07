@@ -28,6 +28,10 @@ namespace HiDb.DataProvider
 
         List<TableDbTypeOutput> GetDbTypeList();
 
-        bool DeleteTable(string database, string table);
+        bool DeleteTable(string database, string mode, string table);
+
+        bool UpdateColumnConfig(UpdateTableColumnInput input);
+
+        bool ClearTable(string database, string mode, string table);
     }
 }
