@@ -14,7 +14,7 @@
         </div>
         <div class="title">
           <span class="info" @click="getLife">
-            <span>
+            <a-tooltip title="点击重新尝试连接">
               <span v-if="lifeTest == 1">
                 <wifi-outlined :width="20" :height="20" style="margin-right: 4px;" />服务连接中...</span>
               <span style="color: green" v-if="lifeTest == 9">
@@ -25,7 +25,7 @@
                 <wifi-outlined :width="20" :height="20" style="margin-right: 4px;" />
                 服务未连接
               </span>
-          </span>
+            </a-tooltip>
             <span style="margin-left: 10px;">|</span>
           </span>
           <span v-if="currDatabase.type != null && currDatabase.type!= undefined" class="info">
@@ -378,18 +378,29 @@ import { deleteTable, clearTable } from '../api/table';
       }
     })
     monaco.languages.registerCompletionItemProvider('sql', {
-      triggerCharacters: ['from', 'FROM'],
+      triggerCharacters: ['@'],
       provideCompletionItems: (model, position) => {
-        let suggestions = []
-        suggestions = tables.map((item: any) => {
+        let suggestions = [];
+        if (!currDbName.value || !treeData.value || treeData.value.length < 1) {
+          return;
+        }
+        let currDb = treeData.value.find(c => c.title == currDbName.value);
+        if (!currDb || !currDb.children || currDb.children.length < 1) {
+          return;
+        }
+        let currMode = currDb.children[0];
+        if (!currMode || !currMode.children || currMode.children.length < 1) {
+          return;
+        }
+        suggestions = currMode.children.map((item: any) => {
           return {
-            label: item,
-            kind: item,
-            insertText: item
+            label: item.title,
+            kind: item.title,
+            insertText: item.title
           }
         })
         return {
-          suggestions,
+          suggestions
         }
       }
     })
@@ -579,11 +590,13 @@ import { deleteTable, clearTable } from '../api/table';
   const cancel = (key: string) => {
     delete editableData[key];
   };
+  
   const deleteDbRow = (key: string)=>{
     let index = currdbData.value.findIndex(item => key === item.key);
     currdbData.value.splice(index, 1);
     localStorage.setItem('hidbdata', JSON.stringify(currdbData.value));
   }
+
   const openDbModel = reactive<ConnectDbInput>({
     key: getGuid(),
     name: '',
@@ -597,11 +610,7 @@ import { deleteTable, clearTable } from '../api/table';
     encrypt: true,
     saveLocal: true
   });
-  const childComponentRef = ref(null) // 创建一个ref对象
-  // // 触发子组件方法
-  // const triggerChildMethod = () => {
-  //   childComponentRef.value.loadTableColumn();
-  // }
+
   const onContextMenuClick = (treeKey: string, menuKey: string | number, data: any) => {
     if (menuKey == '11') {
       viewMode.value = 1;
