@@ -25,7 +25,7 @@ export function getTableColumnDetail(data, dbtype) {
 }
 
 
-// 获取详情
+// 获取数据库类型列表
 export function getDbType(dbtype) {
     return request({
         url: '/table/db-type',
@@ -36,7 +36,7 @@ export function getDbType(dbtype) {
     })
 }
 
-// 获取详情
+// 删除表格]
 export function deleteTable(dbtype, database, mode, table) {
     return request({
         url: '/table',
@@ -48,6 +48,41 @@ export function deleteTable(dbtype, database, mode, table) {
             database,
             table,
             mode
+        }
+    })
+}
+
+// 清空表
+export function clearTable(dbtype, database, mode, table) {
+    return request({
+        url: '/table/clear',
+        method: 'put',
+        headers: {
+            'dbtype': dbtype
+        },
+        params: {
+            database,
+            table,
+            mode
+        }
+    })
+}
+
+// 更新指定列配置
+export function updateTableColumn(dbtype, database, mode, table, column, type, required) {
+    return request({
+        url: '/table/column/config',
+        method: 'put',
+        headers: {
+            'dbtype': dbtype
+        },
+        data: {
+            database,
+            mode,
+            table,
+            column,
+            type,
+            required
         }
     })
 }

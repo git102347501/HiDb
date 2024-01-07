@@ -68,9 +68,9 @@ namespace HiDb.DataProvider.SqlServer
         public bool UpdateColumnConfig(UpdateTableColumnInput input)
         {
             using var connection = SqlConnectionFactory.Get().CreateConnection();
-            var sql = @$"ALTER TABLE [{input.DataBase}].[{input.Mode}].[{input.Table}];";
-            var update = @$"ALTER COLUMN [{input.Column}] [{input.Type}] {(input.Required ? "NOT NULL" : "NULL")}";
-            return connection.Execute(sql + update) > 1;
+            var sql = @$"ALTER TABLE [{input.DataBase}].[{input.Mode}].[{input.Table}]
+                        ALTER COLUMN [{input.Column}] [{input.Type}] {(input.Required ? "NOT NULL" : "NULL")}";
+            return connection.Execute(sql) > 1;
         }
         
         public bool ClearTable(string database, string mode, string table)

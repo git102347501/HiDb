@@ -111,6 +111,7 @@
                             <a-menu-item key="31">查看表数据</a-menu-item>
                             <a-menu-item key="32">编辑表结构</a-menu-item>
                             <a-menu-item key="33">删除表</a-menu-item>
+                            <a-menu-item key="34">清空表</a-menu-item>
                           </div>
                         </a-menu>
                       </template>
@@ -337,7 +338,7 @@ import { getGuid } from '@renderer/utils/guid';
 import { life } from '../api/life';
 import * as monaco from 'monaco-editor';
 import TableEdit from './table-edit/TableEdit.vue';
-import { deleteTable } from '../api/table';
+import { deleteTable, clearTable } from '../api/table';
   const sh = 280;
   const pageHeight = ref(0);
   const dftPageHeight = ref(0);
@@ -625,9 +626,10 @@ import { deleteTable } from '../api/table';
       viewMode.value = 3;
     } else if (menuKey == '33') {
       submitDeleteTable(currRightData.value.database, currRightData.value.title,
-      currRightData.value.mode);
+        currRightData.value.mode);
     } else if (menuKey == '34') {
-      viewMode.value = 3;
+      submitClearTable(currRightData.value.database, currRightData.value.title,
+        currRightData.value.mode);
     }
   };
   // 清空当前数据库数据
@@ -643,6 +645,7 @@ import { deleteTable } from '../api/table';
     pagination.value.pageSize = 100;
     currDbName.value = '';
     selectDbData.value = [];
+    elapsedTimeRef.value = null;
     currDatabase.value = {
       key: null,
       name: '',
@@ -656,6 +659,7 @@ import { deleteTable } from '../api/table';
       encrypt: true,
       saveLocal: true
     };
+    viewMode.value = 0;
     columns.value = [];
   }
   // 打开数据库连接
@@ -1013,7 +1017,7 @@ import { deleteTable } from '../api/table';
   }
 
   // 执行耗时/毫秒
-  const elapsedTimeRef = ref<number>(0);
+  const elapsedTimeRef = ref<number | null>(0);
   const isSelect = (val)=>{
     if(val.includes('select') ){
       return true;
@@ -1099,7 +1103,31 @@ import { deleteTable } from '../api/table';
             message.error('删除错误');
             reject(false)
           })
-        }).catch(() => console.log('Oops errors!'));
+        });
+      },
+    });
+  }
+  const submitClearTable = (database, table, mode)=>{
+    Modal.confirm({
+      title: '确认要清空表[' + table + ']数据吗？',
+      icon: createVNode(ExclamationCircleOutlined),
+      content: '请谨慎操作，删除的数据不可恢复',
+      okText: '确认',
+      cancelText: '取消',
+      onOk() {
+        return new Promise((resolve, reject) => {
+          clearTable(currDatabase.value.type, database, mode, table).then(dres=>{
+            if (dres) {
+              message.success('清空成功');
+            } else {
+              message.warning('清空失败');
+            }
+            resolve(true);
+          }, () => {
+            message.error('清空错误');
+            reject(false)
+          })
+        });
       },
     });
   }
