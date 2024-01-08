@@ -10,6 +10,12 @@ Supports multiple platforms on Windows and Mac, runs completely offline locally,
 
 ![image](https://github.com/git102347501/HiDb/assets/37917403/7f50b4fe-82ca-4e32-87c5-04637c60fe88)
 
+# Install (如何安装)
+
+1. Download the latest version within the Release （在Release内下载最新版本）
+2. Click on setupexe to install it on your computer. If there is no NET8 runtime, you need to first install the runtime Net 8.0 [download](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
+   
+ （点击setup.exe安装到电脑即可。（如果没有NET8运行时，需要先安装运行时Net 8.0 [download](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)））
 
 # Run env
 - Net 8.0 [download](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
