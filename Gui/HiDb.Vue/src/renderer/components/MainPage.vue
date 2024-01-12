@@ -380,32 +380,35 @@ import { deleteTable, clearTable } from '../api/table';
     monaco.languages.registerCompletionItemProvider('sql', {
       triggerCharacters: ['@'],
       provideCompletionItems: (model, position) => {
-        let suggestions = [];
-        if (!currDbName.value || !treeData.value || treeData.value.length < 1) {
-          return;
-        }
-        let currDb = treeData.value.find(c => c.title == currDbName.value);
-        if (!currDb || !currDb.children || currDb.children.length < 1) {
-          return;
-        }
-        let currMode = currDb.children[0];
-        if (!currMode || !currMode.children || currMode.children.length < 1) {
-          return;
-        }
-        suggestions = currMode.children.map((item: any) => {
-          return {
-            label: item.title,
-            kind: item.title,
-            insertText: item.title
-          }
-        })
+        let suggestions = refCurrDbTableList();
         return {
           suggestions
         }
       }
     })
   }
-  const tables = ['table1','table2'];
+  const refCurrDbTableList: any = () => {
+    console.log('refCurrDbTableList');
+    if (!currDbName.value || !treeData.value || treeData.value.length < 1) {
+      return [];
+    }
+    let currDb = treeData.value.find(c => c.title == currDbName.value);
+    if (!currDb || !currDb.children || currDb.children.length < 1) {
+      return [];
+    }
+    let currMode = currDb.children[0];
+    if (!currMode || !currMode.children || currMode.children.length < 1) {
+      return [];
+    } else {
+      return currMode.children.map((item: any) => {
+        return {
+          label: item.title,
+          kind: item.title,
+          insertText: item.title
+        }
+      });
+    }
+  }
   // 窗体大小改变事件
   const onResize = () => {
     pageHeight.value = document.body.clientHeight - sh;
@@ -425,10 +428,58 @@ import { deleteTable, clearTable } from '../api/table';
   const executeNum = ref(0); // 影响行数
   const isQuery = ref(true); // 是否走查询
   const errorMsg = ref(''); // 错误消息
-  // // 菜单展开事件
-  // watch(expandedMenuKeys, () => {
-  //   console.log('expandedKeys', expandedMenuKeys);
-  // });
+  // 选中数据库名称
+  const currDbName = ref('');
+  // 菜单展开事件
+  watch(currDbName, () => {
+    console.log(currDbName.value);
+    let currDb = treeData.value.find(c => c.title == currDbName.value);
+    if (!currDb) {
+      return;
+    }
+    if (!currDb.children || currDb.children.length < 1) {
+      getMode(currDbName.value, currDatabase.value.type).then(res=>{
+        if (!res.data || res.data.length < 1) {
+          return [];
+        }
+        currDb.children = res.data.map(c => {
+          return {            
+            title: c.name,
+            key: currDbName.value + '_' + c.name,
+            isLeaf: false,
+            type: 'mode',
+            database: currDbName.value
+          }
+        });
+        let currMode = currDb.children[0];
+        getTable(currMode.database, currMode.title, currDatabase.value.type).then(res=>{
+          if (!res.data || !res.data || res.data.length < 1) {
+            currMode.children = [{            
+              title: '暂无表数据',
+              key: '暂无表数据',
+              isLeaf: true,
+              disabled: true,
+              type: 'tablenull',
+            }];
+          } else {
+            currMode.children = res.data.map(c => {
+              return {            
+                title: c.name,
+                key: c.name,
+                isLeaf: true,
+                type: 'table',
+                mode: currMode.title,
+                database: currMode.database
+              }
+            });
+          }
+          treeData.value = [...treeData.value];
+        });
+      },() => {
+        message.error('获取数据库信息失败');
+      })
+    } 
+  });
   const dbTypeOptions = [{
     value: 0,
     label: 'SqlServer',
@@ -907,9 +958,6 @@ import { deleteTable, clearTable } from '../api/table';
       }
     });
   }
-
-  // 选中表
-  const currDbName = ref('');
   // 树目录选择事件
   const onSelect = (selectedKeys, e)=>{
     console.log('onSelect');

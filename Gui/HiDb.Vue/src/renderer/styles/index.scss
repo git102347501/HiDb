@@ -29,6 +29,15 @@ html {
     border-radius: 10px;
     background-color: #555;
   }
+  .ant-table-body::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+    background-color: none;
+  }
+  .ant-table-body::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background-color: #888686;
+  }
 }
 
 *,
