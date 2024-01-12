@@ -40,22 +40,21 @@ namespace HiDb.DataProvider.MySql
 
         public List<TableColumnOutput> GetDbColumnList(TableColumnInput input)
         {
-            var use = @$"use [{input.DataBase}];";
-            return GetList<TableColumnOutput>(use + @$"SELECT 
-                                COLUMN_NAME AS Name,
-                                DATA_TYPE AS Type,
-                                IS_NULLABLE AS AllowNull
+            return GetList<TableColumnOutput>(@$"SELECT 
+                                column_name AS Name,
+                                data_type AS Type,
+                                is_nullable  AS AllowNull
                             FROM 
-                                INFORMATION_SCHEMA.COLUMNS
+                                information_schema.columns 
                             WHERE 
-                                TABLE_CATALOG = '{input.DataBase}'
-                                AND TABLE_SCHEMA = '{input.Mode}'
-                                AND TABLE_NAME = '{input.Table}';");
+                                table_schema= '{input.DataBase}'
+                                AND table_name= '{input.Table}';");
         }
         
         public List<TableDbTypeOutput> GetDbTypeList()
         {
-            var res = GetList<MySqlDbTypeList>( @$"SHOW COLUMNS FROM your_table_name;");
+            var res = GetList<MySqlDbTypeList>( @$"SELECT DISTINCT COLUMN_TYPE 
+                                                    FROM information_schema.COLUMNS;");
             return res.Select(c => new TableDbTypeOutput() {Name = c.COLUMNS}).ToList();
         }
 
@@ -67,12 +66,16 @@ namespace HiDb.DataProvider.MySql
 
         public bool UpdateColumnConfig(UpdateTableColumnInput input)
         {
-            throw new NotImplementedException();
+            using var connection = SqlConnectionFactory.GetConnection();
+            var sql = @$"ALTER TABLE `{input.DataBase}`.`{input.Table}`
+                        MODIFY COLUMN `column` [{input.Type}] {(input.Required ? "NOT NULL" : "NULL")}";
+            return connection.Execute(sql) > 1;
         }
 
         public bool ClearTable(string database, string mode, string table)
         {
-            throw new NotImplementedException();
+            var connection = SqlConnectionFactory.GetConnection();
+            return connection.Execute(@$"TRUNCATE TABLE {database}.{table}") > 1;
         }
     }
 }
