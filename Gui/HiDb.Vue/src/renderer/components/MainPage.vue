@@ -16,8 +16,8 @@
               <a-button type="text" style="color: #fff">关于</a-button>
               <template #overlay>
                 <a-menu value="1" @click="selectedAbout">
-                  <a-menu-item key="1">版本信息</a-menu-item>
-                  <a-menu-item key="2">开发人员</a-menu-item>
+                  <a-menu-item key="1">软件版本</a-menu-item>
+                  <a-menu-item key="2">关于我们</a-menu-item>
                 </a-menu>
               </template>
             </a-dropdown>
@@ -225,7 +225,7 @@
             </div>
           </div>
       </div>
-      <a-modal v-model:open="openDbListDialog" title="数据库列表" width="680px" height="550px">
+      <a-modal v-model:open="openDbListDialog" title="数据库列表" width="830px" height="550px">
         <div class="db-dialog">
           <a-table class="table"
                 :columns="dbColumns" 
@@ -348,6 +348,12 @@
           <a-button key="back" @click="openAboutDialog = false">关闭</a-button>
         </template>
       </a-modal>
+      <a-modal v-model:open="openVersionDialog" width="480px" title="版本信息">
+        <version-dialog></version-dialog>
+        <template #footer>
+          <a-button key="back" @click="openVersionDialog = false">关闭</a-button>
+        </template>
+      </a-modal>
     </div>
 </template>
 
@@ -370,6 +376,7 @@ import { life } from '../api/life';
 import * as monaco from 'monaco-editor';
 import TableEdit from './table-edit/TableEdit.vue';
 import AboutDialog from './dialogs/AboutDialog.vue';
+import VersionDialog from './dialogs/VersionDialog.vue';
 import { deleteTable, clearTable } from '../api/table';
 import axios from 'axios';
 
@@ -378,6 +385,7 @@ import axios from 'axios';
   const dftPageHeight = ref(0);
   const loading = ref(false);
   const dbloading = ref(false);
+  const openVersionDialog = ref(false);
   const editorContainer = ref<any>(null)
   let editor = null;
   onMounted(() => {
@@ -421,6 +429,7 @@ import axios from 'axios';
       }
     })
   }
+  
   const refCurrDbTableList: any = () => {
     console.log('refCurrDbTableList');
     if (!currDbName.value || !treeData.value || treeData.value.length < 1) {
@@ -582,7 +591,7 @@ import axios from 'axios';
   };
   const selectedAbout : MenuProps['onClick'] = ({ key }) => { 
     if (key == '1') {
-
+      openVersionDialog.value = true;
     } else {
       openAboutDialog.value = true;
     }
@@ -1059,22 +1068,20 @@ import axios from 'axios';
   const dbColumns = ref<any[]>([{
     title: '名称',
     dataIndex: 'name',
-    sorter: false,
-    width: 150
+    sorter: false
   },{
     title: '地址',
     dataIndex: 'address',
-    sorter: false,
-    width: 130
+    sorter: false
   },{
     title: '用户名',
     dataIndex: 'account',
     sorter: false,
-    width: 90
+    width: 140
   },{
     title: '操作',
     dataIndex: 'operation',
-    width: 120,
+    width: 90,
     fixed: 'right'
   }]);
   // 主题
