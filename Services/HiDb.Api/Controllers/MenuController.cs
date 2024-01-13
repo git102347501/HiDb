@@ -15,21 +15,21 @@ namespace HiDb.Api.Controllers
     {
 
         [HttpGet("db")]
-        public IEnumerable<MenuDataBaseOutput> GetMenu(string? name = null)
+        public async Task<IEnumerable<MenuDataBaseOutput>> GetMenu(string? name = null)
         {
-            return GetService(ServiceFactory.GetMenu).GetDataBaseList(name);
+            return await GetService(ServiceFactory.GetMenu).GetDataBaseListAsync(name);
         }
 
         [HttpGet("mode")]
-        public IEnumerable<MenuDbModeOutput> GetModeByDb(string database)
+        public async Task<IEnumerable<MenuDbModeOutput>> GetModeByDb(string database)
         {
-            return GetService(ServiceFactory.GetMenu).GetDbModeList(database);
+            return await GetService(ServiceFactory.GetMenu).GetDbModeListAsync(database);
         }
 
         [HttpGet("table")]
-        public IEnumerable<MenuDbTableOutput> GetModeByDb(string database, string mode)
+        public async Task<IEnumerable<MenuDbTableOutput>> GetModeByDb(string database, string mode)
         {
-            return GetService(ServiceFactory.GetMenu).GetDbTableList(database, mode);
+            return await GetService(ServiceFactory.GetMenu).GetDbTableListAsync(database, mode);
         }
     }
 }

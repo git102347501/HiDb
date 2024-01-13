@@ -16,7 +16,7 @@ namespace HiDb.DataProvider.SqlServer
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        public SearchOutput GetSearchData(SearchInput input)
+        public async Task<SearchOutput> GetSearchDataAsync(SearchInput input, CancellationToken cancellationToken = default)
         {
             var query = input.noPage ? (input.Sql,"") : GetPageSql(input.Sql, input.PageSize.Value);
             if (!string.IsNullOrWhiteSpace(input.DataBase))
@@ -29,10 +29,13 @@ namespace HiDb.DataProvider.SqlServer
                                {query.Item2}";
                 }
             }
+
+            var list = await GetListAsync(query.Item1, cancellationToken);
             var res = new SearchOutput()
             {
-                List = this.GetList(query.Item1),
-                Count = this.GetCount(query.Item2)
+                List = list,
+                Count = string.IsNullOrWhiteSpace(query.Item2) ? list.Count :
+                    await GetCountAsync(query.Item2, cancellationToken)
             };
             return res;
         }
@@ -42,17 +45,18 @@ namespace HiDb.DataProvider.SqlServer
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        public int Execute(SearchInput input)
+        public async Task<int> ExecuteAsync(SearchInput input, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(input.DataBase))
             {
-                using var connection = SqlConnectionFactory.Get().CreateConnection();
-                return connection.Execute(input.Sql);
+                using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken);
+                return await connection.ExecuteAsync(input.Sql);
             }
             else
             {
-                using var connection = SqlConnectionFactory.Get().CreateConnection(input.DataBase);
-                return connection.Execute(@$"{input.Sql}");
+                using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken,
+                    input.DataBase);
+                return await connection.ExecuteAsync(@$"{input.Sql}");
             }
         }
 

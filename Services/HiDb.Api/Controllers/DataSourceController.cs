@@ -7,8 +7,8 @@ namespace HiDb.Api.Controllers
 {
     [ApiController]
     [AllowAnonymous]
-    [Route("datasorce")]
-    public class DataSorceController : MainController
+    [Route("datasource")]
+    public class DataSourceController : MainController
     {
         /// <summary>
         /// 连接数据库
@@ -16,9 +16,9 @@ namespace HiDb.Api.Controllers
         /// <param name="input"></param>
         /// <returns></returns>
         [HttpPost("connect")]
-        public ConnectDbOutput ConnectDb(ConnectDbInput input)
+        public async Task<ConnectDbOutput> ConnectDbAsync(ConnectDbInput input, CancellationToken cancellationToken)
         {
-            return GetService(ServiceFactory.GetDataSource).ConnectDb(input);
+            return await GetService(ServiceFactory.GetDataSource).ConnectDbAsync(input,cancellationToken);
         }
     }
 }

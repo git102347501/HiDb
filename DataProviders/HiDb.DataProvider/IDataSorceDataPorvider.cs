@@ -14,13 +14,13 @@ namespace HiDb.DataProvider
         /// </summary>
         /// <param name="dataSource"></param>
         /// <returns></returns>
-        public ConnectDbOutput ConnectDb(string dataSource);
+        public Task<ConnectDbOutput> ConnectDbAsync(string dataSource, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 连接数据库
         /// </summary>
         /// <param name="dataSource"></param>
         /// <returns></returns>
-        public ConnectDbOutput ConnectDb(ConnectDbInput input);
+        public Task<ConnectDbOutput> ConnectDbAsync(ConnectDbInput input, CancellationToken cancellationToken = default);
     }
 }

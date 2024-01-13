@@ -26,10 +26,10 @@ namespace HiDb.DataProvider.SqlServer
             return true;
         }
 
-        public bool Init(string conn)
+        public async Task<bool> InitAsync(string conn, CancellationToken cancellationToken)
         {
             this._connectionString = conn;
-            var res = CreateConnection();
+            var res = await CreateConnectionAsync(cancellationToken);
             if (res is {State: ConnectionState.Open})
             {
                 res.Close();
@@ -45,7 +45,8 @@ namespace HiDb.DataProvider.SqlServer
         {
             return curr;
         }
-        public IDbConnection CreateConnection(string database = "", string connectionString = "")
+        public async Task<IDbConnection> CreateConnectionAsync(CancellationToken cancellationToken = default, 
+            string database = "", string connectionString = "")
         {
             var conn = "";
             if (string.IsNullOrWhiteSpace(connectionString))
@@ -64,7 +65,7 @@ namespace HiDb.DataProvider.SqlServer
             var connection = new SqlConnection(conn);
             try
             {
-                connection.Open();
+                await connection.OpenAsync(cancellationToken);
             }
             catch
             {

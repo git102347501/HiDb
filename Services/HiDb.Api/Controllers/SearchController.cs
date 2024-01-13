@@ -27,7 +27,8 @@ namespace HiDb.Api.Controllers
         /// <param name="database"></param>
         /// <returns></returns>
         [HttpGet]
-        public SearchOutput Get(string sql, int? pageSize = null, string? database = "", bool noPage = true)
+        public async Task<SearchOutput> GetAsync(string sql, int? pageSize = null, string? database = "", bool noPage = true,
+            CancellationToken cancellationToken = default)
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -36,13 +37,13 @@ namespace HiDb.Api.Controllers
 
             try
             {
-                var res = GetService(ServiceFactory.GetSearch).GetSearchData(new SearchInput()
+                var res = await GetService(ServiceFactory.GetSearch).GetSearchDataAsync(new SearchInput()
                 {
                     DataBase = database,
                     Sql = sql,
                     PageSize = pageSize,
                     noPage = noPage
-                });
+                }, cancellationToken);
                 stopwatch.Stop();
                 res.ElapsedTime = stopwatch.Elapsed.TotalMilliseconds;
                 return res;
@@ -67,18 +68,19 @@ namespace HiDb.Api.Controllers
         /// <param name="database"></param>
         /// <returns></returns>
         [HttpPost("execute")]
-        public ExecuteOutput Execute(string sql, string? database = "")
+        public async Task<ExecuteOutput> ExecuteAsync(string sql, string? database = "",
+            CancellationToken cancellationToken = default)
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
 
             try
             {
-                var count = GetService(ServiceFactory.GetSearch).Execute(new SearchInput()
+                var count = await GetService(ServiceFactory.GetSearch).ExecuteAsync(new SearchInput()
                 {
                     DataBase = database,
                     Sql = sql
-                });
+                }, cancellationToken);
                 stopwatch.Stop();
                 return new ExecuteOutput()
                 {

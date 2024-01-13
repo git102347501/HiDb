@@ -11,6 +11,17 @@
               </a-menu>
             </template>
           </a-dropdown>
+          <div style="margin-left: 8px;">
+            <a-dropdown>
+              <a-button type="text" style="color: #fff">关于</a-button>
+              <template #overlay>
+                <a-menu value="1" @click="selectedAbout">
+                  <a-menu-item key="1">版本信息</a-menu-item>
+                  <a-menu-item key="2">开发人员</a-menu-item>
+                </a-menu>
+              </template>
+            </a-dropdown>
+          </div>
         </div>
         <div class="title">
           <span class="info" @click="getLife">
@@ -149,6 +160,7 @@
                     :filter-option="selectDbfilterOption"
                   ></a-select>
                   <a-select
+                    :disabled="!currDatabase || !currDatabase.key" 
                     v-model:value="noPage"
                     style="width: 84px; margin-left: 4px;"
                   >
@@ -169,7 +181,7 @@
                   'drap-line drap-line-right': 'drap-line'" 
                   @mousedown="editResize"></div>
                 <div class="data"  :style="{ 'height': editBodyHeight }" 
-                    v-if="!currloading">
+                    v-show="!currloading">
                     <a-table class="table"
                         v-if="isQuery && !errorMsg"
                         :columns="columns" 
@@ -196,6 +208,9 @@
                       </div>
                     </div>
                 </div>
+                <div class="opt" v-show="loading">
+                  <a-button @click="cancelQuery" type="dashed" danger>撤销查询</a-button>
+                </div> 
               </div>
             </div>
             <div v-if="viewMode == 3" class="work">
@@ -327,6 +342,12 @@
           <a-button key="submit" type="primary" :loading="submitOpenDbLoading" @click="submitOpenDb">连接</a-button>
         </template>
       </a-modal>
+      <a-modal v-model:open="openAboutDialog" width="680px" title="关于HiDb">
+        <about-dialog></about-dialog>
+        <template #footer>
+          <a-button key="back" @click="openAboutDialog = false">关闭</a-button>
+        </template>
+      </a-modal>
     </div>
 </template>
 
@@ -348,7 +369,10 @@ import { getGuid } from '@renderer/utils/guid';
 import { life } from '../api/life';
 import * as monaco from 'monaco-editor';
 import TableEdit from './table-edit/TableEdit.vue';
+import AboutDialog from './dialogs/AboutDialog.vue';
 import { deleteTable, clearTable } from '../api/table';
+import axios from 'axios';
+
   const sh = 280;
   const pageHeight = ref(0);
   const dftPageHeight = ref(0);
@@ -438,6 +462,7 @@ import { deleteTable, clearTable } from '../api/table';
   const executeNum = ref(0); // 影响行数
   const isQuery = ref(true); // 是否走查询
   const errorMsg = ref(''); // 错误消息
+  const openAboutDialog = ref(false);
   // 选中数据库名称
   const currDbName = ref('');
   // 菜单展开事件
@@ -555,6 +580,13 @@ import { deleteTable, clearTable } from '../api/table';
     document.addEventListener('mousemove', mouseMove);
     document.addEventListener('mouseup', mouseUp);
   };
+  const selectedAbout : MenuProps['onClick'] = ({ key }) => { 
+    if (key == '1') {
+
+    } else {
+      openAboutDialog.value = true;
+    }
+  }
   const selectedMenu: MenuProps['onClick'] = ({ key }) => {
     if (key == '1') {
       submitOpenDbList();
@@ -631,9 +663,8 @@ import { deleteTable, clearTable } from '../api/table';
     })
   };
   // 查询模式
-  const noPage = ref('');
+  const noPage = ref(true);
   const selectDbData = ref<Array<string>>([]);
-  const selectQueryModeOptions = ref<Array<string>>(['分页','不分页']);
   const selectDbfilterOption = (input: string, option: any) => {
     return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0;
   };
@@ -719,6 +750,8 @@ import { deleteTable, clearTable } from '../api/table';
     currDbName.value = '';
     selectDbData.value = [];
     elapsedTimeRef.value = null;
+    errorMsg.value = '';
+    noPage.value = true;
     currDatabase.value = {
       key: null,
       name: '',
@@ -1097,8 +1130,10 @@ import { deleteTable, clearTable } from '../api/table';
     }
     return false;
   }
+  var cancelToken = axios.CancelToken.source();
   // 表格主查询
   const searchData = () => {
+    cancelToken = axios.CancelToken.source();
     let sql = getSelectedText();
     if (!sql) {
       message.error('执行语句不能为空!');
@@ -1110,7 +1145,7 @@ import { deleteTable, clearTable } from '../api/table';
       execute({
         database: currDbName.value ? currDbName.value : '',
         sql: sql
-      }, currDatabase.value.type).then(res => {
+      }, currDatabase.value.type, cancelToken.token).then(res => {
         loading.value = false;
         executeNum.value = res.data.changeCount;
         elapsedTimeRef.value = res.data.elapsedTime;
@@ -1127,7 +1162,7 @@ import { deleteTable, clearTable } from '../api/table';
         sql: sql,
         pageSize: pagination.value.pageSize,
         noPage: noPage.value
-      }, currDatabase.value.type).then(res => {
+      }, currDatabase.value.type, cancelToken.token).then(res => {
         loading.value = false;
         elapsedTimeRef.value = res.data.elapsedTime;
         errorMsg.value = res.data.message;
@@ -1152,6 +1187,10 @@ import { deleteTable, clearTable } from '../api/table';
         message.error(err && err.message ? err.message : '查询失败');
       })
     }
+  }
+  // 撤销查询
+  const cancelQuery = ()=>{
+    cancelToken.cancel('您已撤销查询');
   }
   const submitDeleteTable = (database, table, mode)=>{
     Modal.confirm({
@@ -1413,6 +1452,15 @@ import { deleteTable, clearTable } from '../api/table';
                     justify-content: flex-start;
                     padding: 8px;
                     font-size: 12px;
+                  }
+                  .opt {
+                    width: 100%;
+                    height: 100%;
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 9999;
                   }
                   .error {
                     color: rgb(249, 57, 57);

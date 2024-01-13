@@ -21,9 +21,10 @@ public class TableController : MainController
     /// <param name="input"></param>
     /// <returns></returns>
     [HttpPost("column/detail")]
-    public TableColumnFullOutput GetDbColumnFullInfo(TableColumnFullInput input)
+    public async Task<TableColumnFullOutput> GetDbColumnFullInfoAsync(TableColumnFullInput input,
+        CancellationToken cancellationToken = default)
     {
-        var data = GetService(ServiceFactory.GetTable).GetDbColumnFullInfo(input);
+        var data = await GetService(ServiceFactory.GetTable).GetDbColumnFullInfoAsync(input, cancellationToken);
         return data;
     }
 
@@ -33,38 +34,73 @@ public class TableController : MainController
     /// <param name="input"></param>
     /// <returns></returns>
     [HttpPost("column/list")]
-    public List<TableColumnOutput> GetDbColumnList(TableColumnInput input)
+    public async Task<List<TableColumnOutput>> GetDbColumnListAsync(TableColumnInput input,
+        CancellationToken cancellationToken = default)
     {
-        var data = GetService(ServiceFactory.GetTable).GetDbColumnList(input);
+        var data = await GetService(ServiceFactory.GetTable).GetDbColumnListAsync(input,
+            cancellationToken);
         return data;
     }
 
+    /// <summary>
+    /// 获取支持的类型
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     [HttpPost("db-type")]
-    public List<TableDbTypeOutput> GetDbTypeList()
+    public async Task<List<TableDbTypeOutput>> GetDbTypeList(CancellationToken cancellationToken = default)
     {
-        var data = GetService(ServiceFactory.GetTable).GetDbTypeList();
+        var data = await GetService(ServiceFactory.GetTable).GetDbTypeListAsync(cancellationToken);
         return data;
     }
 
+    /// <summary>
+    /// 删除表
+    /// </summary>
+    /// <param name="database"></param>
+    /// <param name="mode"></param>
+    /// <param name="table"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     [HttpDelete]
-    public bool DeleteTable(string database, string mode, string table)
+    public async Task<bool> DeleteTable(string database, string mode, string table,
+        CancellationToken cancellationToken = default)
     {
-        var data = GetService(ServiceFactory.GetTable).DeleteTable(database, mode, table);
+        var data = await GetService(ServiceFactory.GetTable).DeleteTableAsync(database, mode, table,
+            cancellationToken);
         return data;
     }
     
+    /// <summary>
+    /// 清空表
+    /// </summary>
+    /// <param name="database"></param>
+    /// <param name="mode"></param>
+    /// <param name="table"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     [HttpPut("clear")]
     [HttpPut]
-    public bool ClearTable(string database, string mode, string table)
+    public async Task<bool> ClearTable(string database, string mode, string table,
+        CancellationToken cancellationToken = default)
     {
-        var data = GetService(ServiceFactory.GetTable).ClearTable(database, mode, table);
+        var data = await GetService(ServiceFactory.GetTable).ClearTableAsync(database, mode, table,
+            cancellationToken);
         return data;
     }
 
+    /// <summary>
+    /// 更新表列配置
+    /// </summary>
+    /// <param name="input"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     [HttpPut("column/config")]
-    public bool UpdateColumnConfig(UpdateTableColumnInput input)
+    public async Task<bool> UpdateColumnConfigAsync(UpdateTableColumnInput input,
+        CancellationToken cancellationToken = default)
     {
-        var data = GetService(ServiceFactory.GetTable).UpdateColumnConfig(input);
+        var data = await GetService(ServiceFactory.GetTable).UpdateColumnConfigAsync(input,
+            cancellationToken);
         return data;
     }
 }
