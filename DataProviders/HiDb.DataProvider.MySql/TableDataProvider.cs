@@ -14,10 +14,11 @@ namespace HiDb.DataProvider.MySql
     /// </summary>
     public class TableDataProvider : MainDataProvider, ITableDataProvider
     {
-        public TableColumnFullOutput GetDbColumnFullInfo(TableColumnFullInput input)
+        public async Task<TableColumnFullOutput> GetDbColumnFullInfoAsync(TableColumnFullInput input,
+            CancellationToken cancellationToken = default)
         {
             var use = @$"use [{input.DataBase}];";
-            return GetFirst<TableColumnFullOutput>(use + @$"SELECT 
+            return await GetFirstAsync<TableColumnFullOutput>(use + @$"SELECT 
                                 COLUMN_NAME AS Name,
                                 DATA_TYPE AS Type,
                                 IS_NULLABLE AS AllowNull,
@@ -35,34 +36,51 @@ namespace HiDb.DataProvider.MySql
                             WHERE 
                                 TABLE_CATALOG = '{input.DataBase}'
                                 AND TABLE_SCHEMA = '{input.Mode}'
-                                AND TABLE_NAME = '{input.Table}';");
+                                AND TABLE_NAME = '{input.Table}';", cancellationToken);
         }
 
-        public List<TableColumnOutput> GetDbColumnList(TableColumnInput input)
+        public async Task<List<TableColumnOutput>> GetDbColumnListAsync(TableColumnInput input,
+            CancellationToken cancellationToken = default)
         {
-            var use = @$"use [{input.DataBase}];";
-            return GetList<TableColumnOutput>(use + @$"SELECT 
-                                COLUMN_NAME AS Name,
-                                DATA_TYPE AS Type,
-                                IS_NULLABLE AS AllowNull
+            return await GetListAsync<TableColumnOutput>(@$"SELECT 
+                                column_name AS Name,
+                                data_type AS Type,
+                                is_nullable  AS AllowNull
                             FROM 
-                                INFORMATION_SCHEMA.COLUMNS
+                                information_schema.columns 
                             WHERE 
-                                TABLE_CATALOG = '{input.DataBase}'
-                                AND TABLE_SCHEMA = '{input.Mode}'
-                                AND TABLE_NAME = '{input.Table}';");
+                                table_schema= '{input.DataBase}'
+                                AND table_name= '{input.Table}';", cancellationToken);
         }
         
-        public List<TableDbTypeOutput> GetDbTypeList()
+        public async Task<List<TableDbTypeOutput>> GetDbTypeListAsync(CancellationToken cancellationToken = default)
         {
-            var res = GetList<MySqlDbTypeList>( @$"SHOW COLUMNS FROM your_table_name;");
+            var res = await GetListAsync<MySqlDbTypeList>( @$"SELECT DISTINCT COLUMN_TYPE 
+                                                    FROM information_schema.COLUMNS;", cancellationToken);
             return res.Select(c => new TableDbTypeOutput() {Name = c.COLUMNS}).ToList();
         }
 
-        public bool DeleteTable(string database, string table)
+        public async Task<bool> DeleteTableAsync(string database, string mode, string table, 
+            CancellationToken cancellationToken = default)
         {
-            var connection = SqlConnectionFactory.GetConnection();
-            return connection.Execute(@$"DROP TABLE {database}.{table};") > 1;
+            using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken);
+            return await connection.ExecuteAsync(@$"DROP TABLE {database}.{table};") > 1;
+        }
+
+        public async Task<bool> UpdateColumnConfigAsync(UpdateTableColumnInput input,
+            CancellationToken cancellationToken = default)
+        {
+            using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken);
+            var sql = @$"ALTER TABLE `{input.DataBase}`.`{input.Table}`
+                        MODIFY COLUMN `column` [{input.Type}] {(input.Required ? "NOT NULL" : "NULL")}";
+            return await connection.ExecuteAsync(sql) > 1;
+        }
+
+        public async Task<bool> ClearTableAsync(string database, string mode, string table,
+            CancellationToken cancellationToken = default)
+        {
+            using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken);
+            return await connection.ExecuteAsync(@$"TRUNCATE TABLE {database}.{table}") > 1;
         }
     }
 }

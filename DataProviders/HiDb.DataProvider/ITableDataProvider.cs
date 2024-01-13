@@ -17,17 +17,26 @@ namespace HiDb.DataProvider
         /// </summary>
         /// <param name="tableName"></param>
         /// <returns></returns>
-        public List<TableColumnOutput> GetDbColumnList(TableColumnInput input);
+        public Task<List<TableColumnOutput>> GetDbColumnListAsync(TableColumnInput input,
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 获取指定属性-全量信息
         /// </summary>
         /// <param name="tableName"></param>
         /// <returns></returns>
-        public TableColumnFullOutput GetDbColumnFullInfo(TableColumnFullInput input);
+        public Task<TableColumnFullOutput> GetDbColumnFullInfoAsync(TableColumnFullInput input,
+            CancellationToken cancellationToken = default);
 
-        List<TableDbTypeOutput> GetDbTypeList();
+        Task<List<TableDbTypeOutput>> GetDbTypeListAsync(CancellationToken cancellationToken = default);
 
-        bool DeleteTable(string database, string table);
+        Task<bool> DeleteTableAsync(string database, string mode, string table,
+            CancellationToken cancellationToken = default);
+
+        Task<bool> UpdateColumnConfigAsync(UpdateTableColumnInput input,
+            CancellationToken cancellationToken = default);
+
+        Task<bool> ClearTableAsync(string database, string mode, string table,
+            CancellationToken cancellationToken = default);
     }
 }

@@ -21,7 +21,15 @@ namespace HiDb.DataProvider.Dtos.Enums
             {
                 return null;
             }
-            return (DbTypeEnum)int.Parse(name);
+
+            try
+            {
+                return (DbTypeEnum)int.Parse(name);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("不支持的数据类型");
+            }
         }
     }
 }

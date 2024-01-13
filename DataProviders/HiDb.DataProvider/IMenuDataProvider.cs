@@ -9,31 +9,36 @@ namespace HiDb.DataProvider
         /// 获取菜单-数据库列表
         /// </summary>
         /// <returns></returns>
-        public List<MenuDataBaseOutput> GetDataBaseList(string? name = "");
+        public Task<List<MenuDataBaseOutput>> GetDataBaseListAsync(string? name = "",
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 获取菜单-数据库-表列表
         /// </summary>
         /// <returns></returns>
-        public List<MenuDbTableOutput> GetDbTableList(string database, string mode = "");
+        public Task<List<MenuDbTableOutput>> GetDbTableListAsync(string database, string mode = "",
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 获取菜单-数据库-视图列表
         /// </summary>
         /// <returns></returns>
-        public List<MenuDbViewOutput> GetDbViewList(string database, string mode = "");
+        public Task<List<MenuDbViewOutput>> GetDbViewListAsync(string database, string mode = "",
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 获取菜单-数据库-模式列表
         /// </summary>
         /// <param name="database"></param>
         /// <returns></returns>
-        List<MenuDbModeOutput> GetDbModeList(string database);
+        public Task<List<MenuDbModeOutput>> GetDbModeListAsync(string database,
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 获取菜单-数据库-存储过程列表
         /// </summary>
         /// <returns></returns>
-        public List<MenuDbSpOutput> GetDbSpList(string database, string mode = "");
+        public Task<List<MenuDbSpOutput>> GetDbSpListAsync(string database, string mode = "",
+            CancellationToken cancellationToken = default);
     }
 }

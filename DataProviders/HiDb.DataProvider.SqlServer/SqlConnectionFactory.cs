@@ -11,53 +11,68 @@ namespace HiDb.DataProvider.SqlServer
 {
     public class SqlConnectionFactory
     {
-        private static IDbConnection connection = null;
-        private static string _connectionString = "";
+        private IDbConnection _connection = null;
+        private static SqlConnectionFactory curr = new SqlConnectionFactory();
+        private string _connectionString;
 
         private SqlConnectionFactory()
         {
-            
         }
 
-        public static IDbConnection CreateConnection()
+        public bool Close()
         {
-            connection = new SqlConnection(_connectionString);
-            connection.Open();
-            return connection;
+            this._connectionString = "";
+            curr = new SqlConnectionFactory();
+            return true;
         }
 
-        public static void InitConnection(string connectionString)
+        public async Task<bool> InitAsync(string conn, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(_connectionString))
+            this._connectionString = conn;
+            var res = await CreateConnectionAsync(cancellationToken);
+            if (res is {State: ConnectionState.Open})
             {
-                _connectionString = connectionString;
-            }
-            connection = new SqlConnection(connectionString ?? _connectionString);
-            connection.Open();
-        }
-         
-        public static IDbConnection GetConnection(string connectionString = "")
-        {
-            // 如果未初始化，初始化连接
-            if (connection is not {State: ConnectionState.Open})
-            {
-                InitConnection(_connectionString);
-                return connection;
+                res.Close();
+                return true;
             }
             else
             {
-                return connection;
+                return false;
             }
         }
 
-        public static void InitConnection(ConnectDbInput input)
+        public static SqlConnectionFactory Get()
         {
-            InitConnection(GeneratorDataSource(input));
+            return curr;
         }
-
-        public static IDbConnection GetConnection(ConnectDbInput input)
+        public async Task<IDbConnection> CreateConnectionAsync(CancellationToken cancellationToken = default, 
+            string database = "", string connectionString = "")
         {
-            return GetConnection(GeneratorDataSource(input));
+            var conn = "";
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                conn = _connectionString;
+            }
+
+            if (string.IsNullOrWhiteSpace(conn))
+            {
+                throw new Exception("连接已断开，请重新连接数据库");
+            }
+            if (!string.IsNullOrWhiteSpace(database))
+            {
+                conn = conn + "Database=" + database;
+            }
+            var connection = new SqlConnection(conn);
+            try
+            {
+                await connection.OpenAsync(cancellationToken);
+            }
+            catch
+            {
+                throw new Exception("连接失败，请重新连接数据库");
+            }
+
+            return connection;
         }
 
         /// <summary>

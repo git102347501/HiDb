@@ -1,6 +1,14 @@
 <template>
-    <div class="content">
-        <a-table class="table"
+    <div class="tbedit">
+        <div class="tool">
+          <a-tooltip title="刷新表结构数据">
+              <a-button @click="loadTableColumn" 
+                :icon="h(RedoOutlined)"
+                style="margin-right: 6px;">刷新</a-button>
+          </a-tooltip>
+        </div>
+        <div class="data">
+          <a-table class="table"
               :columns="dbColumns" 
               size="small"
               style="width: 100%;"
@@ -30,24 +38,29 @@
                   <a-switch v-model:checked="record.allowNull" />
                 </template>
                 <template v-else-if="column.dataIndex === 'operation'">
-                  <a-typography-link @click="save(record.key)" style="margin-right: 8px;">保存</a-typography-link>
+                  <a-typography-link @click="saveColumnConfig(record)" :loading="record.loading" style="margin-right: 8px;">保存</a-typography-link>
                 </template>
               </template>
-        </a-table>
+          </a-table>
+        </div>
     </div>
 </template>
 <script setup lang="ts">
+import { message } from 'ant-design-vue';
 import { cloneDeep } from 'lodash-es';
-import { UnwrapRef, reactive, ref, watchEffect,onMounted,createVNode } from 'vue';
-import { getTableColumnList, getDbType } from '../../api/table';
+import { h, UnwrapRef, reactive, ref, watchEffect,onMounted,createVNode } from 'vue';
+import { getTableColumnList, getDbType, updateTableColumn } from '../../api/table';
+import {  RedoOutlined,DeleteOutlined } from '@ant-design/icons-vue';
 
 const props = defineProps(['database','mode','table','dbtype'])
 const tableHeight = ref(document.body.clientHeight);
-const sh = 280;
+const sh = 80;
+
 onMounted(() => {
   tableHeight.value = document.body.clientHeight - sh;
   window.addEventListener('resize', onResize);
   loadDbType();
+  loadTableColumn();
 });
 // 窗体大小改变事件
 const onResize = () => {
@@ -111,6 +124,7 @@ const loadTableColumn = ()=>{
     loading.value = false;
     currdbData.value = res.data;
   },()=> {
+    currdbData.value = [];
     loading.value = false;
   })
 }
@@ -124,27 +138,55 @@ const loadDbType = ()=>{
 const filterOption = (input: string, option: any) => {
   return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0;
 };
+const saveColumnConfig = (data)=>{
+  data.loading = true;
+  updateTableColumn(props.dbtype, props.database, props.mode, props.table,
+    data.name, data.type, !data.allowNull).then(res=>{
+      if (res) {
+        message.success('保存成功');
+      } else {
+        message.warning('保存失败');
+      }
+      data.loading = false;
+  },()=>{ data.loading = false; })
+}
 const clearData = ()=>{
   currdbData.value = [];
 }
 
 watchEffect(()=>{
   console.log('watch');
-  clearData();
   loadTableColumn();
 });
-
 </script>
 <style scoped lang="scss">
-.content {
+.tbedit {
     width: 100%;
     height: 100%;
     display: flex;
     flex-direction: column;
+    align-items: center;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
 
-    .table {
+    .tool {
+      width: 100%;
+      height: 40px;
+      padding: 0 12px;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    .data {
         width: 100%;
-        height: 100%;
+        height: calc(100% - 40px);
+
+        .table {
+          width: 100%;
+          height: 100%;
+        }
     }
 }
 </style>

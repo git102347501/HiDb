@@ -7,8 +7,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dataproviders", "dataprovid
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "gui", "gui", "{F44F8F57-55E6-4C56-8B6C-B8708A5DFAA9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HiDb.WinForm", "Gui\HiDb.WinForm\HiDb.WinForm.csproj", "{C392046F-D150-4336-AF64-51DA8FDE9AE1}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HiDb.DataProvider.MySql", "DataProviders\HiDb.DataProvider.MySql\HiDb.DataProvider.MySql.csproj", "{D702094A-F794-46F9-8538-4B1303A52004}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HiDb.DataProvider.SqlServer", "DataProviders\HiDb.DataProvider.SqlServer\HiDb.DataProvider.SqlServer.csproj", "{910F0A57-F28B-4955-9691-DDA1DA4C24BB}"
@@ -31,10 +29,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{C392046F-D150-4336-AF64-51DA8FDE9AE1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C392046F-D150-4336-AF64-51DA8FDE9AE1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C392046F-D150-4336-AF64-51DA8FDE9AE1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C392046F-D150-4336-AF64-51DA8FDE9AE1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D702094A-F794-46F9-8538-4B1303A52004}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D702094A-F794-46F9-8538-4B1303A52004}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D702094A-F794-46F9-8538-4B1303A52004}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -64,7 +58,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{C392046F-D150-4336-AF64-51DA8FDE9AE1} = {F44F8F57-55E6-4C56-8B6C-B8708A5DFAA9}
 		{D702094A-F794-46F9-8538-4B1303A52004} = {8AB4D31B-CE2B-4025-A483-7ACD217EDDDD}
 		{910F0A57-F28B-4955-9691-DDA1DA4C24BB} = {8AB4D31B-CE2B-4025-A483-7ACD217EDDDD}
 		{B2BEB3FC-7374-4E82-9511-9D74EA7F71AD} = {9DBEF6AD-5FEA-4DF1-B19D-C0EDFC2D3D75}

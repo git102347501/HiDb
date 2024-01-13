@@ -7,16 +7,17 @@ using System.Threading.Tasks;
 
 namespace HiDb.DataProvider.Factory
 {
-    public class ServiceFactory
+    public static class ServiceFactory
     {
         public static IDataSorceDataPorvider? GetDataSource(DbTypeEnum dbType)
         {
             switch (dbType)
             {
                 case DbTypeEnum.SqlServer:
-                    return new SqlServer.DataSorceDataPorvider();
+                    return new SqlServer.DataSourceDataProvider();
                 case DbTypeEnum.MySql:
-                    return new MySql.DataSorceDataPorvider();
+                    return new MySql.DataSourceDataProvider();
+                case DbTypeEnum.PgSql:
                 default:
                     return null;
             }
@@ -24,41 +25,32 @@ namespace HiDb.DataProvider.Factory
 
         public static IMenuDataProvider? GetMenu(DbTypeEnum dbType)
         {
-            switch (dbType)
+            return dbType switch
             {
-                case DbTypeEnum.SqlServer:
-                    return new SqlServer.MenuDataProvider();
-                case DbTypeEnum.MySql:
-                    return new MySql.MenuDataProvider();
-                default:
-                    return null;
-            }
+                DbTypeEnum.SqlServer => new SqlServer.MenuDataProvider(),
+                DbTypeEnum.MySql => new MySql.MenuDataProvider(),
+                _ => null
+            };
         }
 
         public static ISearchDataProvider? GetSearch(DbTypeEnum dbType)
         {
-            switch (dbType)
+            return dbType switch
             {
-                case DbTypeEnum.SqlServer:
-                    return new SqlServer.SearchDataProvider();
-                case DbTypeEnum.MySql:
-                    return new MySql.SearchDataProvider();
-                default:
-                    return null;
-            }
+                DbTypeEnum.SqlServer => new SqlServer.SearchDataProvider(),
+                DbTypeEnum.MySql => new MySql.SearchDataProvider(),
+                _ => null
+            };
         }
 
         public static ITableDataProvider? GetTable(DbTypeEnum dbType)
         {
-            switch (dbType)
+            return dbType switch
             {
-                case DbTypeEnum.SqlServer:
-                    return new SqlServer.TableDataProvider();
-                case DbTypeEnum.MySql:
-                    return new MySql.TableDataProvider();
-                default:
-                    return null;
-            }
+                DbTypeEnum.SqlServer => new SqlServer.TableDataProvider(),
+                DbTypeEnum.MySql => new MySql.TableDataProvider(),
+                _ => null
+            };
         }
     }
 }

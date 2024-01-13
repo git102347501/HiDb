@@ -11,19 +11,19 @@ namespace HiDb.DataProvider.MySql
     /// </summary>
     public class MenuDataProvider : MainDataProvider, IMenuDataProvider
     {
-        public List<MenuDataBaseOutput> GetDataBaseList(string? name = "")
+        public async Task<List<MenuDataBaseOutput>> GetDataBaseListAsync(string? name = "",
+            CancellationToken cancellationToken = default)
         {
-            var res = GetList<MySqlDataBaseList>("SHOW DATABASES;");
-            if (!string.IsNullOrWhiteSpace(name))
-            {
-                return res.Where(c=> c.Database.Contains(name)).Select(c => new MenuDataBaseOutput() { Name = c.Database }).ToList();
-            }
-            return res.Select(c => new MenuDataBaseOutput() { Name = c.Database }).ToList();
+            var res = await GetListAsync<MySqlDataBaseList>("SHOW DATABASES;", cancellationToken);
+            return !string.IsNullOrWhiteSpace(name) ? 
+                res.Where(c=> c.Database.Contains(name)).Select(c => new MenuDataBaseOutput() { Name = c.Database }).ToList() : 
+                res.Select(c => new MenuDataBaseOutput() { Name = c.Database }).ToList();
         }
 
-        public List<MenuDbTableOutput> GetDbTableList(string database, string mode = "")
+        public async Task<List<MenuDbTableOutput>> GetDbTableListAsync(string database, string mode = "",
+            CancellationToken cancellationToken = default)
         {
-            var res = GetList<dynamic>($@"SHOW TABLES FROM `{database}`;");
+            var res = await GetListAsync<dynamic>($@"SHOW TABLES FROM `{database}`;", cancellationToken);
 
             return res.Select(c => new MenuDbTableOutput() { 
                 Name = ((IDictionary<string, object>)c)[$"Tables_in_{database}"].ToString() ?? "" }).ToList();
@@ -34,17 +34,20 @@ namespace HiDb.DataProvider.MySql
         /// </summary>
         /// <param name="database"></param>
         /// <returns></returns>
-        public List<MenuDbModeOutput> GetDbModeList(string database)
+        public async Task<List<MenuDbModeOutput>> GetDbModeListAsync(string database,
+            CancellationToken cancellationToken = default)
         {
             return new List<MenuDbModeOutput>() { new MenuDbModeOutput() { Name = "master" } };
         }
 
-        public List<MenuDbViewOutput> GetDbViewList(string database, string mode = "")
+        public async Task<List<MenuDbViewOutput>> GetDbViewListAsync(string database, string mode = "",
+            CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
-        public List<MenuDbSpOutput> GetDbSpList(string database, string mode = "")
+        public async Task<List<MenuDbSpOutput>> GetDbSpListAsync(string database, string mode = "",
+            CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }

@@ -3,9 +3,8 @@ using DataProvider.UnitTest;
 using HiDb.DataProvider;
 using HiDb.DataProvider.Dtos.Connect;
 using Microsoft.Extensions.DependencyInjection;
-using System.Text.Json.Serialization;
 
-Console.WriteLine("Start DataProvder UT...");
+Console.WriteLine("Start DataProvider UT...");
 try
 {
 
@@ -20,12 +19,12 @@ try
     var mainService = serviceProvider.GetService<IDataSorceDataPorvider>();
     if (mainService == null)
     {
-        throw new Exception("缺少服务[IDataSorceDataPorvider]实现");
+        throw new Exception("缺少服务[IDataSourceDataProvider]实现");
     }
 
     Console.WriteLine("1. Start Connect Test...");
     // 使用注入的服务
-    var connRes = mainService.ConnectDb(new ConnectDbInput()
+    var connRes = await mainService.ConnectDbAsync(new ConnectDbInput()
     {
         Account = "sa",
         Address = "127.0.0.1",
@@ -49,24 +48,37 @@ try
     }
 
     Console.WriteLine("2. Start Get DbList Test...");
-    var dbList = menuService.GetDataBaseList();
+    var dbList = await menuService.GetDataBaseListAsync();
     Console.WriteLine("2. Get DbList:" + string.Join(",", dbList.Select(c => c.Name).ToList()));
 
     Console.WriteLine("2. Get DbList Ok!");
 
     Console.WriteLine("3. Get DbMode Test...");
-    var modeList = menuService.GetDbModeList(dbList.FirstOrDefault().Name);
-    Console.WriteLine("3. Get DbMode:" + string.Join(",", modeList.Select(c => c.Name).ToList()));
-    Console.WriteLine("3. Get DbMode Ok!");
+    var database = dbList.FirstOrDefault()?.Name;
+    if (database != null)
+    {
+        var modeList = await menuService.GetDbModeListAsync(database);
+        Console.WriteLine("3. Get DbMode:" + string.Join(",", modeList.Select(c => c.Name).ToList()));
+        Console.WriteLine("3. Get DbMode Ok!");
 
-    Console.WriteLine("4. Get DbTable Test...");
-    var tableList = menuService.GetDbTableList(modeList.FirstOrDefault().Name, dbList.FirstOrDefault().Name);
-    Console.WriteLine("4. Get DbTable:" + string.Join(",", tableList.Select(c => c.Name).ToList()));
+        Console.WriteLine("4. Get DbTable Test...");
+        var name = dbList.FirstOrDefault()?.Name;
+        if (name != null)
+        {
+            var s = modeList.FirstOrDefault()?.Name;
+            if (s != null)
+            {
+                var tableList = await menuService.GetDbTableListAsync(s, name);
+                Console.WriteLine("4. Get DbTable:" + string.Join(",", tableList.Select(c => c.Name).ToList()));
+            }
+        }
+    }
+
     Console.WriteLine("4. Get DbTable Ok!");
 }
 catch (Exception ex)
 {
     Console.WriteLine("Test Err:" + ex.Message);
 }
-Console.WriteLine("DataProvder UT Finish!");
+Console.WriteLine("DataProvider UT Finish!");
 Console.WriteLine("Exit");

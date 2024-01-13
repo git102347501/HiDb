@@ -4,47 +4,51 @@ namespace HiDb.DataProvider.MySql
 {
     public class MainDataProvider
     {
-        public List<T> GetList<T>(string sql, string database = "")
+        public async Task<List<T>> GetListAsync<T>(string sql, 
+            CancellationToken cancellationToken = default, string database = "")
         {
             if (string.IsNullOrWhiteSpace(sql))
             {
                 return new List<T>();
             }
-            var connection = SqlConnectionFactory.GetConnection(database);
-            var result = connection.Query<T>(sql);
+            using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken, database);
+            var result = await connection.QueryAsync<T>(sql);
             return result.ToList();
         }
 
-        public long GetCount(string sql, string database = "")
+        public async Task<long> GetCountAsync(string sql, CancellationToken cancellationToken = default,
+            string database = "")
         {
             if (string.IsNullOrWhiteSpace(sql))
             {
                 return 0;
             }
-            var connection = SqlConnectionFactory.GetConnection(database);
-            var result = connection.QueryFirstOrDefault<long>(sql);
+            using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken, database);
+            var result = await connection.QueryFirstOrDefaultAsync<long>(sql);
             return result;
         }
 
-        public List<dynamic> GetList(string sql, string database = "")
+        public async Task<List<dynamic>> GetListAsync(string sql, CancellationToken cancellationToken = default,
+            string database = "")
         {
             if (string.IsNullOrWhiteSpace(sql))
             {
                 return new List<dynamic>();
             }
-            var connection = SqlConnectionFactory.GetConnection(database);
-            var result = connection.Query<dynamic>(sql);
+            using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken, database);
+            var result = await connection.QueryAsync<dynamic>(sql);
             return result.ToList();
         }
 
-        public T GetFirst<T>(string sql, string database = "") where T : new ()
+        public async Task<T> GetFirstAsync<T>(string sql, CancellationToken cancellationToken = default,
+            string database = "") where T : new()
         {
             if (string.IsNullOrWhiteSpace(sql))
             {
                 return new T();
             }
-            var connection = SqlConnectionFactory.GetConnection(database);
-            var result = connection.QueryFirst<T>(sql);
+            using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken, database);
+            var result = await connection.QueryFirstAsync<T>(sql);
             return result;
         }
     }

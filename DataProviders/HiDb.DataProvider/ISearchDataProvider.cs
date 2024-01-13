@@ -14,8 +14,8 @@ namespace HiDb.DataProvider
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        SearchOutput GetSearchData(SearchInput input);
+        Task<SearchOutput> GetSearchDataAsync(SearchInput input, CancellationToken cancellationToken = default);
 
-        int Execute(SearchInput input);
+        Task<int> ExecuteAsync(SearchInput input, CancellationToken cancellationToken = default);
     }
 }

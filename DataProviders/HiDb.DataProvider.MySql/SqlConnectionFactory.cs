@@ -12,59 +12,67 @@ namespace HiDb.DataProvider.MySql
 {
     public class SqlConnectionFactory
     {
-        private static IDbConnection connection = null;
-        private static string _connectionString = "";
+       
+        private IDbConnection _connection = null;
+        private static SqlConnectionFactory curr = new SqlConnectionFactory();
+        private string _connectionString;
 
         private SqlConnectionFactory()
         {
-            
         }
-
-        public static void InitConnection(string connectionString)
+        
+        public static SqlConnectionFactory Get()
         {
-            if (string.IsNullOrWhiteSpace(_connectionString))
+            return curr;
+        }
+        
+        public async Task<IDbConnection> CreateConnectionAsync(CancellationToken cancellationToken = default, 
+            string database = "", string connectionString = "")
+        {
+            var conn = "";
+            if (string.IsNullOrWhiteSpace(connectionString))
             {
-                _connectionString = connectionString;
+                conn = _connectionString;
             }
-            connection = new MySqlConnection(connectionString ?? _connectionString);
-            connection.Open();
-        }
-         
-        public static IDbConnection GetConnection(string database = "", string connectionString = "")
-        {
-            if (connection != null)
+
+            if (string.IsNullOrWhiteSpace(conn))
             {
-                if (!string.IsNullOrWhiteSpace(database))
-                {
-                    var useDatabaseSql = $"USE `{database}`;";
-                    connection.Execute(useDatabaseSql);
-                }
-                return connection;
-            } 
-            else
+                throw new Exception("连接已断开，请重新连接数据库");
+            }
+            
+            try
             {
-                connection = new MySqlConnection(connectionString ?? _connectionString);
+                var connection = new MySqlConnection(conn);
+                await connection.OpenAsync(cancellationToken);
                 if (!string.IsNullOrWhiteSpace(database))
                 {
                     var useDatabaseSql = $"USE {database};";
-                    connection.Execute(useDatabaseSql);
+                    await connection.ExecuteAsync(useDatabaseSql);
                 }
 
-                connection.Open();
                 return connection;
+            }
+            catch
+            {
+                throw new Exception("连接失败，请重新连接数据库");
             }
         }
 
-        public static void InitConnection(ConnectDbInput input)
+        public async Task<bool> InitAsync(string conn, CancellationToken cancellationToken)
         {
-            InitConnection(GeneratorDataSource(input));
+            this._connectionString = conn;
+            var res = await CreateConnectionAsync(cancellationToken);
+            if (res is { State: ConnectionState.Open })
+            {
+                res.Close();
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
-
-        public static IDbConnection GetConnection(ConnectDbInput input)
-        {
-            return GetConnection(GeneratorDataSource(input));
-        }
-
+        
         /// <summary>
         /// 拼接MySQL连接字符串
         /// </summary>
@@ -92,18 +100,6 @@ namespace HiDb.DataProvider.MySql
             connectionString.Append(";Pwd=");
             connectionString.Append(input.PassWord);
             connectionString.Append(";");
-            //if (input.TrustCert.HasValue)
-            //{
-            //    connectionString.Append($"SslMode={input.TrustCert.ToString()};");
-            //}
-            //if (input.Encrypt.HasValue)
-            //{
-            //    connectionString.Append($"AllowPublicKeyRetrieval={input.Encrypt.ToString()};");
-            //}
-            //if (input.TrustedConnection.HasValue)
-            //{
-            //    connectionString.Append($"TrustServerCertificate={input.TrustedConnection.ToString()};");
-            //}
             return connectionString.ToString();
         }
     }

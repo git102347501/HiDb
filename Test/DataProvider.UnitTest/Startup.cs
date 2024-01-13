@@ -14,7 +14,7 @@ namespace DataProvider.UnitTest
         public void ConfigureServices(IServiceCollection services)
         {
             // 注册需要注入的服务
-            services.AddTransient<IDataSorceDataPorvider, DataSorceDataPorvider>();
+            services.AddTransient<IDataSorceDataPorvider, DataSourceDataProvider>();
             services.AddTransient<IMenuDataProvider, MenuDataProvider>();
             services.AddTransient<ITableDataProvider, TableDataProvider>();
             services.AddTransient<ISearchDataProvider, SearchDataProvider>();

@@ -41,7 +41,7 @@ function onAppReady() {
     console.log('启动win后台子进程-HiDb.Api')
     runAppInBackground();
   } else if (process.platform === 'darwin') {
-    //console.log('启动mac后台子进程-HiDb.Api')
+    console.log('启动mac后台子进程-HiDb.Api')
     //runAppInMacBackground()
   } else {
     // 其他平台的逻辑

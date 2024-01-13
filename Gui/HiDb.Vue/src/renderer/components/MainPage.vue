@@ -11,10 +11,21 @@
               </a-menu>
             </template>
           </a-dropdown>
+          <div style="margin-left: 8px;">
+            <a-dropdown>
+              <a-button type="text" style="color: #fff">关于</a-button>
+              <template #overlay>
+                <a-menu value="1" @click="selectedAbout">
+                  <a-menu-item key="1">版本信息</a-menu-item>
+                  <a-menu-item key="2">开发人员</a-menu-item>
+                </a-menu>
+              </template>
+            </a-dropdown>
+          </div>
         </div>
         <div class="title">
           <span class="info" @click="getLife">
-            <span>
+            <a-tooltip title="点击重新尝试连接">
               <span v-if="lifeTest == 1">
                 <wifi-outlined :width="20" :height="20" style="margin-right: 4px;" />服务连接中...</span>
               <span style="color: green" v-if="lifeTest == 9">
@@ -25,7 +36,7 @@
                 <wifi-outlined :width="20" :height="20" style="margin-right: 4px;" />
                 服务未连接
               </span>
-          </span>
+            </a-tooltip>
             <span style="margin-left: 10px;">|</span>
           </span>
           <span v-if="currDatabase.type != null && currDatabase.type!= undefined" class="info">
@@ -111,6 +122,7 @@
                             <a-menu-item key="31">查看表数据</a-menu-item>
                             <a-menu-item key="32">编辑表结构</a-menu-item>
                             <a-menu-item key="33">删除表</a-menu-item>
+                            <a-menu-item key="34">清空表</a-menu-item>
                           </div>
                         </a-menu>
                       </template>
@@ -147,6 +159,17 @@
                     :options="selectDbData"
                     :filter-option="selectDbfilterOption"
                   ></a-select>
+                  <a-select
+                    :disabled="!currDatabase || !currDatabase.key" 
+                    v-model:value="noPage"
+                    style="width: 84px; margin-left: 4px;"
+                  >
+                    <a-select-option :value="true">不分页</a-select-option>
+                    <a-select-option :value="false">分页</a-select-option>
+                  </a-select>
+                  <a-input-number v-if="!noPage"
+                    style="margin-left: 4px;width: 84px;text-align: center;"
+                    id="pageSize" v-model:value="pagination.pageSize" :min="1" />
                 </div>
               </div>
               <div class="context" >
@@ -158,7 +181,7 @@
                   'drap-line drap-line-right': 'drap-line'" 
                   @mousedown="editResize"></div>
                 <div class="data"  :style="{ 'height': editBodyHeight }" 
-                    v-if="!currloading">
+                    v-show="!currloading">
                     <a-table class="table"
                         v-if="isQuery && !errorMsg"
                         :columns="columns" 
@@ -185,14 +208,17 @@
                       </div>
                     </div>
                 </div>
+                <div class="opt" v-show="loading">
+                  <a-button @click="cancelQuery" type="dashed" danger>撤销查询</a-button>
+                </div> 
               </div>
             </div>
-            <div v-show="viewMode == 3" class="work">
-              <my-sql-edit 
+            <div v-if="viewMode == 3" class="work">
+              <table-edit
                 :database="editTableData.database" 
                 :table="editTableData.table" 
                 :mode="editTableData.mode" 
-                :dbtype="editTableData.dbtype"></my-sql-edit>
+                :dbtype="editTableData.dbtype" />
             </div>
             <div  v-show="viewMode == 1" class="work" :style="{ 'width': bodyWidth }">
               编辑数据库
@@ -316,6 +342,12 @@
           <a-button key="submit" type="primary" :loading="submitOpenDbLoading" @click="submitOpenDb">连接</a-button>
         </template>
       </a-modal>
+      <a-modal v-model:open="openAboutDialog" width="680px" title="关于HiDb">
+        <about-dialog></about-dialog>
+        <template #footer>
+          <a-button key="back" @click="openAboutDialog = false">关闭</a-button>
+        </template>
+      </a-modal>
     </div>
 </template>
 
@@ -336,8 +368,11 @@ import { DataType } from 'vue-request';
 import { getGuid } from '@renderer/utils/guid';
 import { life } from '../api/life';
 import * as monaco from 'monaco-editor';
-import MySqlEdit from './table-edit/MySqlEdit.vue';
-import { deleteTable } from '../api/table';
+import TableEdit from './table-edit/TableEdit.vue';
+import AboutDialog from './dialogs/AboutDialog.vue';
+import { deleteTable, clearTable } from '../api/table';
+import axios from 'axios';
+
   const sh = 280;
   const pageHeight = ref(0);
   const dftPageHeight = ref(0);
@@ -377,23 +412,37 @@ import { deleteTable } from '../api/table';
       }
     })
     monaco.languages.registerCompletionItemProvider('sql', {
-      triggerCharacters: ['from', 'FROM'],
+      triggerCharacters: ['@'],
       provideCompletionItems: (model, position) => {
-        let suggestions = []
-        suggestions = tables.map((item: any) => {
-          return {
-            label: item,
-            kind: item,
-            insertText: item
-          }
-        })
+        let suggestions = refCurrDbTableList();
         return {
-          suggestions,
+          suggestions
         }
       }
     })
   }
-  const tables = ['table1','table2'];
+  const refCurrDbTableList: any = () => {
+    console.log('refCurrDbTableList');
+    if (!currDbName.value || !treeData.value || treeData.value.length < 1) {
+      return [];
+    }
+    let currDb = treeData.value.find(c => c.title == currDbName.value);
+    if (!currDb || !currDb.children || currDb.children.length < 1) {
+      return [];
+    }
+    let currMode = currDb.children[0];
+    if (!currMode || !currMode.children || currMode.children.length < 1) {
+      return [];
+    } else {
+      return currMode.children.map((item: any) => {
+        return {
+          label: item.title,
+          kind: item.title,
+          insertText: item.title
+        }
+      });
+    }
+  }
   // 窗体大小改变事件
   const onResize = () => {
     pageHeight.value = document.body.clientHeight - sh;
@@ -413,10 +462,59 @@ import { deleteTable } from '../api/table';
   const executeNum = ref(0); // 影响行数
   const isQuery = ref(true); // 是否走查询
   const errorMsg = ref(''); // 错误消息
-  // // 菜单展开事件
-  // watch(expandedMenuKeys, () => {
-  //   console.log('expandedKeys', expandedMenuKeys);
-  // });
+  const openAboutDialog = ref(false);
+  // 选中数据库名称
+  const currDbName = ref('');
+  // 菜单展开事件
+  watch(currDbName, () => {
+    console.log(currDbName.value);
+    let currDb = treeData.value.find(c => c.title == currDbName.value);
+    if (!currDb) {
+      return;
+    }
+    if (!currDb.children || currDb.children.length < 1) {
+      getMode(currDbName.value, currDatabase.value.type).then(res=>{
+        if (!res.data || res.data.length < 1) {
+          return [];
+        }
+        currDb.children = res.data.map(c => {
+          return {            
+            title: c.name,
+            key: currDbName.value + '_' + c.name,
+            isLeaf: false,
+            type: 'mode',
+            database: currDbName.value
+          }
+        });
+        let currMode = currDb.children[0];
+        getTable(currMode.database, currMode.title, currDatabase.value.type).then(res=>{
+          if (!res.data || !res.data || res.data.length < 1) {
+            currMode.children = [{            
+              title: '暂无表数据',
+              key: '暂无表数据',
+              isLeaf: true,
+              disabled: true,
+              type: 'tablenull',
+            }];
+          } else {
+            currMode.children = res.data.map(c => {
+              return {            
+                title: c.name,
+                key: c.name,
+                isLeaf: true,
+                type: 'table',
+                mode: currMode.title,
+                database: currMode.database
+              }
+            });
+          }
+          treeData.value = [...treeData.value];
+        });
+      },() => {
+        message.error('获取数据库信息失败');
+      })
+    } 
+  });
   const dbTypeOptions = [{
     value: 0,
     label: 'SqlServer',
@@ -482,6 +580,13 @@ import { deleteTable } from '../api/table';
     document.addEventListener('mousemove', mouseMove);
     document.addEventListener('mouseup', mouseUp);
   };
+  const selectedAbout : MenuProps['onClick'] = ({ key }) => { 
+    if (key == '1') {
+
+    } else {
+      openAboutDialog.value = true;
+    }
+  }
   const selectedMenu: MenuProps['onClick'] = ({ key }) => {
     if (key == '1') {
       submitOpenDbList();
@@ -557,6 +662,8 @@ import { deleteTable } from '../api/table';
       currloading.value = false;
     })
   };
+  // 查询模式
+  const noPage = ref(true);
   const selectDbData = ref<Array<string>>([]);
   const selectDbfilterOption = (input: string, option: any) => {
     return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0;
@@ -578,11 +685,13 @@ import { deleteTable } from '../api/table';
   const cancel = (key: string) => {
     delete editableData[key];
   };
+  
   const deleteDbRow = (key: string)=>{
     let index = currdbData.value.findIndex(item => key === item.key);
     currdbData.value.splice(index, 1);
     localStorage.setItem('hidbdata', JSON.stringify(currdbData.value));
   }
+
   const openDbModel = reactive<ConnectDbInput>({
     key: getGuid(),
     name: '',
@@ -596,6 +705,7 @@ import { deleteTable } from '../api/table';
     encrypt: true,
     saveLocal: true
   });
+
   const onContextMenuClick = (treeKey: string, menuKey: string | number, data: any) => {
     if (menuKey == '11') {
       viewMode.value = 1;
@@ -612,19 +722,18 @@ import { deleteTable } from '../api/table';
       }
       searchData();
     } else if (menuKey == '32') {
-      editTableData.value = {
-        database: currRightData.value.database,
-        table: currRightData.value.title,
-        mode: currRightData.value.mode,
-        dbtype: currDatabase.value.type
-      }
+      editTableData.value.database = currRightData.value.database;
+      editTableData.value.table = currRightData.value.title;
+      editTableData.value.mode = currRightData.value.mode;
+      editTableData.value.dbtype = currDatabase.value.type;
       console.log(editTableData)
       viewMode.value = 3;
     } else if (menuKey == '33') {
       submitDeleteTable(currRightData.value.database, currRightData.value.title,
-      currRightData.value.mode);
+        currRightData.value.mode);
     } else if (menuKey == '34') {
-      viewMode.value = 3;
+      submitClearTable(currRightData.value.database, currRightData.value.title,
+        currRightData.value.mode);
     }
   };
   // 清空当前数据库数据
@@ -640,6 +749,9 @@ import { deleteTable } from '../api/table';
     pagination.value.pageSize = 100;
     currDbName.value = '';
     selectDbData.value = [];
+    elapsedTimeRef.value = null;
+    errorMsg.value = '';
+    noPage.value = true;
     currDatabase.value = {
       key: null,
       name: '',
@@ -653,6 +765,7 @@ import { deleteTable } from '../api/table';
       encrypt: true,
       saveLocal: true
     };
+    viewMode.value = 0;
     columns.value = [];
   }
   // 打开数据库连接
@@ -853,7 +966,7 @@ import { deleteTable } from '../api/table';
   };
 
   // 刷新模式下表列表
-  const refDatabaseTable = (database, mode) => {
+  const refDatabaseTable = (database, mode, msg = true) => {
     let currDb = treeData.value.find(c => c.title == database);
     if (!currDb || !currDb.children) {
       message.error('未找到数据库节点信息');
@@ -886,12 +999,11 @@ import { deleteTable } from '../api/table';
         });
       }
       treeData.value = [...treeData.value];
-      message.success('刷新[' + database + '.' + mode + ']成功');
+      if (msg) {
+        message.success('刷新[' + database + '.' + mode + ']成功');
+      }
     });
   }
-
-  // 选中表
-  const currDbName = ref('');
   // 树目录选择事件
   const onSelect = (selectedKeys, e)=>{
     console.log('onSelect');
@@ -1008,7 +1120,7 @@ import { deleteTable } from '../api/table';
   }
 
   // 执行耗时/毫秒
-  const elapsedTimeRef = ref<number>(0);
+  const elapsedTimeRef = ref<number | null>(0);
   const isSelect = (val)=>{
     if(val.includes('select') ){
       return true;
@@ -1018,8 +1130,10 @@ import { deleteTable } from '../api/table';
     }
     return false;
   }
+  var cancelToken = axios.CancelToken.source();
   // 表格主查询
   const searchData = () => {
+    cancelToken = axios.CancelToken.source();
     let sql = getSelectedText();
     if (!sql) {
       message.error('执行语句不能为空!');
@@ -1031,7 +1145,7 @@ import { deleteTable } from '../api/table';
       execute({
         database: currDbName.value ? currDbName.value : '',
         sql: sql
-      }, currDatabase.value.type).then(res => {
+      }, currDatabase.value.type, cancelToken.token).then(res => {
         loading.value = false;
         executeNum.value = res.data.changeCount;
         elapsedTimeRef.value = res.data.elapsedTime;
@@ -1046,8 +1160,9 @@ import { deleteTable } from '../api/table';
       getSearch({
         database: currDbName.value ? currDbName.value : '',
         sql: sql,
-        pageSize: pagination.value.pageSize
-      }, currDatabase.value.type).then(res => {
+        pageSize: pagination.value.pageSize,
+        noPage: noPage.value
+      }, currDatabase.value.type, cancelToken.token).then(res => {
         loading.value = false;
         elapsedTimeRef.value = res.data.elapsedTime;
         errorMsg.value = res.data.message;
@@ -1073,6 +1188,10 @@ import { deleteTable } from '../api/table';
       })
     }
   }
+  // 撤销查询
+  const cancelQuery = ()=>{
+    cancelToken.cancel('您已撤销查询');
+  }
   const submitDeleteTable = (database, table, mode)=>{
     Modal.confirm({
       title: '确认要删除表[' + table + ']吗？',
@@ -1082,10 +1201,10 @@ import { deleteTable } from '../api/table';
       cancelText: '取消',
       onOk() {
         return new Promise((resolve, reject) => {
-          deleteTable(currDatabase.value.type, database, table).then(dres=>{
+          deleteTable(currDatabase.value.type, database, mode, table).then(dres=>{
             if (dres) {
               message.success('删除成功');
-              refDatabaseTable(database, mode);
+              refDatabaseTable(database, mode, false);
             } else {
               message.warning('删除失败');
             }
@@ -1094,7 +1213,31 @@ import { deleteTable } from '../api/table';
             message.error('删除错误');
             reject(false)
           })
-        }).catch(() => console.log('Oops errors!'));
+        });
+      },
+    });
+  }
+  const submitClearTable = (database, table, mode)=>{
+    Modal.confirm({
+      title: '确认要清空表[' + table + ']数据吗？',
+      icon: createVNode(ExclamationCircleOutlined),
+      content: '请谨慎操作，删除的数据不可恢复',
+      okText: '确认',
+      cancelText: '取消',
+      onOk() {
+        return new Promise((resolve, reject) => {
+          clearTable(currDatabase.value.type, database, mode, table).then(dres=>{
+            if (dres) {
+              message.success('清空成功');
+            } else {
+              message.warning('清空失败');
+            }
+            resolve(true);
+          }, () => {
+            message.error('清空错误');
+            reject(false)
+          })
+        });
       },
     });
   }
@@ -1229,6 +1372,9 @@ import { deleteTable } from '../api/table';
               justify-content: space-between;
 
               .tool-right {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
               }
           }
           .context {
@@ -1306,6 +1452,15 @@ import { deleteTable } from '../api/table';
                     justify-content: flex-start;
                     padding: 8px;
                     font-size: 12px;
+                  }
+                  .opt {
+                    width: 100%;
+                    height: 100%;
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 9999;
                   }
                   .error {
                     color: rgb(249, 57, 57);

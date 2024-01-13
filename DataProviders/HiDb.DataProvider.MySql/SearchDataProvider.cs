@@ -16,14 +16,17 @@ namespace HiDb.DataProvider.MySql
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        public SearchOutput GetSearchData(SearchInput input)
+        public async Task<SearchOutput> GetSearchDataAsync(SearchInput input,
+            CancellationToken cancellationToken = default)
         {
-            var query = GetPageSql(input.Sql, input.PageSize.Value);
+            var query = input.noPage ? (input.Sql, "") : GetPageSql(input.Sql, input.PageSize.Value);
 
+            var list = await GetListAsync(query.Item1, cancellationToken);
             var res = new SearchOutput()
             {
-                List = this.GetList(query.Item1, input.DataBase),
-                Count = this.GetCount(query.Item2, input.DataBase)
+                List = list,
+                Count = string.IsNullOrWhiteSpace(query.Item2) ? list.Count :
+                    await GetCountAsync(query.Item2, cancellationToken)
             };
             return res;
         }
@@ -33,10 +36,10 @@ namespace HiDb.DataProvider.MySql
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        public int Execute(SearchInput input)
+        public async Task<int> ExecuteAsync(SearchInput input, CancellationToken cancellationToken = default)
         {
-            var connection = SqlConnectionFactory.GetConnection(input.DataBase);
-            return connection.Execute(input.Sql, input.DataBase);
+            var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken, input.DataBase);
+            return await connection.ExecuteAsync(input.Sql, input.DataBase);
         }
 
         private (string,string) GetPageSql(string sql, int pageSize)

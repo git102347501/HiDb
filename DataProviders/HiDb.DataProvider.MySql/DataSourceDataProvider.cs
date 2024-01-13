@@ -12,13 +12,14 @@ namespace HiDb.DataProvider.MySql
     /// <summary>
     /// 数据库连接实现
     /// </summary>
-    public class DataSorceDataPorvider : MainDataProvider, IDataSorceDataPorvider
+    public class DataSourceDataProvider : MainDataProvider, IDataSorceDataPorvider
     {
-        public ConnectDbOutput ConnectDb(string dataSource)
+        public async Task<ConnectDbOutput> ConnectDbAsync(string dataSource, 
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                SqlConnectionFactory.InitConnection(dataSource);
+                await SqlConnectionFactory.Get().InitAsync(dataSource, cancellationToken);
                 return new ConnectDbOutput() { Success = true };
             }
             catch (Exception ex)
@@ -27,11 +28,10 @@ namespace HiDb.DataProvider.MySql
             }
         }
 
-        public ConnectDbOutput ConnectDb(ConnectDbInput input)
+        public async Task<ConnectDbOutput> ConnectDbAsync(ConnectDbInput input, 
+            CancellationToken cancellationToken = default)
         {
-            return ConnectDb(SqlConnectionFactory.GeneratorDataSource(input));
+            return await ConnectDbAsync(SqlConnectionFactory.GeneratorDataSource(input), cancellationToken);
         }
-
-
     }
 }
