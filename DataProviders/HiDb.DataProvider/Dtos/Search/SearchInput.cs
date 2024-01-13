@@ -18,6 +18,8 @@ namespace HiDb.DataProvider.Dtos.Search
         /// </summary>
         public string Sql { get; set; }
 
+        public bool noPage { get; set; }
+
         public int? PageSize { get; set; }
     }
 }

@@ -18,7 +18,7 @@ namespace HiDb.DataProvider.MySql
         /// <returns></returns>
         public SearchOutput GetSearchData(SearchInput input)
         {
-            var query = GetPageSql(input.Sql, input.PageSize.Value);
+            var query = input.noPage ? (input.Sql, "") : GetPageSql(input.Sql, input.PageSize.Value);
 
             var res = new SearchOutput()
             {

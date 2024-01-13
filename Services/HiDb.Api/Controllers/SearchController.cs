@@ -27,7 +27,7 @@ namespace HiDb.Api.Controllers
         /// <param name="database"></param>
         /// <returns></returns>
         [HttpGet]
-        public SearchOutput Get(string sql, int? pageSize = null, string? database = "")
+        public SearchOutput Get(string sql, int? pageSize = null, string? database = "", bool noPage = true)
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -40,7 +40,8 @@ namespace HiDb.Api.Controllers
                 {
                     DataBase = database,
                     Sql = sql,
-                    PageSize = pageSize
+                    PageSize = pageSize,
+                    noPage = noPage
                 });
                 stopwatch.Stop();
                 res.ElapsedTime = stopwatch.Elapsed.TotalMilliseconds;

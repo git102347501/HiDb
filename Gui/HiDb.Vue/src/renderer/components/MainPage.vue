@@ -148,6 +148,16 @@
                     :options="selectDbData"
                     :filter-option="selectDbfilterOption"
                   ></a-select>
+                  <a-select
+                    v-model:value="noPage"
+                    style="width: 84px; margin-left: 4px;"
+                  >
+                    <a-select-option :value="true">不分页</a-select-option>
+                    <a-select-option :value="false">分页</a-select-option>
+                  </a-select>
+                  <a-input-number v-if="!noPage"
+                    style="margin-left: 4px;width: 84px;text-align: center;"
+                    id="pageSize" v-model:value="pagination.pageSize" :min="1" />
                 </div>
               </div>
               <div class="context" >
@@ -620,7 +630,10 @@ import { deleteTable, clearTable } from '../api/table';
       currloading.value = false;
     })
   };
+  // 查询模式
+  const noPage = ref('');
   const selectDbData = ref<Array<string>>([]);
+  const selectQueryModeOptions = ref<Array<string>>(['分页','不分页']);
   const selectDbfilterOption = (input: string, option: any) => {
     return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0;
   };
@@ -1112,7 +1125,8 @@ import { deleteTable, clearTable } from '../api/table';
       getSearch({
         database: currDbName.value ? currDbName.value : '',
         sql: sql,
-        pageSize: pagination.value.pageSize
+        pageSize: pagination.value.pageSize,
+        noPage: noPage.value
       }, currDatabase.value.type).then(res => {
         loading.value = false;
         elapsedTimeRef.value = res.data.elapsedTime;
@@ -1319,6 +1333,9 @@ import { deleteTable, clearTable } from '../api/table';
               justify-content: space-between;
 
               .tool-right {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
               }
           }
           .context {

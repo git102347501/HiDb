@@ -18,7 +18,7 @@ namespace HiDb.DataProvider.SqlServer
         /// <returns></returns>
         public SearchOutput GetSearchData(SearchInput input)
         {
-            var query = GetPageSql(input.Sql, input.PageSize.Value);
+            var query = input.noPage ? (input.Sql,"") : GetPageSql(input.Sql, input.PageSize.Value);
             if (!string.IsNullOrWhiteSpace(input.DataBase))
             {
                 query.Item1 = @$"use [{input.DataBase}];
