@@ -31,6 +31,6 @@ Contribution Guide （贡献指南）
   - 确保你的代码能够兼容多平台运行
   - 遵守项目分层约束代码职责统一
 
-## 分支策略 Branch strategy
+## Branch strategy （分支策略）
 - Please fork the project and PR it to the project development layer for code review after completion of development
 - 请fork项目，在完成开发后pr到项目develop层以待代码审阅
