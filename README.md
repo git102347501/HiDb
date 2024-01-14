@@ -43,5 +43,5 @@ Supports multiple platforms on Windows and Mac, runs completely offline locally,
 
   Deploy backend services on your server, with only graphical interfaces running on the desktop for use
 
-# Contribution Guide
-- [贡献指南](CONTRIBUTING.md)
+# Contribution Guide （贡献指南）
+- [Contribution](CONTRIBUTING.md)
