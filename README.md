@@ -26,7 +26,8 @@ Supports multiple platforms on Windows and Mac, runs completely offline locally,
 # Gui
 - Electron for Vue3
 
-  ![image](https://github.com/git102347501/HiDb/assets/37917403/0b0d255c-d206-4d5d-a8a0-a7a389ce2954)
+  <img width="1512" alt="image" src="https://github.com/git102347501/HiDb/assets/37917403/ba27b268-3052-4b1b-86a0-128b9f8036a3">
+
 
 - WinForm (Plan)
 - WPF (Plan)
