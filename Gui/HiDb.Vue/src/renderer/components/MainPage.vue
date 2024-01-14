@@ -1353,7 +1353,6 @@ import axios from 'axios';
         width: 5px;
         background-color: #fffefe;
         cursor: col-resize;
-        z-index: 999;
       }
       .drap-line-left {
         border-left: #dbd7d7 2px solid;
@@ -1401,7 +1400,6 @@ import axios from 'axios';
                 height: 1px;
                 background-color: #fffefe;
                 cursor: row-resize;
-                z-index: 999;
                 margin: 4px 0;
               }
               .drap-line-left {
