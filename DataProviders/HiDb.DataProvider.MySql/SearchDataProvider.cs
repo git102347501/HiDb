@@ -21,12 +21,12 @@ namespace HiDb.DataProvider.MySql
         {
             var query = input.noPage ? (input.Sql, "") : GetPageSql(input.Sql, input.PageSize.Value);
 
-            var list = await GetListAsync(query.Item1, cancellationToken);
+            var list = await GetListAsync(query.Item1, cancellationToken, input.DataBase);
             var res = new SearchOutput()
             {
                 List = list,
                 Count = string.IsNullOrWhiteSpace(query.Item2) ? list.Count :
-                    await GetCountAsync(query.Item2, cancellationToken)
+                    await GetCountAsync(query.Item2, cancellationToken, input.DataBase)
             };
             return res;
         }

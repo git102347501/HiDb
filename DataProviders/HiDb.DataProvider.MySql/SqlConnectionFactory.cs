@@ -27,7 +27,7 @@ namespace HiDb.DataProvider.MySql
         }
         
         public async Task<IDbConnection> CreateConnectionAsync(CancellationToken cancellationToken = default, 
-            string database = "", string connectionString = "")
+            string? database = "", string connectionString = "")
         {
             var conn = "";
             if (string.IsNullOrWhiteSpace(connectionString))
@@ -46,7 +46,7 @@ namespace HiDb.DataProvider.MySql
                 await connection.OpenAsync(cancellationToken);
                 if (!string.IsNullOrWhiteSpace(database))
                 {
-                    var useDatabaseSql = $"USE {database};";
+                    var useDatabaseSql = $"USE `{database}`;";
                     await connection.ExecuteAsync(useDatabaseSql);
                 }
 
