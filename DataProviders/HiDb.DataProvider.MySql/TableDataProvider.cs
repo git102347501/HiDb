@@ -50,7 +50,7 @@ namespace HiDb.DataProvider.MySql
                                 information_schema.columns 
                             WHERE 
                                 table_schema= '{input.DataBase}'
-                                AND table_name= '{input.Table}';", cancellationToken);
+                                AND table_name= '{input.Table}';", cancellationToken, input.DataBase);
         }
         
         public async Task<List<TableDbTypeOutput>> GetDbTypeListAsync(CancellationToken cancellationToken = default)
@@ -63,14 +63,14 @@ namespace HiDb.DataProvider.MySql
         public async Task<bool> DeleteTableAsync(string database, string mode, string table, 
             CancellationToken cancellationToken = default)
         {
-            using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken);
+            using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken, database);
             return await connection.ExecuteAsync(@$"DROP TABLE {database}.{table};") > 1;
         }
 
         public async Task<bool> UpdateColumnConfigAsync(UpdateTableColumnInput input,
             CancellationToken cancellationToken = default)
         {
-            using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken);
+            using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken, input.DataBase);
             var sql = @$"ALTER TABLE `{input.DataBase}`.`{input.Table}`
                         MODIFY COLUMN `column` [{input.Type}] {(input.Required ? "NOT NULL" : "NULL")}";
             return await connection.ExecuteAsync(sql) > 1;
@@ -79,7 +79,7 @@ namespace HiDb.DataProvider.MySql
         public async Task<bool> ClearTableAsync(string database, string mode, string table,
             CancellationToken cancellationToken = default)
         {
-            using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken);
+            using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken, database);
             return await connection.ExecuteAsync(@$"TRUNCATE TABLE {database}.{table}") > 1;
         }
     }

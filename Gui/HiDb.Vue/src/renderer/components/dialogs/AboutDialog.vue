@@ -56,6 +56,7 @@ const open = (url)=>{
     height: 100%;
     display: flex;
     flex-direction: column;
+    padding-top: 10px;
 
     .item {
         width: 100%;

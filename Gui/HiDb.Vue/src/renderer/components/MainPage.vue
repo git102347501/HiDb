@@ -16,8 +16,8 @@
               <a-button type="text" style="color: #fff">关于</a-button>
               <template #overlay>
                 <a-menu value="1" @click="selectedAbout">
-                  <a-menu-item key="1">版本信息</a-menu-item>
-                  <a-menu-item key="2">开发人员</a-menu-item>
+                  <a-menu-item key="1">软件版本</a-menu-item>
+                  <a-menu-item key="2">关于我们</a-menu-item>
                 </a-menu>
               </template>
             </a-dropdown>
@@ -225,7 +225,7 @@
             </div>
           </div>
       </div>
-      <a-modal v-model:open="openDbListDialog" title="数据库列表" width="680px" height="550px">
+      <a-modal v-model:open="openDbListDialog" title="数据库列表" width="830px" height="550px">
         <div class="db-dialog">
           <a-table class="table"
                 :columns="dbColumns" 
@@ -348,15 +348,18 @@
           <a-button key="back" @click="openAboutDialog = false">关闭</a-button>
         </template>
       </a-modal>
+      <a-modal v-model:open="openVersionDialog" width="480px" title="版本信息">
+        <version-dialog></version-dialog>
+        <template #footer>
+          <a-button key="back" @click="openVersionDialog = false">关闭</a-button>
+        </template>
+      </a-modal>
     </div>
 </template>
 
 <script lang="ts" setup>
 import { cloneDeep } from 'lodash-es';
 import { h, ref, watch, onMounted, UnwrapRef, reactive, createVNode, defineComponent  } from 'vue';
-import MySql from './icons/MySql.vue';
-import SqlServer from './icons/SqlServer.vue';
-import PgSql from './icons/PgSql.vue';
 import { message, Modal } from 'ant-design-vue';
 import { ExclamationCircleOutlined, WifiOutlined,ApiOutlined,UserOutlined,BorderlessTableOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownOutlined, FrownFilled  } from '@ant-design/icons-vue';
 import { getDb,getMode,getTable } from '../api/menu';
@@ -368,24 +371,131 @@ import { DataType } from 'vue-request';
 import { getGuid } from '@renderer/utils/guid';
 import { life } from '../api/life';
 import * as monaco from 'monaco-editor';
-import TableEdit from './table-edit/TableEdit.vue';
+import MySql from './icons/MySql.vue';
+import SqlServer from './icons/SqlServer.vue';
+import PgSql from './icons/PgSql.vue';
+import TableEdit from './edits/TableEdit.vue';
 import AboutDialog from './dialogs/AboutDialog.vue';
+import VersionDialog from './dialogs/VersionDialog.vue';
 import { deleteTable, clearTable } from '../api/table';
 import axios from 'axios';
+import { getMaxLength } from '../utils/common';
 
   const sh = 280;
   const pageHeight = ref(0);
   const dftPageHeight = ref(0);
   const loading = ref(false);
   const dbloading = ref(false);
+  const openVersionDialog = ref(false);
   const editorContainer = ref<any>(null)
-  let editor = null;
+  let editor = null; // 当前编辑器
+  const viewMode = ref(0); // 视图模式，0数据视图，1 编辑表视图 2编辑模式视图 3编辑数据库视图
+  // 当前标记表
+  const editTableData = ref({
+    table: '',
+    database: '',
+    mode: '',
+    dbtype: 0
+  });
+  const searchValue = ref<string>(''); // 左侧搜索内容
+  const expandedMenuKeys = ref<string[]>([]); // tree搜索key
+  const selectedMenuKeys = ref<string[]>([]); // tree选择key
+  const executeNum = ref(0); // 影响行数
+  const isQuery = ref(true); // 是否走查询
+  const errorMsg = ref(''); // 错误消息
+  const openAboutDialog = ref(false);
+  // 选中数据库名称
+  const currDbName = ref('');
+  const dbTypeOptions = [{
+    value: 0,
+    label: 'SqlServer',
+  },{
+    value: 1,
+    label: 'MySql',
+  }];
+  const submitOpenDbLoading = ref(false);
+  const isMore = ref(false);
+  // 当前数据库信息
+  const currDatabase = ref<ConnectDbInput>({
+    key: null,
+    name: '',
+    account: '',
+    passWord: '',
+    address: '',
+    type: 0,
+    port: 0,
+    trustCert: true,
+    trustedConnection: false,
+    encrypt: true,
+    saveLocal: true
+  });
+  // tree数据
+  const treeData = ref<TreeProps['treeData']>([
+  ]);
+  const openDbDialog = ref<boolean>(false);
+  const openDbListDialog = ref<boolean>(false);
+  const menuWidth =  ref(350); // 菜单宽度
+  const bodyWidth =  ref('calc(100% - 350px)'); // 内容宽度
+  const mouseEventX =  ref<number>(0);
+
+  const editHeight =  ref(105); // 菜单宽度
+  const editBodyHeight =  ref('calc(100% - 105px)'); // 内容宽度
+  const mouseEventY =  ref<number>(0);
+
+  // 查询模式
+  const noPage = ref(true);
+  const selectDbData = ref<Array<string>>([]);
+  const editableData: UnwrapRef<Record<string, ConnectDbInput>> = reactive({});
+  const currRightData = ref<any>(null);
+  // 全局加载
+  const currloading = ref<boolean>(false);
+  // 后台存活监听
+  const lifeTest = ref<number>(0);
+  // 表格数据列
+  const columns = ref<any[]>([]);
+  // 表格数据列
+  const dbColumns = ref<any[]>([{
+    title: '名称',
+    dataIndex: 'name',
+    sorter: false
+  },{
+    title: '地址',
+    dataIndex: 'address',
+    sorter: false
+  },{
+    title: '用户名',
+    dataIndex: 'account',
+    sorter: false,
+    width: 140
+  },{
+    title: '操作',
+    dataIndex: 'operation',
+    width: 90,
+    fixed: 'right'
+  }]);
+  // 主题
+  const theme = ref<MenuTheme>('dark');
+  // 当前表格数据
+  const currData = ref<any[]>([]);
+  // 当前数据库表格数据
+  const currdbData = ref<ConnectDbInput[]>([]);
+  // 表格分页信息
+  const pagination = ref({
+    total: null,
+    pageSize: 100
+  });
+  var cancelToken = axios.CancelToken.source();
+  // 执行耗时/毫秒
+  const elapsedTimeRef = ref<number | null>(0);
+
+  // 创建时
   onMounted(() => {
     pageHeight.value = document.body.clientHeight - sh;
     dftPageHeight.value = pageHeight.value;
     window.addEventListener('resize', onResize);
     initEdit();
   });
+  // 初始化编辑器
   const initEdit = (val = '')=>{
     console.log('initEdit')
     editor = monaco.editor.create(editorContainer.value, {
@@ -421,6 +531,8 @@ import axios from 'axios';
       }
     })
   }
+  
+  // 刷新当前数据库下拉表列表
   const refCurrDbTableList: any = () => {
     console.log('refCurrDbTableList');
     if (!currDbName.value || !treeData.value || treeData.value.length < 1) {
@@ -443,28 +555,14 @@ import axios from 'axios';
       });
     }
   }
+
   // 窗体大小改变事件
   const onResize = () => {
     pageHeight.value = document.body.clientHeight - sh;
     dftPageHeight.value = pageHeight.value;
     console.log('onResize:' + pageHeight.value);
   };
-  const viewMode = ref(0); // 视图模式，0数据视图，1 编辑表视图 2编辑模式视图 3编辑数据库视图
-  const editTableData = ref({
-    table: '',
-    database: '',
-    mode: '',
-    dbtype: 0
-  }); // 当前标记表
-  const searchValue = ref<string>(''); // 左侧搜索内容
-  const expandedMenuKeys = ref<string[]>([]); // tree搜索key
-  const selectedMenuKeys = ref<string[]>([]); // tree选择key
-  const executeNum = ref(0); // 影响行数
-  const isQuery = ref(true); // 是否走查询
-  const errorMsg = ref(''); // 错误消息
-  const openAboutDialog = ref(false);
-  // 选中数据库名称
-  const currDbName = ref('');
+
   // 菜单展开事件
   watch(currDbName, () => {
     console.log(currDbName.value);
@@ -515,45 +613,13 @@ import axios from 'axios';
       })
     } 
   });
-  const dbTypeOptions = [{
-    value: 0,
-    label: 'SqlServer',
-  },{
-    value: 1,
-    label: 'MySql',
-  },{
-    value: 2,
-    label: 'PgSql',
-  }];
-  const submitOpenDbLoading = ref(false);
-  const isMore = ref(false);
-  // 当前数据库信息
-  const currDatabase = ref<ConnectDbInput>({
-    key: null,
-    name: '',
-    account: '',
-    passWord: '',
-    address: '',
-    type: 0,
-    port: 0,
-    trustCert: true,
-    trustedConnection: false,
-    encrypt: true,
-    saveLocal: true
-  });
-  // tree数据
-  const treeData = ref<TreeProps['treeData']>([
-  ]);
-  const openDbDialog = ref<boolean>(false);
-  const openDbListDialog = ref<boolean>(false);
+
+  // 选中用户菜单
   const selectedUserMenu: MenuProps['onClick'] = ({ key }) => {
     if (key == '1') {
       clearCurrDbData();
     } 
   }
-  const menuWidth =  ref(350); // 菜单宽度
-  const bodyWidth =  ref('calc(100% - 350px)'); // 内容宽度
-  const mouseEventX =  ref<number>(0);
   
   const leftResize = (e: MouseEvent) => {
     // 处理拖动选中字问题
@@ -580,13 +646,15 @@ import axios from 'axios';
     document.addEventListener('mousemove', mouseMove);
     document.addEventListener('mouseup', mouseUp);
   };
+
   const selectedAbout : MenuProps['onClick'] = ({ key }) => { 
     if (key == '1') {
-
+      openVersionDialog.value = true;
     } else {
       openAboutDialog.value = true;
     }
   }
+
   const selectedMenu: MenuProps['onClick'] = ({ key }) => {
     if (key == '1') {
       submitOpenDbList();
@@ -603,13 +671,12 @@ import axios from 'axios';
       openDbModel.encrypt = true;
     }
   };
+
   const submitIsMore = () => {
     isMore.value =!isMore.value;
   };
 
-  const editHeight =  ref(105); // 菜单宽度
-  const editBodyHeight =  ref('calc(100% - 105px)'); // 内容宽度
-  const mouseEventY =  ref<number>(0);
+  // 编辑器大小改变
   const editResize = (e: MouseEvent) => {
     // 处理拖动选中字问题
     document.onselectstart = function () {
@@ -638,6 +705,7 @@ import axios from 'axios';
     document.addEventListener('mousemove', mouseMove);
     document.addEventListener('mouseup', mouseUp);
   }
+
   // 加载数据库列表
   const loadDataBase = ()=>{
     currloading.value = true;
@@ -662,14 +730,10 @@ import axios from 'axios';
       currloading.value = false;
     })
   };
-  // 查询模式
-  const noPage = ref(true);
-  const selectDbData = ref<Array<string>>([]);
+
   const selectDbfilterOption = (input: string, option: any) => {
     return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0;
   };
-  const editableData: UnwrapRef<Record<string, ConnectDbInput>> = reactive({});
-  const currRightData = ref<any>(null);
   const menuRightClick = (e)=>{
     currRightData.value = e.node;
   }
@@ -794,6 +858,7 @@ import axios from 'axios';
       message.error(err && err.message ? err.message : '连接失败');
     })
   };
+  // 保存数据库到本地
   const saveDbByLocal = (data) => {
     searchDbData();
     console.log('saveDbByLocal');
@@ -843,8 +908,6 @@ import axios from 'axios';
       openDbModel.port = 5432;
     }
   }
-  // 全局加载
-  const currloading = ref<boolean>(false);
   // 选择db
   const selectDb = (openDialog)=> {
     if (!currSelectDb.value || !currSelectDb.value.key) {
@@ -1021,8 +1084,6 @@ import axios from 'axios';
       }
     }
   }
-  // 后台存活监听
-  const lifeTest = ref<number>(0);
   // 监听连接
   const getLife = ()=> {
     lifeTest.value = 1;
@@ -1053,41 +1114,7 @@ import axios from 'axios';
       return parentKey;
   };
 
-  // 表格数据列
-  const columns = ref<any[]>([]);
-  // 表格数据列
-  const dbColumns = ref<any[]>([{
-    title: '名称',
-    dataIndex: 'name',
-    sorter: false,
-    width: 150
-  },{
-    title: '地址',
-    dataIndex: 'address',
-    sorter: false,
-    width: 130
-  },{
-    title: '用户名',
-    dataIndex: 'account',
-    sorter: false,
-    width: 90
-  },{
-    title: '操作',
-    dataIndex: 'operation',
-    width: 120,
-    fixed: 'right'
-  }]);
-  // 主题
-  const theme = ref<MenuTheme>('dark');
-  // 当前表格数据
-  const currData = ref<any[]>([]);
-  // 当前数据库表格数据
-  const currdbData = ref<ConnectDbInput[]>([]);
-  // 表格分页信息
-  const pagination = ref({
-    total: null,
-    pageSize: 100
-  });
+  
   const getSelectedText = () => {
     console.log('getSelectedText');
     const selection = editor.getSelection(); // 获取光标选中的值 
@@ -1115,12 +1142,11 @@ import axios from 'axios';
     currdbData.value = data ? JSON.parse(data) : [];
     dbloading.value = false;
   }
+
   const clearData = ()=> {
     editor.setValue('');
   }
 
-  // 执行耗时/毫秒
-  const elapsedTimeRef = ref<number | null>(0);
   const isSelect = (val)=>{
     if(val.includes('select') ){
       return true;
@@ -1130,7 +1156,7 @@ import axios from 'axios';
     }
     return false;
   }
-  var cancelToken = axios.CancelToken.source();
+
   // 表格主查询
   const searchData = () => {
     cancelToken = axios.CancelToken.source();
@@ -1188,10 +1214,13 @@ import axios from 'axios';
       })
     }
   }
+
   // 撤销查询
   const cancelQuery = ()=>{
     cancelToken.cancel('您已撤销查询');
   }
+
+  // 提交删除表
   const submitDeleteTable = (database, table, mode)=>{
     Modal.confirm({
       title: '确认要删除表[' + table + ']吗？',
@@ -1240,24 +1269,6 @@ import axios from 'axios';
         });
       },
     });
-  }
-  const getMaxLength = (objCollection, name)=>{
-    let maxLength = 0;
-    let length = objCollection.length > 20 ? 20 : objCollection.length;
-    for (var i = 0; i < length; i++) {
-      // 获取当前对象的name属性长度
-      var nameLength = objCollection[i][name] ? objCollection[i][name].length : 0;
-      
-      // 如果当前长度大于最大长度，则更新最大长度
-      if (nameLength > maxLength) {
-        maxLength = nameLength;
-      }
-    }
-    if (maxLength < name.length) {
-      return name.length;
-    } else {   
-      return maxLength;
-    }
   }
 </script>
 
@@ -1346,7 +1357,6 @@ import axios from 'axios';
         width: 5px;
         background-color: #fffefe;
         cursor: col-resize;
-        z-index: 999;
       }
       .drap-line-left {
         border-left: #dbd7d7 2px solid;
@@ -1394,7 +1404,6 @@ import axios from 'axios';
                 height: 1px;
                 background-color: #fffefe;
                 cursor: row-resize;
-                z-index: 999;
                 margin: 4px 0;
               }
               .drap-line-left {

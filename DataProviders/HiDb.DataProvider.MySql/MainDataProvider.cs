@@ -5,7 +5,7 @@ namespace HiDb.DataProvider.MySql
     public class MainDataProvider
     {
         public async Task<List<T>> GetListAsync<T>(string sql, 
-            CancellationToken cancellationToken = default, string database = "")
+            CancellationToken cancellationToken = default, string? database = "")
         {
             if (string.IsNullOrWhiteSpace(sql))
             {
@@ -17,7 +17,7 @@ namespace HiDb.DataProvider.MySql
         }
 
         public async Task<long> GetCountAsync(string sql, CancellationToken cancellationToken = default,
-            string database = "")
+            string? database = "")
         {
             if (string.IsNullOrWhiteSpace(sql))
             {
@@ -29,7 +29,7 @@ namespace HiDb.DataProvider.MySql
         }
 
         public async Task<List<dynamic>> GetListAsync(string sql, CancellationToken cancellationToken = default,
-            string database = "")
+            string? database = "")
         {
             if (string.IsNullOrWhiteSpace(sql))
             {
@@ -41,7 +41,7 @@ namespace HiDb.DataProvider.MySql
         }
 
         public async Task<T> GetFirstAsync<T>(string sql, CancellationToken cancellationToken = default,
-            string database = "") where T : new()
+            string? database = "") where T : new()
         {
             if (string.IsNullOrWhiteSpace(sql))
             {

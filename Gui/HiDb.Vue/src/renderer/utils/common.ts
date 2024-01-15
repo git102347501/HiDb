@@ -9,3 +9,23 @@ export function debounce (fn: Function, delay: number, args: any){
         fn(args);
     }, delay);
 }
+
+// 自动列宽计算
+export function getMaxLength (objCollection, name){
+    let maxLength = 0;
+    let length = objCollection.length > 20 ? 20 : objCollection.length;
+    for (var i = 0; i < length; i++) {
+        // 获取当前对象的name属性长度
+        var nameLength = objCollection[i][name] ? objCollection[i][name].length : 0;
+        
+        // 如果当前长度大于最大长度，则更新最大长度
+        if (nameLength > maxLength) {
+            maxLength = nameLength;
+        }
+    }
+    if (maxLength < name.length) {
+        return name.length;
+    } else {   
+        return maxLength;
+    }
+}
