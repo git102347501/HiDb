@@ -443,7 +443,7 @@ import { getMaxLength } from '../utils/common';
   const mouseEventY =  ref<number>(0);
 
   // 查询模式
-  const noPage = ref(true);
+  const noPage = ref(false);
   const selectDbData = ref<Array<string>>([]);
   const editableData: UnwrapRef<Record<string, ConnectDbInput>> = reactive({});
   const currRightData = ref<any>(null);
@@ -815,7 +815,7 @@ import { getMaxLength } from '../utils/common';
     selectDbData.value = [];
     elapsedTimeRef.value = null;
     errorMsg.value = '';
-    noPage.value = true;
+    noPage.value = false;
     currDatabase.value = {
       key: null,
       name: '',

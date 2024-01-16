@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using System.Linq;
 
 namespace HiDb.DataProvider.SqlServer
 {
@@ -38,6 +39,18 @@ namespace HiDb.DataProvider.SqlServer
             using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken, database);
             var result = await connection.QueryAsync<dynamic>(sql);
             return result.ToList();
+        }
+
+        public async Task<(List<dynamic>, long)> GetListAsync(string sql, CancellationToken cancellationToken = default,
+          string? database = "", int? pageSize = 100)
+        {
+            if (string.IsNullOrWhiteSpace(sql))
+            {
+                return (new List<dynamic>(), 0);
+            }
+            using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken, database);
+            var result = await connection.QueryAsync<dynamic>(sql);
+            return (pageSize.HasValue ? result.Take(pageSize.Value).ToList() : result.ToList(), result.Count());
         }
 
         public async Task<T> GetFirstAsync<T>(string sql, CancellationToken cancellationToken = default,

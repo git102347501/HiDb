@@ -46,7 +46,7 @@ namespace HiDb.DataProvider.SqlServer
             return curr;
         }
         public async Task<IDbConnection> CreateConnectionAsync(CancellationToken cancellationToken = default, 
-            string database = "", string connectionString = "")
+            string? database = "", string connectionString = "")
         {
             var conn = "";
             if (string.IsNullOrWhiteSpace(connectionString))

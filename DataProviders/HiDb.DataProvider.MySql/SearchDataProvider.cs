@@ -19,14 +19,11 @@ namespace HiDb.DataProvider.MySql
         public async Task<SearchOutput> GetSearchDataAsync(SearchInput input,
             CancellationToken cancellationToken = default)
         {
-            var query = input.noPage ? (input.Sql, "") : GetPageSql(input.Sql, input.PageSize.Value);
-
-            var list = await GetListAsync(query.Item1, cancellationToken, input.DataBase);
+            var list = await GetListAsync(input.Sql, cancellationToken, input.DataBase, input.PageSize);
             var res = new SearchOutput()
             {
-                List = list,
-                Count = string.IsNullOrWhiteSpace(query.Item2) ? list.Count :
-                    await GetCountAsync(query.Item2, cancellationToken, input.DataBase)
+                List = list.Item1,
+                Count = list.Item2
             };
             return res;
         }
