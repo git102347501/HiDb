@@ -176,8 +176,8 @@
                 <div class="sql" :style="{ 'height': editHeight + 'px' }">
                     <div ref="editorContainer" class="editor" style="height:100%; width: 100%;"></div>
                 </div>
-                <div :class="menuWidth <= 350 ? 
-                  'edit-drap-line edit-drap-line-left' : menuWidth >= 850 ? 
+                <div :class="editHeight <= 105 ? 
+                  'edit-drap-line edit-drap-line-left' : editHeight >= 850 ? 
                   'edit-drap-line edit-drap-line-right': 'edit-drap-line'" 
                   @mousedown="editResize"></div>
                 <div class="data"  :style="{ 'height': editBodyHeight }" 
@@ -787,7 +787,7 @@ import { getMaxLength } from '../utils/common';
       if (currDatabase.value.type == 0) {
         editor.setValue('select * from ' + currRightData.value.title);
       } else if (currDatabase.value.type == 1) {
-        editor.setValue( 'select * from ' + currRightData.value.title);
+        editor.setValue( 'select * from `' + currRightData.value.title + '`');
       }
       searchData();
     } else if (menuKey == '32') {
@@ -877,7 +877,6 @@ import { getMaxLength } from '../utils/common';
       if (index != -1) {
         // 更新本地
         currdbData.value[index].passWord = data.passWord;
-        currdbData.value[index].name = data.name;
         currdbData.value[index].port = data.port;
         currdbData.value[index].trustCert = data.trustCert;
         currdbData.value[index].trustedConnection = data.trustedConnection;
@@ -1082,7 +1081,7 @@ import { getMaxLength } from '../utils/common';
         if (currDatabase.value.type == 0) {
           editor.setValue('select * from ' + e.node.dataRef.title);
         } else if (currDatabase.value.type == 1) {
-          editor.setValue( 'select * from ' + e.node.dataRef.title);
+          editor.setValue( 'select * from `' + e.node.dataRef.title + '`');
         }
         currDbName.value = e.node.dataRef.database;
         console.log('currDbName' + currDbName.value);
@@ -1297,6 +1296,9 @@ import { getMaxLength } from '../utils/common';
 </script>
 
 <style lang="scss" scoped>
+
+$drapline: #41085e;
+$draplinebk: #EBEEF5; 
   
   .ant-row-rtl #components-layout-demo-top-side-2 .logo {
     float: right;
@@ -1379,14 +1381,15 @@ import { getMaxLength } from '../utils/common';
       .drap-line {
         height: 100%;
         width: 5px;
-        background-color: #fffefe;
+        background-color: $draplinebk;
+        z-index: 999;
         cursor: col-resize;
       }
       .drap-line-left {
-        border-left: #dbd7d7 2px solid;
+        border-left: $drapline 1px dashed;
       }
       .drap-line-right {
-        border-right: #dbd7d7 2px solid;
+        border-right: $drapline 1px dashed;
       }
       .work {
           width: 100%;
@@ -1434,17 +1437,18 @@ import { getMaxLength } from '../utils/common';
               }
 
               .edit-drap-line {
-                width: calc(100% - 12px);
-                height: 1px;
-                background-color: #fffefe;
+                width: calc(100%);
+                height: 6px;
+                background-color: $draplinebk;
                 cursor: row-resize;
-                margin: 4px 0;
+                margin: 2px 0;
+                border: 0;
               }
               .edit-drap-line-left {
-                border-top: #dbd7d7 2px solid;
+                border-top: $drapline 1px dashed;
               }
               .edit-drap-line-right {
-                border-bottom: #dbd7d7 2px solid;
+                border-bottom: $drapline 1px dashed;
               }
 
               .sql {
@@ -1498,6 +1502,7 @@ import { getMaxLength } from '../utils/common';
                   }
                   .error {
                     color: rgb(249, 57, 57);
+                    max-width: 760px;
                   }
               }
           }
