@@ -89,7 +89,7 @@
                   <template #switcherIcon="{ switcherCls }">
                     <down-outlined :class="switcherCls" />
                   </template>
-                  <template #icon="{ type, selected }">
+                  <template #icon="{ type, mode, database }">
                     <template v-if="type === 'db'">
                       <database-outlined />
                     </template>
@@ -97,7 +97,10 @@
                       <tablet-outlined />
                     </template>
                     <template v-if="type === 'table-search'">
-                      <a-input placeholder="Basic usage" />
+                      <a-input-search
+                        placeholder="输入关键字搜索表" size="middle"  @search="onTableSearch($event, mode, database)"
+                        :style="{ 'width': (menuWidth - 110) + 'px','max-width': '300px' }" 
+                      />
                     </template>
                     <template v-if="type === 'table'">
                       <table-outlined />
@@ -536,6 +539,41 @@ import { getMaxLength } from '../utils/common';
       }
     })
   }
+  const onTableSearch = (data, mode, database)=>{
+    console.log('onTableSearch');
+    let currDb = treeData.value.find(c => c.title == database);
+    if (!currDb || !currDb.children || currDb.children.length < 1) {
+      return [];
+    }
+    let currMode = currDb.children.find(c => c.title == mode);
+    if (!currMode || !currMode.children || currMode.children.length < 1) {
+      return [];
+    }
+    if (!currMode.oldchildren) {
+      currMode.oldchildren = currMode.children;
+    }
+    if (!data) {
+      if (currMode.oldchildren){
+        currMode.children = currMode.oldchildren;
+        treeData.value = [...treeData.value];
+        return;
+      } else {
+        return;
+      }
+    } 
+    let currdata = data.toLowerCase();
+    currMode.children = currMode.oldchildren.filter(c=> c.type == 'table-search' || c.title.toLowerCase().includes(currdata));
+    if (currMode.children.length < 2) {
+      currMode.children.push({            
+        title: '未搜索到数据',
+        key: '未搜索到数据',
+        isLeaf: true,
+        disabled: true,
+        type: 'tablenull',
+      });
+    }
+    treeData.value = [...treeData.value];
+  }
   
   // 刷新当前数据库下拉表列表
   const refCurrDbTableList: any = () => {
@@ -609,6 +647,17 @@ import { getMaxLength } from '../utils/common';
                 mode: currMode.title,
                 database: currMode.database
               }
+            });
+            currMode.children.unshift({
+              title: '',
+              key: currMode.title + '-s',
+              isLeaf: true,
+              style: {
+                height: '35px'
+              },
+              type: 'table-search',
+              mode: currMode.title,
+              database: currMode.database
             });
           }
           treeData.value = [...treeData.value];
@@ -1294,246 +1343,4 @@ import { getMaxLength } from '../utils/common';
     });
   }
 </script>
-
-<style lang="scss" scoped>
-
-$drapline: #41085e;
-$draplinebk: #EBEEF5; 
-  
-  .ant-row-rtl #components-layout-demo-top-side-2 .logo {
-    float: right;
-    margin: 16px 0 16px 24px;
-  }
-  
-  .site-layout-background {
-    background: #fff;
-  }
-  .main {
-    //margin-top: 30px;
-    width: 100%;
-    height: 100%;
-    overflow-y: hidden;
-    overflow-x: hidden;
-    display: flex;
-    flex-direction: column;
-
-    .header {
-        height: 50px;
-        width: 100%;
-        margin: 0;
-        padding: 0;
-        z-index: 999;
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-        background-color: rgb(24, 24, 40);
-
-        .btn {
-          width: 150px;
-          height: 100%;
-          display: flex;
-          flex-direction: row;
-          align-items: center;
-          justify-content: flex-start;
-          padding: 0 6px;
-        }
-        .title {
-          color: #ffffff;
-          margin-right: 12px;
-
-          .info {
-            margin-right: 12px;
-            cursor: pointer;
-          }
-        }
-    }
-
-    .content{
-      height: calc(100% - 50px);
-      width: 100%;
-      display: flex;
-      flex-direction: row;
-
-      
-      .menu {
-          height: calc(100% - 16px);
-          display: flex;
-          flex-direction: column;
-          padding: 8px;
-          background-color: #fff;
-
-          .search {
-              height: 45px;
-              width: 100%;
-              display: flex;
-              flex-direction: row;
-              align-items: center;
-              justify-content: center;
-          }
-
-          .tree {
-              width: 100%;
-              max-height: calc(100vh - 45px);
-              overflow-y: auto;
-          }
-      }
-      .drap-line {
-        height: 100%;
-        width: 5px;
-        background-color: $draplinebk;
-        z-index: 999;
-        cursor: col-resize;
-      }
-      .drap-line-left {
-        border-left: $drapline 1px dashed;
-      }
-      .drap-line-right {
-        border-right: $drapline 1px dashed;
-      }
-      .work {
-          width: 100%;
-          height: calc(100vh - 50px);
-          padding: 0;
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-
-          .tools {
-              width: 100%;
-              height: 40px;
-              padding: 0 12px;
-              display: flex;
-              flex-direction: row;
-              align-items: center;
-              justify-content: space-between;
-
-              .tool-right {
-                display: flex;
-                flex-direction: row;
-                align-items: center;
-              }
-          }
-          .context {
-              width: 100%;
-              height: calc(100% - 40px);
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              padding: 0;
-              margin: 0;
-              background: '#fff'; 
-              padding: '6px'; 
-              min-height: '280px';
-
-              .opt {
-                width: 100%;
-                height: 50px;
-                display: flex;
-                flex-direction: row;
-                align-items: center;
-                justify-content: center;
-                z-index: 9999;
-              }
-
-              .edit-drap-line {
-                width: calc(100%);
-                height: 6px;
-                background-color: $draplinebk;
-                cursor: row-resize;
-                margin: 2px 0;
-                border: 0;
-              }
-              .edit-drap-line-left {
-                border-top: $drapline 1px dashed;
-              }
-              .edit-drap-line-right {
-                border-bottom: $drapline 1px dashed;
-              }
-
-              .sql {
-                  width: calc(100% - 12px);
-                  height: auto;
-                  border: #cccccc 1px solid;
-                  border-radius: 4px;
-                  padding: 6px;
-
-                  .input {
-                      height: calc(100% - 8px);
-                      margin: 4px;
-                      width: calc(100% - 8px);
-                  }
-                  .editor {
-                      height: 105px;
-                      margin: 4px;
-                      width: calc(100% - 8px);
-                  }
-              }
-              .data {
-                  width: 100%;
-
-                  .table {
-                    width: 100%;
-                    padding: 0;
-                    margin: 0;
-                  }
-                  .msg-line {
-                    display: flex;
-                    flex-direction: row;
-                    align-items: center;
-                    justify-content: flex-start;
-                    width: 100%;
-                    height: 30px;
-                    font-size: 12px;
-                    color: #333333;
-                    padding: 0 6px;
-                  }
-
-                  .msg {
-                    width: auto;
-                    height: 100%;
-                    margin-right: 8px;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: flex-start;
-                    justify-content: flex-start;
-                    padding: 8px;
-                    font-size: 12px;
-                  }
-                  .error {
-                    color: rgb(249, 57, 57);
-                    max-width: 760px;
-                  }
-              }
-          }
-      }
-    }
-  }
-  .db-dialog {
-    padding: 12px 0px 0px 0px;
-    margin-top: 12px;
-
-    .more {
-      width: 100%;
-      height: 35px;
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      justify-content: center;
-      .btn {
-        width: 100%;
-      }
-    }
-  }
-  .monaco-editor .margin {
-    width: 12px !important;
-  }
-
-  .flex-row {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
-  }
-</style>
-  
+<style lang="scss" scoped src="./MainPage.scss"></style>
