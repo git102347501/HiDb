@@ -177,8 +177,8 @@
                     <div ref="editorContainer" class="editor" style="height:100%; width: 100%;"></div>
                 </div>
                 <div :class="menuWidth <= 350 ? 
-                  'drap-line drap-line-left' : menuWidth >= 850 ? 
-                  'drap-line drap-line-right': 'drap-line'" 
+                  'edit-drap-line edit-drap-line-left' : menuWidth >= 850 ? 
+                  'edit-drap-line edit-drap-line-right': 'edit-drap-line'" 
                   @mousedown="editResize"></div>
                 <div class="data"  :style="{ 'height': editBodyHeight }" 
                     v-show="!currloading">
@@ -191,7 +191,12 @@
                         :loading="loading"
                         :pagination="false"
                     >
-                      <template #headerCell="{ column }"/>
+                      <template #headerCell="{ column, text  }">
+                        <a @click="tableHeardClick(column.title)">{{ column.title }}</a>
+                      </template>
+                      <template #bodyCell="{ column, text }">
+                        <a @click="tableColumnClick(text)">{{ text }}</a>
+                      </template>
                     </a-table>
                     <div class="msg-line">
                       <div class="msg error" v-if="errorMsg">
@@ -1220,6 +1225,25 @@ import { getMaxLength } from '../utils/common';
     cancelToken.cancel('您已撤销查询');
   }
 
+  const tableHeardClick = (val)=>{
+    editorAppendValue(val);
+  }
+  const tableColumnClick = (val)=>{
+    editorAppendValue(val);
+  }
+  const editorAppendValue = (text)=>{
+    // 获取焦点位置
+    const position = editor.getPosition(); 
+    const appendText = {
+      range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column),
+      text: text,
+      forceMoveMarkers: true
+    };
+
+    // 执行编辑操作
+    editor.executeEdits('appendText', [appendText]);
+  }
+
   // 提交删除表
   const submitDeleteTable = (database, table, mode)=>{
     Modal.confirm({
@@ -1399,17 +1423,27 @@ import { getMaxLength } from '../utils/common';
               padding: '6px'; 
               min-height: '280px';
 
-              .drap-line {
+              .opt {
+                width: 100%;
+                height: 50px;
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+              }
+
+              .edit-drap-line {
                 width: calc(100% - 12px);
                 height: 1px;
                 background-color: #fffefe;
                 cursor: row-resize;
                 margin: 4px 0;
               }
-              .drap-line-left {
+              .edit-drap-line-left {
                 border-top: #dbd7d7 2px solid;
               }
-              .drap-line-right {
+              .edit-drap-line-right {
                 border-bottom: #dbd7d7 2px solid;
               }
 
@@ -1461,15 +1495,6 @@ import { getMaxLength } from '../utils/common';
                     justify-content: flex-start;
                     padding: 8px;
                     font-size: 12px;
-                  }
-                  .opt {
-                    width: 100%;
-                    height: 100%;
-                    display: flex;
-                    flex-direction: row;
-                    align-items: center;
-                    justify-content: center;
-                    z-index: 9999;
                   }
                   .error {
                     color: rgb(249, 57, 57);
