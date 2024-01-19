@@ -205,10 +205,10 @@
                       <div class="msg error" v-if="errorMsg">
                         执行错误: {{errorMsg}}
                       </div>
-                      <div class="msg" v-if="isQuery && pagination.total != null &&  pagination.total != undefined">
+                      <div class="msg" v-if="isQuery && !errorMsg && pagination.total != null &&  pagination.total != undefined">
                         总行数: {{ pagination.total }} ｜ 页行数: {{ pagination.pageSize }}
                       </div>
-                      <div class="msg" v-if="!isQuery">
+                      <div class="msg" v-if="!isQuery && !errorMsg">
                         影响行数: {{executeNum}}
                       </div>
                       <div class="msg" v-if="elapsedTimeRef">
@@ -1196,18 +1196,27 @@ import { getMaxLength } from '../utils/common';
     dbloading.value = false;
   }
 
-  const clearData = ()=> {
+  // 清空
+  const clearData = () => {
     editor.setValue('');
   }
 
-  const isSelect = (val)=>{
-    if(val.includes('select') ){
-      return true;
+  // 获取是否为查询语句
+  const getIsQuery = (val) => {
+    const notquery = /(update|delete|drop|alter|truncate)/i;
+    if (notquery.test(val)) {
+      return false;
     }
-    if(val.includes('show') ){
+    const query = /(select|show)/i;
+    if (query.test(val)) {
       return true;
     }
     return false;
+  }
+
+  // 清空查询消息
+  const clearMsg = ()=>{
+    errorMsg.value = '';
   }
 
   // 表格主查询
@@ -1218,7 +1227,10 @@ import { getMaxLength } from '../utils/common';
       message.error('执行语句不能为空!');
       return;
     }
-    if (!isSelect((sql as any).toLowerCase())) {
+    
+    clearMsg();
+
+    if (!getIsQuery((sql as any).toLowerCase())) {
       isQuery.value = false;
       loading.value = true;
       execute({
