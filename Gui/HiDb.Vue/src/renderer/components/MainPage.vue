@@ -1248,12 +1248,22 @@ import { getMaxLength } from '../utils/common';
         console.log(res);
         if (res && res.data && res.data.list && res.data.list.length > 0) {
           let obj  = res.data.list[0];
-          columns.value = Object.keys(obj).map(key => ({
-            title: key,
-            dataIndex: key,
+          columns.value = Object.keys(obj).map((element, index) => ({
+            title: element ? element : 'filed' + (index + 1),
+            dataIndex:  element ? element : 'filed' + (index + 1),
             sorter: false,
-            width: 30 + (getMaxLength(res.data.list, key) * 10)
+            width: 30 + (getMaxLength(res.data.list, element) * 10)
           }));
+          res.data.list.forEach((obj, index) => {
+            Object.keys(obj).forEach((key, index) => {
+              // 检查属性是否为空
+              if (key === "") {
+                const newKey = "filed" + (index + 1);
+                obj[newKey] = obj[key];
+                delete obj[key]; // 删除原属性
+              }
+            });
+          });
           currData.value = res.data.list;
           pagination.value.total = res.data.count;
         } else {
