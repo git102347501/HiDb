@@ -173,6 +173,9 @@
                   <a-input-number v-if="!noPage"
                     style="margin-left: 4px;width: 84px;text-align: center;"
                     id="pageSize" v-model:value="pagination.pageSize" :min="1" />
+                  <a-tooltip title="常用语句">
+                    <a-button @click="openToolDrawerDialog" style="margin-left: 6px" type="default" shape="circle" :icon="h(BarsOutlined)" />
+                  </a-tooltip>
                 </div>
               </div>
               <div class="context" >
@@ -362,6 +365,30 @@
           <a-button key="back" @click="openVersionDialog = false">关闭</a-button>
         </template>
       </a-modal>
+      <a-drawer class="tools" title="常用语句" :size="400" 
+        :bodyStyle="{'padding': '8px'}" :open="openToolDrawer">
+        <template #extra>
+          <a-button @click="addToolsSearch" type="default" shape="circle" :icon="h(PlusCircleOutlined)" />
+        </template>
+        <div class="search">
+          <a-input-search
+            placeholder="搜索语句"
+            
+            @search="onToolsSearch" />
+        </div>
+        <div class="list">
+          <a-card size="small"
+            v-for="(item, index) in currToolDrawerData"
+            v-bind:key="index" style="width: 100%; margin-top: 4px;">
+            <a-textarea v-model:value="item.data" placeholder="输入sql语句" :rows="4" />
+            <a-button @click="addToolsSearch" type="default" shape="circle" 
+              style="margin-top: 6px" :icon="h(CheckOutlined)" />
+            <a-button @click="addToolsSearch" type="default" shape="circle" 
+              style="margin: 6px 0 0 6px" :icon="h(CopyOutlined)" />
+          </a-card>
+          <a-empty description="暂无保存语句" v-if="!currToolDrawerData || currToolDrawerData.length < 1" />
+        </div>
+      </a-drawer>
     </div>
 </template>
 
@@ -369,7 +396,7 @@
 import { cloneDeep } from 'lodash-es';
 import { h, ref, watch, onMounted, UnwrapRef, reactive, createVNode, defineComponent  } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { ExclamationCircleOutlined, WifiOutlined,ApiOutlined,UserOutlined,BorderlessTableOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownOutlined, FrownFilled  } from '@ant-design/icons-vue';
+import { ExclamationCircleOutlined,BarsOutlined,PlusCircleOutlined,CopyOutlined,CheckOutlined, WifiOutlined,ApiOutlined,UserOutlined,BorderlessTableOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownOutlined, FrownFilled  } from '@ant-design/icons-vue';
 import { getDb,getMode,getTable } from '../api/menu';
 import { getSearch,execute} from '../api/search';
 import { connectDb } from '../api/datasource';
@@ -405,6 +432,7 @@ import { getMaxLength } from '../utils/common';
     mode: '',
     dbtype: 0
   });
+  const openToolDrawer = ref<boolean>(false); // 工具插窗
   const searchValue = ref<string>(''); // 左侧搜索内容
   const expandedMenuKeys = ref<string[]>([]); // tree搜索key
   const selectedMenuKeys = ref<string[]>([]); // tree选择key
@@ -492,6 +520,41 @@ import { getMaxLength } from '../utils/common';
     total: null,
     pageSize: 100
   });
+  const currToolDrawerData = ref<any[]>();
+  const toolDrawerData = ref<any[]>([{
+    title: '获取患者列表',
+    data: 'select * from patientmastrer where isdelete = 0 and status = -1'
+  },{
+    title: '获取患者列表',
+    data: 'select * from patientmastrer where isdelete = 0 and status = -1'
+  },{
+    title: '获取患者列表',
+    data: 'select * from patientmastrer where isdelete = 0 and status = -1'
+  },{
+    title: '获取患者列表',
+    data: 'select * from patientmastrer where isdelete = 0 and status = -1'
+  },{
+    title: '获取患者列表',
+    data: 'select * from patientmastrer where isdelete = 0 and status = -1'
+  },{
+    title: '获取患者列表',
+    data: 'select * from patientmastrer where isdelete = 0 and status = -1'
+  },{
+    title: '获取患者列表',
+    data: 'select * from patientmastrer where isdelete = 0 and status = -1'
+  },{
+    title: '获取患者列表',
+    data: 'select * from patientmastrer where isdelete = 0 and status = -1'
+  },{
+    title: '获取患者列表',
+    data: 'select * from patientmastrer where isdelete = 0 and status = -1'
+  },{
+    title: '获取患者列表',
+    data: 'select * from patientmastrer where isdelete = 0 and status = -1'
+  },{
+    title: '获取患者列表',
+    data: 'select * from patientmastrer where isdelete = 0 and status = -1'
+  }]);
   var cancelToken = axios.CancelToken.source();
   // 执行耗时/毫秒
   const elapsedTimeRef = ref<number | null>(0);
@@ -538,6 +601,36 @@ import { getMaxLength } from '../utils/common';
         }
       }
     })
+  }
+  const onToolsSearch = (val)=>{
+    if (!val) {
+      currToolDrawerData.value = toolDrawerData.value;
+    } else {
+      currToolDrawerData.value = toolDrawerData.value.filter(c=> c.contains(val));
+    }
+  }
+  const addToolsSearch = (val) => {
+    currToolDrawerData.value.push(val);
+    toolDrawerData.value.push(val);
+    localStorage.saveItem('toolsql', JSON.stringify(toolDrawerData));
+  }
+  const saveToolsSearch = () => {
+    localStorage.saveItem('toolsql', JSON.stringify(toolDrawerData));
+  }
+  const initToolsSearch = ()=> {
+    let data = localStorage.getItem('toolsql');
+    if (data) {
+      toolDrawerData.value = JSON.parse(data);
+      currToolDrawerData.value = toolDrawerData.value;
+    } else {
+      toolDrawerData.value = [];
+      currToolDrawerData.value = [];
+    }
+  }
+  initToolsSearch();
+
+  const openToolDrawerDialog = ()=>{
+    openToolDrawer.value = true;
   }
   const onTableSearch = (data, mode, database)=>{
     console.log('onTableSearch');
