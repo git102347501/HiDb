@@ -147,7 +147,7 @@
                         style="margin-right: 6px;">执行</a-button>
                   </a-tooltip>
                   <a-tooltip title="清空SQL区域内容">
-                      <a-button @click="clearData" :disabled="!currDatabase || !currDatabase.key" 
+                      <a-button @click="clearEditData" :disabled="!currDatabase || !currDatabase.key" 
                       :icon="h(RedoOutlined)">清空</a-button>
                   </a-tooltip>
                 </div>
@@ -236,14 +236,13 @@
       <a-modal v-model:open="openDbListDialog" title="数据库列表" width="830px" height="550px">
         <div class="db-dialog">
           <a-table class="table"
-                :columns="dbColumns" 
-                size="small"
-                :data-source="currdbData"
-                :row-selection="rowSelection"
-                :scroll="{ y: 500 }"
-                :loading="dbloading"
-                :pagination="false">
-                
+              :columns="dbColumns" 
+              size="small"
+              :data-source="currdbData"
+              :row-selection="rowSelection"
+              :scroll="{ y: 500 }"
+              :loading="dbloading"
+              :pagination="false">
               <template #bodyCell="{ column, text, record }">
                 <template v-if="['name', 'account', 'address'].includes(column.dataIndex)">
                   <div>
@@ -289,62 +288,7 @@
         </template>
       </a-modal>
       <a-modal v-model:open="openDbDialog" title="连接数据库">
-        <div class="db-dialog">
-          <a-form :model="openDbModel" :label-col="{ style: { width: '140px' } }" :wrapper-col="{ span: 14 }">
-            <a-form-item label="数据库类型" name="type"
-                :rules="[{ required: true, message: '请选择数据库类型!' }]">
-              <a-select
-                @change="typeChange"
-                v-model:value="openDbModel.type"
-                style="width: 245px; margin-right: 6px;"
-                placeholder="请选择数据库类型"
-                :options="dbTypeOptions"
-              ></a-select>
-              <sql-server v-if="openDbModel.type == 0"></sql-server>
-              <my-sql v-if="openDbModel.type == 1"></my-sql>
-              <pg-sql v-if="openDbModel.type == 2"></pg-sql>
-            </a-form-item>
-            <a-form-item label="数据库地址" name="address"
-                :rules="[{ required: true, message: '请输入数据库地址' }]">
-              <a-input style="width: 190px;" v-model:value="openDbModel.address" placeholder="请输入数据库地址" />
-              <a-input style="width: 80px; margin-left: 4px;" v-model:value="openDbModel.port" placeholder="端口" />
-            </a-form-item>
-            <a-form-item label="登录名" name="account"
-                :rules="[{ required: true, message: '请输入登录名!' }]">
-              <a-input v-model:value="openDbModel.account" placeholder="请输入登录名" />
-            </a-form-item>
-            <a-form-item label="密码" name="passWord"
-                :rules="[{ required: true, message: '请输入密码!' }]">
-              <a-input-password v-model:value="openDbModel.passWord" placeholder="请输入密码" />
-            </a-form-item>
-            <a-row>
-              <a-col :span="12">
-                <a-form-item v-if="isMore" label="启用加密连接" name="encrypt">
-                    <a-checkbox v-model:checked="openDbModel.encrypt"></a-checkbox>
-                </a-form-item>
-              </a-col>
-              <a-col :span="12">
-                <a-form-item v-if="isMore" label="信任服务器证书" name="trustCert">
-                    <a-checkbox v-model:checked="openDbModel.trustCert"></a-checkbox>
-                </a-form-item>
-              </a-col>
-              <a-col :span="12">
-                <a-form-item v-if="isMore" label="保存到本地列表" name="saveLocal">
-                    <a-checkbox v-model:checked="openDbModel.saveLocal"></a-checkbox>
-                </a-form-item>
-              </a-col>
-              <!-- <a-col :span="12">
-                <a-form-item v-if="isMore" label="使用Windows身份验证" name="trustedConnection">
-                    <a-checkbox v-model:checked="openDbModel.trustedConnection"></a-checkbox>
-                </a-form-item>
-              </a-col> -->
-            </a-row>
-            <div class="more">
-              <a-button @click="submitIsMore" class="btn" type="primary" ghost>
-              {{ isMore ? '收缩' : '更多' }}</a-button>
-            </div>
-          </a-form>
-        </div>
+        <open-db-dialog ref="openDbDialogRef"></open-db-dialog>
         <template #footer>
           <a-button key="back" @click="cancelDbDialog">取消</a-button>
           <a-button key="submit" type="primary" :loading="submitOpenDbLoading" @click="submitOpenDb">连接</a-button>
@@ -385,9 +329,11 @@ import PgSql from './icons/PgSql.vue';
 import TableEdit from './edits/TableEdit.vue';
 import AboutDialog from './dialogs/AboutDialog.vue';
 import VersionDialog from './dialogs/VersionDialog.vue';
+import OpenDbDialog from './dialogs/OpenDbDialog.vue';
 import { deleteTable, clearTable } from '../api/table';
 import axios from 'axios';
 import { getMaxLength } from '../utils/common';
+import { dbTypeOptions } from '../utils/database';
 
   const sh = 280;
   const pageHeight = ref(0);
@@ -414,15 +360,7 @@ import { getMaxLength } from '../utils/common';
   const openAboutDialog = ref(false);
   // 选中数据库名称
   const currDbName = ref('');
-  const dbTypeOptions = [{
-    value: 0,
-    label: 'SqlServer',
-  },{
-    value: 1,
-    label: 'MySql',
-  }];
   const submitOpenDbLoading = ref(false);
-  const isMore = ref(false);
   // 当前数据库信息
   const currDatabase = ref<ConnectDbInput>({
     key: null,
@@ -539,6 +477,13 @@ import { getMaxLength } from '../utils/common';
       }
     })
   }
+  const openDbDialogRef = ref(null);
+
+  const callChildInit = () => {
+    if (openDbDialogRef.value) {
+      openDbDialogRef.value.init();
+    }
+  };
   const onTableSearch = (data, mode, database)=>{
     console.log('onTableSearch');
     let currDb = treeData.value.find(c => c.title == database);
@@ -726,10 +671,6 @@ import { getMaxLength } from '../utils/common';
     }
   };
 
-  const submitIsMore = () => {
-    isMore.value =!isMore.value;
-  };
-
   // 编辑器大小改变
   const editResize = (e: MouseEvent) => {
     // 处理拖动选中字问题
@@ -810,20 +751,6 @@ import { getMaxLength } from '../utils/common';
     localStorage.setItem('hidbdata', JSON.stringify(currdbData.value));
   }
 
-  const openDbModel = reactive<ConnectDbInput>({
-    key: getGuid(),
-    name: '',
-    account: '',
-    passWord: '',
-    address: '',
-    type: 0,
-    port: 1433,
-    trustCert: true,
-    trustedConnection: false,
-    encrypt: true,
-    saveLocal: true
-  });
-
   const onContextMenuClick = (treeKey: string, menuKey: string | number, data: any) => {
     if (menuKey == '11') {
       viewMode.value = 1;
@@ -856,13 +783,13 @@ import { getMaxLength } from '../utils/common';
   };
   // 清空当前数据库数据
   const clearCurrDbData = () => {
+    clearEditData();
     treeData.value = [];
     currData.value = [];
     expandedMenuKeys.value = [];
     selectedMenuKeys.value = [];
     searchValue.value = '';
     isQuery.value = true;
-    editor.setValue('');
     pagination.value.total = undefined;
     pagination.value.pageSize = 100;
     currDbName.value = '';
@@ -951,16 +878,6 @@ import { getMaxLength } from '../utils/common';
     openDbListDialog.value = true;
     searchDbData();
   }
-  // 数据库类型更改默认端口
-  const typeChange = (e)=>{
-    if (e == 0) {
-      openDbModel.port = 1433;
-    } else if (e == 1) {
-      openDbModel.port = 3306;
-    } else if (e == 2){
-      openDbModel.port = 5432;
-    }
-  }
   // 选择db
   const selectDb = (openDialog)=> {
     if (!currSelectDb.value || !currSelectDb.value.key) {
@@ -970,16 +887,7 @@ import { getMaxLength } from '../utils/common';
     let data = currdbData.value.filter(item => currSelectDb.value.key === item.key)[0];
     console.log('selectDb');
     console.log(data);
-    openDbModel.key = data.key;
-    openDbModel.account = data.account;
-    openDbModel.passWord = data.passWord;
-    openDbModel.address = data.address;
-    openDbModel.type = data.type;
-    openDbModel.port = data.port;
-    openDbModel.trustCert = data.trustCert;
-    openDbModel.trustedConnection = data.trustedConnection;
-    openDbModel.encrypt = data.encrypt;
-    console.log(openDbModel);
+    callChildInit();
     if (openDialog) {
       openDbListDialog.value = false;
       openDbDialog.value = true;
@@ -1197,7 +1105,7 @@ import { getMaxLength } from '../utils/common';
   }
 
   // 清空
-  const clearData = () => {
+  const clearEditData = () => {
     editor.setValue('');
   }
 
