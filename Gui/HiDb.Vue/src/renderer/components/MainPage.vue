@@ -39,12 +39,10 @@
             </a-tooltip>
             <span style="margin-left: 10px;">|</span>
           </span>
-          <span v-if="currDatabase.type != null && currDatabase.type!= undefined" class="info">
-            <span style="color:#fff">{{ dbTypeOptions.find(c=> c.value == currDatabase.type).label }}</span>
-            <span style="margin-left: 10px;">|</span>
-          </span>
           <span v-if="currDatabase.name" class="info">
-            <database-outlined :width="20" :height="20" />
+            <sql-server v-if="currDatabase.type == 0"></sql-server>
+            <my-sql v-if="currDatabase.type == 1" :color="'white'"></my-sql>
+            <pg-sql v-if="currDatabase.type == 2"></pg-sql>
             {{ currDatabase.name }}
           </span>
           <span v-if="currDatabase.address" class="info">
@@ -258,7 +256,7 @@
                       <span>
                         <span v-if="column.dataIndex == 'name'">
                           <sql-server v-if="record.type == 0"></sql-server>
-                          <my-sql v-if="record.type == 1"></my-sql>
+                          <my-sql v-if="record.type == 1" :color="'dark'"></my-sql>
                           <pg-sql v-if="record.type == 2"></pg-sql>
                         </span>
                         {{ text }}
@@ -270,7 +268,7 @@
                   <div class="editable-row-operations">
                     <span v-if="editableData[record.key]">
                       <a-typography-link @click="save(record.key)" style="margin-right: 8px;">保存</a-typography-link>
-                      <a @click="cancel(record.key)" style="color: #555555">撤销</a>
+                      <a @click="cancel(record.key)" style="color: #a1a0a0">撤销</a>
                     </span>
                     <span v-else>
                       <a-typography-link @click="edit(record.key)"  style="margin-right: 8px;">
@@ -291,7 +289,7 @@
         </template>
       </a-modal>
       <a-modal v-model:open="openDbDialog" title="连接数据库">
-        <open-db-dialog ref="openDbDialogRef"></open-db-dialog>
+        <open-db-dialog ref="openDbDialogRef" :model="selectDbVal"></open-db-dialog>
         <template #footer>
           <a-button key="back" @click="cancelDbDialog">取消</a-button>
           <a-button key="submit" type="primary" :loading="submitOpenDbLoading" @click="submitOpenDb">连接</a-button>
@@ -518,12 +516,13 @@ import { dbTypeOptions } from '../utils/database';
     })
   }
   const openDbDialogRef = ref(null);
-
-  const callChildInit = () => {
+  const callOpenDbInit = (data) => {
+    console.log('callOpenDbInit');
     if (openDbDialogRef.value) {
-      openDbDialogRef.value.init();
+      openDbDialogRef.value.init(data);
     }
   };
+
   const onToolsSearch = (val)=>{
     if (!val) {
       currToolDrawerData.value = toolDrawerData.value;
@@ -739,15 +738,7 @@ import { dbTypeOptions } from '../utils/database';
       submitOpenDbList();
     } else {
       openDbDialog.value = true;
-      openDbModel.key = getGuid();
-      openDbModel.account = '';
-      openDbModel.passWord =  '';
-      openDbModel.address = '';
-      openDbModel.type = 0;
-      openDbModel.port = 1433;
-      openDbModel.trustCert = true;
-      openDbModel.trustedConnection = false;
-      openDbModel.encrypt = true;
+      callOpenDbInit(null);
     }
   };
 
@@ -898,7 +889,7 @@ import { dbTypeOptions } from '../utils/database';
     clearCurrDbData();
     currloading.value = true;
     submitOpenDbLoading.value = true;
-    connectDb(openDbModel).then(res=>{
+    connectDb(selectDbVal.value).then(res=>{
       currloading.value = false;
       if (!res.data || !res.data || !res.data.success) {
         message.error(res.data.message);
@@ -907,9 +898,9 @@ import { dbTypeOptions } from '../utils/database';
         message.success('连接成功');
         openDbDialog.value = false;
         submitOpenDbLoading.value = false;
-        currDatabase.value = openDbModel;
+        currDatabase.value = selectDbVal.value;
         // 保存到本地
-        saveDbByLocal(openDbModel);
+        saveDbByLocal(selectDbVal.value);
         // 加载数据库列表
         loadDataBase();
       }
@@ -959,15 +950,15 @@ import { dbTypeOptions } from '../utils/database';
     searchDbData();
   }
   // 选择db
+  let selectDbVal = ref<ConnectDbInput>(null);
   const selectDb = (openDialog)=> {
     if (!currSelectDb.value || !currSelectDb.value.key) {
       message.error('请选择一个数据库');
       return false;
     }
-    let data = currdbData.value.filter(item => currSelectDb.value.key === item.key)[0];
+    selectDbVal.value = currdbData.value.filter(item => currSelectDb.value.key === item.key)[0];
     console.log('selectDb');
-    console.log(data);
-    callChildInit();
+    console.log(selectDbVal.value);
     if (openDialog) {
       openDbListDialog.value = false;
       openDbDialog.value = true;

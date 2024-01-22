@@ -60,12 +60,21 @@
 <script setup lang="ts">
 
 import { getGuid } from '@renderer/utils/guid';
-import { reactive, ref } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 import { ConnectDbInput } from '../model/MainPageMode';
 import { dbTypeOptions } from '../../utils/database';
 
 const isMore = ref(false);
-const openDbModel = reactive<ConnectDbInput>({
+const props = defineProps({
+    model: {
+        type: Object,
+        default: null
+    }
+});
+onMounted(() => {
+    init(props.model);
+});
+const openDbModel = ref<ConnectDbInput>({
     key: getGuid(),
     name: '',
     account: '',
@@ -85,19 +94,38 @@ const submitIsMore = () => {
 
 // 数据库类型更改默认端口
 const typeChange = (e)=>{
-    openDbModel.port = e.port;
+    openDbModel.value.port = e.port;
 }
 
-const init = ()=>{
-    openDbModel.key = getGuid();
-    openDbModel.account = '';
-    openDbModel.passWord =  '';
-    openDbModel.address = '';
-    openDbModel.type = 0;
-    openDbModel.port = dbTypeOptions[0].port;
-    openDbModel.trustCert = true;
-    openDbModel.trustedConnection = false;
-    openDbModel.encrypt = true;
+const init = (data)=>{
+    if (!data) {
+        openDbModel.value.key = getGuid();
+        openDbModel.value.account = '';
+        openDbModel.value.name = '';
+        openDbModel.value.passWord =  '';
+        openDbModel.value.address = '';
+        openDbModel.value.type = 0;
+        openDbModel.value.port = dbTypeOptions[0].port;
+        openDbModel.value.trustCert = true;
+        openDbModel.value.trustedConnection = false;
+        openDbModel.value.encrypt = true;
+    } else {
+        openDbModel.value.key = data.key;
+        openDbModel.value.account = data.account;
+        openDbModel.value.passWord = data.passWord;
+        openDbModel.value.address = data.address;
+        openDbModel.value.name = data.name;
+        openDbModel.value.type = data.type;
+        openDbModel.value.port = data.port;
+        openDbModel.value.trustCert = data.trustCert;
+        openDbModel.value.trustedConnection = data.trustedConnection;
+        openDbModel.value.encrypt = data.encrypt;
+    }
 }
+
+defineExpose({
+    init,
+    openDbModel
+})
 
 </script>
