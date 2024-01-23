@@ -610,10 +610,14 @@ import { dbTypeOptions } from '../utils/database';
       return [];
     }
     let currMode = currDb.children[0];
-    if (!currMode || !currMode.children || currMode.children.length < 1) {
+    if (!currMode) {
+      return [];
+    }
+    let children = currMode.oldchildren ? currMode.oldchildren : currMode.children;
+    if (!children || children.length < 1) {
       return [];
     } else {
-      return currMode.children.map((item: any) => {
+      return children.map((item: any) => {
         return {
           label: item.title,
           kind: item.title,
