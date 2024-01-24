@@ -235,54 +235,7 @@
           </div>
       </div>
       <a-modal v-model:open="openDbListDialog" title="数据库列表" width="830px" height="550px">
-        <div class="db-dialog">
-          <a-table class="table"
-              :columns="dbColumns" 
-              size="small"
-              :data-source="currdbData"
-              :row-selection="rowSelection"
-              :scroll="{ y: 500 }"
-              :loading="dbloading"
-              :pagination="false">
-              <template #bodyCell="{ column, text, record }">
-                <template v-if="['name', 'account', 'address'].includes(column.dataIndex)">
-                  <div>
-                    <a-input
-                      v-if="editableData[record.key]"
-                      v-model:value="editableData[record.key][column.dataIndex]"
-                      style="margin: -5px 0"
-                    />
-                    <template v-else>
-                      <span>
-                        <span v-if="column.dataIndex == 'name'">
-                          <sql-server v-if="record.type == 0"></sql-server>
-                          <my-sql v-if="record.type == 1" :color="'dark'"></my-sql>
-                          <pg-sql v-if="record.type == 2"></pg-sql>
-                        </span>
-                        {{ text }}
-                      </span>
-                    </template>
-                  </div>
-                </template>
-                <template v-else-if="column.dataIndex === 'operation'">
-                  <div class="editable-row-operations">
-                    <span v-if="editableData[record.key]">
-                      <a-typography-link @click="save(record.key)" style="margin-right: 8px;">保存</a-typography-link>
-                      <a @click="cancel(record.key)" style="color: #a1a0a0">撤销</a>
-                    </span>
-                    <span v-else>
-                      <a-typography-link @click="edit(record.key)"  style="margin-right: 8px;">
-                        编辑
-                      </a-typography-link>
-                      <a-popconfirm title="确认删除吗?" @confirm="deleteDbRow(record.key)">
-                        <a style="color: rgb(251, 78, 78);">删除</a>
-                      </a-popconfirm>
-                    </span>
-                  </div>
-                </template>
-              </template>
-          </a-table>
-        </div>
+        <db-list-dialog ref="dbListDialogRef" />
         <template #footer>
           <a-button key="submit" type="default" @click="selectDb(true)">打开</a-button>
           <a-button key="submit" type="primary" @click="selectDbAndOpen">连接</a-button>
@@ -344,7 +297,7 @@
 </template>
 
 <script lang="ts" setup>
-import { cloneDeep } from 'lodash-es';
+
 import { h, ref, watch, onMounted, UnwrapRef, reactive, createVNode, defineComponent  } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import { ExclamationCircleOutlined,BarsOutlined,PlusCircleOutlined,DeleteOutlined,CheckOutlined,SaveOutlined, WifiOutlined,ApiOutlined,UserOutlined,BorderlessTableOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownOutlined, FrownFilled  } from '@ant-design/icons-vue';
@@ -364,6 +317,7 @@ import TableEdit from './edits/TableEdit.vue';
 import AboutDialog from './dialogs/AboutDialog.vue';
 import VersionDialog from './dialogs/VersionDialog.vue';
 import OpenDbDialog from './dialogs/OpenDbDialog.vue';
+import DbListDialog from './dialogs/DbListDialog.vue';
 import { deleteTable, clearTable } from '../api/table';
 import axios from 'axios';
 import { getMaxLength } from '../utils/common';
@@ -373,7 +327,6 @@ import { dbTypeOptions } from '../utils/database';
   const pageHeight = ref(0);
   const dftPageHeight = ref(0);
   const loading = ref(false);
-  const dbloading = ref(false);
   const openVersionDialog = ref(false);
   const editorContainer = ref<any>(null)
   let editor = null; // 当前编辑器
@@ -426,7 +379,6 @@ import { dbTypeOptions } from '../utils/database';
   // 查询模式
   const noPage = ref(false);
   const selectDbData = ref<Array<string>>([]);
-  const editableData: UnwrapRef<Record<string, ConnectDbInput>> = reactive({});
   const currRightData = ref<any>(null);
   // 全局加载
   const currloading = ref<boolean>(false);
@@ -435,32 +387,10 @@ import { dbTypeOptions } from '../utils/database';
   // 表格数据列
   const columns = ref<any[]>([]);
   const toolSearchValue = ref<string>('');
-  // 表格数据列
-  const dbColumns = ref<any[]>([{
-    title: '名称',
-    dataIndex: 'name',
-    sorter: false
-  },{
-    title: '地址',
-    dataIndex: 'address',
-    sorter: false
-  },{
-    title: '用户名',
-    dataIndex: 'account',
-    sorter: false,
-    width: 140
-  },{
-    title: '操作',
-    dataIndex: 'operation',
-    width: 90,
-    fixed: 'right'
-  }]);
   // 主题
   const theme = ref<MenuTheme>('dark');
   // 当前表格数据
   const currData = ref<any[]>([]);
-  // 当前数据库表格数据
-  const currdbData = ref<ConnectDbInput[]>([]);
   // 表格分页信息
   const pagination = ref({
     total: null,
@@ -516,6 +446,7 @@ import { dbTypeOptions } from '../utils/database';
     })
   }
   const openDbDialogRef = ref(null);
+  const dbListDialogRef = ref(null);
   const callOpenDbInit = (data) => {
     console.log('callOpenDbInit');
     if (openDbDialogRef.value) {
@@ -807,24 +738,7 @@ import { dbTypeOptions } from '../utils/database';
   const menuRightClick = (e)=>{
     currRightData.value = e.node;
   }
-  const edit = (key: string) => {
-    editableData[key] = cloneDeep(currdbData.value.filter(item => key === item.key)[0]);
-  };
-  const save = (key: string) => {
-    Object.assign(currdbData.value.filter(item => key === item.key)[0], editableData[key]);
-    delete editableData[key];
-    console.log('save : ' + JSON.stringify(currdbData.value))
-    localStorage.setItem('hidbdata', JSON.stringify(currdbData.value));
-  };
-  const cancel = (key: string) => {
-    delete editableData[key];
-  };
   
-  const deleteDbRow = (key: string)=>{
-    let index = currdbData.value.findIndex(item => key === item.key);
-    currdbData.value.splice(index, 1);
-    localStorage.setItem('hidbdata', JSON.stringify(currdbData.value));
-  }
 
   const onContextMenuClick = (treeKey: string, menuKey: string | number, data: any) => {
     if (menuKey == '11') {
@@ -916,10 +830,9 @@ import { dbTypeOptions } from '../utils/database';
   };
   // 保存数据库到本地
   const saveDbByLocal = (data) => {
-    searchDbData();
-    console.log('saveDbByLocal');
     // 寻找相同地址，账号和类型的本地记录
-    let index = currdbData.value.findIndex(c=> c.key == data.key);
+    let currdbData = dbListDialogRef.value.currdbData;
+    let index = currdbData.findIndex(c=> c.key == data.key);
     if (!data.name || data.name.length < 1) {
       // 默认名称为地址
       data.name = data.address;
@@ -927,14 +840,14 @@ import { dbTypeOptions } from '../utils/database';
     if (data.saveLocal){
       if (index != -1) {
         // 更新本地
-        currdbData.value[index].passWord = data.passWord;
-        currdbData.value[index].port = data.port;
-        currdbData.value[index].trustCert = data.trustCert;
-        currdbData.value[index].trustedConnection = data.trustedConnection;
-        currdbData.value[index].encrypt = data.encrypt;
+        currdbData[index].passWord = data.passWord;
+        currdbData[index].port = data.port;
+        currdbData[index].trustCert = data.trustCert;
+        currdbData[index].trustedConnection = data.trustedConnection;
+        currdbData[index].encrypt = data.encrypt;
       } else {
         // 新增本地
-        currdbData.value.push(data);
+        currdbData.push(data);
       }
     } else {
       if (index == -1) {
@@ -942,25 +855,27 @@ import { dbTypeOptions } from '../utils/database';
         return;
       } else {
         // 不保存移除本地
-        currdbData.value.splice(index, 1);
+        currdbData.splice(index, 1);
       }
     }
-    console.log('save-local:' + JSON.stringify(currdbData.value));
-    localStorage.setItem('hidbdata', JSON.stringify(currdbData.value));
+    console.log('save-local:' + JSON.stringify(currdbData));
+    localStorage.setItem('hidbdata', JSON.stringify(currdbData));
   }
   // 打开数据库列表
-  const submitOpenDbList = ()=>{
+  const submitOpenDbList = () => {
     openDbListDialog.value = true;
-    searchDbData();
   }
   // 选择db
   let selectDbVal = ref<ConnectDbInput>(null);
   const selectDb = (openDialog)=> {
-    if (!currSelectDb.value || !currSelectDb.value.key) {
+    console.log(dbListDialogRef.value);
+    let currSelectDb = dbListDialogRef.value.currSelectDb;
+    if (!currSelectDb || !currSelectDb.key) {
       message.error('请选择一个数据库');
       return false;
     }
-    selectDbVal.value = currdbData.value.filter(item => currSelectDb.value.key === item.key)[0];
+    let currdbData = dbListDialogRef.value.currdbData;
+    selectDbVal.value = currdbData.filter(item => currSelectDb.key === item.key)[0];
     console.log('selectDb');
     console.log(selectDbVal.value);
     if (openDialog) {
@@ -978,21 +893,6 @@ import { dbTypeOptions } from '../utils/database';
       submitOpenDb();
     }
   }
-  // 当前选择数据库
-  const currSelectDb = ref<DataType>();
-  // 选择数据库事件
-  const rowSelection: TableProps['rowSelection'] = {
-    onChange: (selectedRowKeys: string[], selectedRows: DataType[]) => {
-      console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows);
-      currSelectDb.value = selectedRows[0];
-    },
-    getCheckboxProps: (record: DataType) => ({
-      disabled: record.name === 'Disabled User', // Column configuration not to be checked
-      name: record.name,
-    }),
-    type: 'radio',
-    fixed: true
-  };
   // 左侧菜单搜索事件
   const onSearch = () => {
     treeData.value = [];
@@ -1168,15 +1068,6 @@ import { dbTypeOptions } from '../utils/database';
     } else {
       return value;
     }
-  }
-
-  // 获取本地数据库列表
-  const searchDbData = ()=> {
-    dbloading.value = true;
-    let data = localStorage.getItem('hidbdata');
-    console.log('get-local:' + data);
-    currdbData.value = data ? JSON.parse(data) : [];
-    dbloading.value = false;
   }
 
   // 清空
