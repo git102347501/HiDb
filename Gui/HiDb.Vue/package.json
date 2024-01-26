@@ -1,10 +1,10 @@
 {
   "name": "hidb",
-  "version": "0.0.6",
+  "version": "0.0.8",
   "main": "./dist/electron/main/main.js",
   "author": "https://github.com/git102347501/HiDb",
   "description": "hidb",
-  "license": "AGPL-3.0 license",
+  "license": "Apache-2.0 license",
   "scripts": {
     "dev": "esno .electron-vite/dev-runner.ts",
     "build": "cross-env BUILD_TARGET=clean esno .electron-vite/build.ts -m prod && electron-builder -c build.json",

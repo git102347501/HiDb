@@ -39,12 +39,10 @@
             </a-tooltip>
             <span style="margin-left: 10px;">|</span>
           </span>
-          <span v-if="currDatabase.type != null && currDatabase.type!= undefined" class="info">
-            <span style="color:#fff">{{ dbTypeOptions.find(c=> c.value == currDatabase.type).label }}</span>
-            <span style="margin-left: 10px;">|</span>
-          </span>
           <span v-if="currDatabase.name" class="info">
-            <database-outlined :width="20" :height="20" />
+            <sql-server v-if="currDatabase.type == 0"></sql-server>
+            <my-sql v-if="currDatabase.type == 1" :color="'white'"></my-sql>
+            <pg-sql v-if="currDatabase.type == 2"></pg-sql>
             {{ currDatabase.name }}
           </span>
           <span v-if="currDatabase.address" class="info">
@@ -89,7 +87,7 @@
                   <template #switcherIcon="{ switcherCls }">
                     <down-outlined :class="switcherCls" />
                   </template>
-                  <template #icon="{ type, selected }">
+                  <template #icon="{ type, mode, database }">
                     <template v-if="type === 'db'">
                       <database-outlined />
                     </template>
@@ -97,7 +95,10 @@
                       <tablet-outlined />
                     </template>
                     <template v-if="type === 'table-search'">
-                      <a-input placeholder="Basic usage" />
+                      <a-input-search
+                        placeholder="输入关键字搜索表" size="middle"  @search="onTableSearch($event, mode, database)"
+                        :style="{ 'width': (menuWidth - 110) + 'px','max-width': '300px' }" 
+                      />
                     </template>
                     <template v-if="type === 'table'">
                       <table-outlined />
@@ -144,7 +145,7 @@
                         style="margin-right: 6px;">执行</a-button>
                   </a-tooltip>
                   <a-tooltip title="清空SQL区域内容">
-                      <a-button @click="clearData" :disabled="!currDatabase || !currDatabase.key" 
+                      <a-button @click="clearEditData" :disabled="!currDatabase || !currDatabase.key" 
                       :icon="h(RedoOutlined)">清空</a-button>
                   </a-tooltip>
                 </div>
@@ -170,15 +171,18 @@
                   <a-input-number v-if="!noPage"
                     style="margin-left: 4px;width: 84px;text-align: center;"
                     id="pageSize" v-model:value="pagination.pageSize" :min="1" />
+                  <a-tooltip title="常用语句">
+                    <a-button @click="openToolDrawerDialog" style="margin-left: 6px" type="default" shape="circle" :icon="h(BarsOutlined)" />
+                  </a-tooltip>
                 </div>
               </div>
               <div class="context" >
                 <div class="sql" :style="{ 'height': editHeight + 'px' }">
                     <div ref="editorContainer" class="editor" style="height:100%; width: 100%;"></div>
                 </div>
-                <div :class="menuWidth <= 350 ? 
-                  'drap-line drap-line-left' : menuWidth >= 850 ? 
-                  'drap-line drap-line-right': 'drap-line'" 
+                <div :class="editHeight <= 105 ? 
+                  'edit-drap-line edit-drap-line-left' : editHeight >= 850 ? 
+                  'edit-drap-line edit-drap-line-right': 'edit-drap-line'" 
                   @mousedown="editResize"></div>
                 <div class="data"  :style="{ 'height': editBodyHeight }" 
                     v-show="!currloading">
@@ -191,16 +195,21 @@
                         :loading="loading"
                         :pagination="false"
                     >
-                      <template #headerCell="{ column }"/>
+                      <template #headerCell="{ column, text  }">
+                        <a @click="tableHeardClick(column.title)">{{ column.title }}</a>
+                      </template>
+                      <template #bodyCell="{ column, text }">
+                        <a @click="tableColumnClick(text)">{{ text }}</a>
+                      </template>
                     </a-table>
                     <div class="msg-line">
                       <div class="msg error" v-if="errorMsg">
                         执行错误: {{errorMsg}}
                       </div>
-                      <div class="msg" v-if="isQuery && pagination.total != null &&  pagination.total != undefined">
+                      <div class="msg" v-if="isQuery && !errorMsg && pagination.total != null &&  pagination.total != undefined">
                         总行数: {{ pagination.total }} ｜ 页行数: {{ pagination.pageSize }}
                       </div>
-                      <div class="msg" v-if="!isQuery">
+                      <div class="msg" v-if="!isQuery && !errorMsg">
                         影响行数: {{executeNum}}
                       </div>
                       <div class="msg" v-if="elapsedTimeRef">
@@ -226,117 +235,14 @@
           </div>
       </div>
       <a-modal v-model:open="openDbListDialog" title="数据库列表" width="830px" height="550px">
-        <div class="db-dialog">
-          <a-table class="table"
-                :columns="dbColumns" 
-                size="small"
-                :data-source="currdbData"
-                :row-selection="rowSelection"
-                :scroll="{ y: 500 }"
-                :loading="dbloading"
-                :pagination="false">
-                
-              <template #bodyCell="{ column, text, record }">
-                <template v-if="['name', 'account', 'address'].includes(column.dataIndex)">
-                  <div>
-                    <a-input
-                      v-if="editableData[record.key]"
-                      v-model:value="editableData[record.key][column.dataIndex]"
-                      style="margin: -5px 0"
-                    />
-                    <template v-else>
-                      <span>
-                        <span v-if="column.dataIndex == 'name'">
-                          <sql-server v-if="record.type == 0"></sql-server>
-                          <my-sql v-if="record.type == 1"></my-sql>
-                          <pg-sql v-if="record.type == 2"></pg-sql>
-                        </span>
-                        {{ text }}
-                      </span>
-                    </template>
-                  </div>
-                </template>
-                <template v-else-if="column.dataIndex === 'operation'">
-                  <div class="editable-row-operations">
-                    <span v-if="editableData[record.key]">
-                      <a-typography-link @click="save(record.key)" style="margin-right: 8px;">保存</a-typography-link>
-                      <a @click="cancel(record.key)" style="color: #555555">撤销</a>
-                    </span>
-                    <span v-else>
-                      <a-typography-link @click="edit(record.key)"  style="margin-right: 8px;">
-                        编辑
-                      </a-typography-link>
-                      <a-popconfirm title="确认删除吗?" @confirm="deleteDbRow(record.key)">
-                        <a style="color: rgb(251, 78, 78);">删除</a>
-                      </a-popconfirm>
-                    </span>
-                  </div>
-                </template>
-              </template>
-          </a-table>
-        </div>
+        <db-list-dialog ref="dbListDialogRef" />
         <template #footer>
           <a-button key="submit" type="default" @click="selectDb(true)">打开</a-button>
           <a-button key="submit" type="primary" @click="selectDbAndOpen">连接</a-button>
         </template>
       </a-modal>
       <a-modal v-model:open="openDbDialog" title="连接数据库">
-        <div class="db-dialog">
-          <a-form :model="openDbModel" :label-col="{ style: { width: '140px' } }" :wrapper-col="{ span: 14 }">
-            <a-form-item label="数据库类型" name="type"
-                :rules="[{ required: true, message: '请选择数据库类型!' }]">
-              <a-select
-                @change="typeChange"
-                v-model:value="openDbModel.type"
-                style="width: 245px; margin-right: 6px;"
-                placeholder="请选择数据库类型"
-                :options="dbTypeOptions"
-              ></a-select>
-              <sql-server v-if="openDbModel.type == 0"></sql-server>
-              <my-sql v-if="openDbModel.type == 1"></my-sql>
-              <pg-sql v-if="openDbModel.type == 2"></pg-sql>
-            </a-form-item>
-            <a-form-item label="数据库地址" name="address"
-                :rules="[{ required: true, message: '请输入数据库地址' }]">
-              <a-input style="width: 190px;" v-model:value="openDbModel.address" placeholder="请输入数据库地址" />
-              <a-input style="width: 80px; margin-left: 4px;" v-model:value="openDbModel.port" placeholder="端口" />
-            </a-form-item>
-            <a-form-item label="登录名" name="account"
-                :rules="[{ required: true, message: '请输入登录名!' }]">
-              <a-input v-model:value="openDbModel.account" placeholder="请输入登录名" />
-            </a-form-item>
-            <a-form-item label="密码" name="passWord"
-                :rules="[{ required: true, message: '请输入密码!' }]">
-              <a-input-password v-model:value="openDbModel.passWord" placeholder="请输入密码" />
-            </a-form-item>
-            <a-row>
-              <a-col :span="12">
-                <a-form-item v-if="isMore" label="启用加密连接" name="encrypt">
-                    <a-checkbox v-model:checked="openDbModel.encrypt"></a-checkbox>
-                </a-form-item>
-              </a-col>
-              <a-col :span="12">
-                <a-form-item v-if="isMore" label="信任服务器证书" name="trustCert">
-                    <a-checkbox v-model:checked="openDbModel.trustCert"></a-checkbox>
-                </a-form-item>
-              </a-col>
-              <a-col :span="12">
-                <a-form-item v-if="isMore" label="保存到本地列表" name="saveLocal">
-                    <a-checkbox v-model:checked="openDbModel.saveLocal"></a-checkbox>
-                </a-form-item>
-              </a-col>
-              <!-- <a-col :span="12">
-                <a-form-item v-if="isMore" label="使用Windows身份验证" name="trustedConnection">
-                    <a-checkbox v-model:checked="openDbModel.trustedConnection"></a-checkbox>
-                </a-form-item>
-              </a-col> -->
-            </a-row>
-            <div class="more">
-              <a-button @click="submitIsMore" class="btn" type="primary" ghost>
-              {{ isMore ? '收缩' : '更多' }}</a-button>
-            </div>
-          </a-form>
-        </div>
+        <open-db-dialog ref="openDbDialogRef" :model="selectDbVal"></open-db-dialog>
         <template #footer>
           <a-button key="back" @click="cancelDbDialog">取消</a-button>
           <a-button key="submit" type="primary" :loading="submitOpenDbLoading" @click="submitOpenDb">连接</a-button>
@@ -354,14 +260,47 @@
           <a-button key="back" @click="openVersionDialog = false">关闭</a-button>
         </template>
       </a-modal>
+      <a-drawer class="tools" :title="'常用语句 (' + currToolDrawerData.length  + ')'" :size="400" 
+        :bodyStyle="{'padding': '8px'}" :open="openToolDrawer" @close="openToolDrawer = false">
+        <template #extra>
+          <a-tooltip title="添加语句">
+            <a-button @click="addToolsSearch" type="default" shape="circle" :icon="h(PlusCircleOutlined)" />
+          </a-tooltip>
+          <a-tooltip title="保存全部">
+            <a-button @click="saveToolsSearch" type="default" shape="circle" 
+              style="margin: 6px 0 0 6px" :icon="h(SaveOutlined)" />
+          </a-tooltip>
+        </template>
+        <div class="search">
+          <a-input-search  v-model:value="toolSearchValue"
+            placeholder="搜索语句"
+            @search="onToolsSearch" />
+        </div>
+        <div class="list">
+          <a-card size="small" hoverable
+            v-for="(item, index) in currToolDrawerData"
+            v-bind:key="index" style="width: 100%; margin-top: 6px;">
+            <a-textarea v-model:value="item.data" placeholder="输入sql语句" :rows="4" />
+            <a-tooltip title="删除">
+              <a-button @click="deleteToolSearch(index)" danger shape="circle" 
+              style="margin: 6px 6px 0 0" :icon="h(DeleteOutlined)" />
+            </a-tooltip>
+            <a-tooltip title="应用">
+              <a-button @click="selectToolSearch(item.data)" type="default" shape="circle" 
+                style="margin-top: 6px" :icon="h(CheckOutlined)" />
+            </a-tooltip>
+          </a-card>
+          <a-empty description="暂无保存语句" v-if="!currToolDrawerData || currToolDrawerData.length < 1" />
+        </div>
+      </a-drawer>
     </div>
 </template>
 
 <script lang="ts" setup>
-import { cloneDeep } from 'lodash-es';
+
 import { h, ref, watch, onMounted, UnwrapRef, reactive, createVNode, defineComponent  } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { ExclamationCircleOutlined, WifiOutlined,ApiOutlined,UserOutlined,BorderlessTableOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownOutlined, FrownFilled  } from '@ant-design/icons-vue';
+import { ExclamationCircleOutlined,BarsOutlined,PlusCircleOutlined,DeleteOutlined,CheckOutlined,SaveOutlined, WifiOutlined,ApiOutlined,UserOutlined,BorderlessTableOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownOutlined, FrownFilled  } from '@ant-design/icons-vue';
 import { getDb,getMode,getTable } from '../api/menu';
 import { getSearch,execute} from '../api/search';
 import { connectDb } from '../api/datasource';
@@ -377,15 +316,17 @@ import PgSql from './icons/PgSql.vue';
 import TableEdit from './edits/TableEdit.vue';
 import AboutDialog from './dialogs/AboutDialog.vue';
 import VersionDialog from './dialogs/VersionDialog.vue';
+import OpenDbDialog from './dialogs/OpenDbDialog.vue';
+import DbListDialog from './dialogs/DbListDialog.vue';
 import { deleteTable, clearTable } from '../api/table';
 import axios from 'axios';
 import { getMaxLength } from '../utils/common';
+import { dbTypeOptions } from '../utils/database';
 
   const sh = 280;
   const pageHeight = ref(0);
   const dftPageHeight = ref(0);
   const loading = ref(false);
-  const dbloading = ref(false);
   const openVersionDialog = ref(false);
   const editorContainer = ref<any>(null)
   let editor = null; // 当前编辑器
@@ -397,6 +338,7 @@ import { getMaxLength } from '../utils/common';
     mode: '',
     dbtype: 0
   });
+  const openToolDrawer = ref<boolean>(false); // 工具插窗
   const searchValue = ref<string>(''); // 左侧搜索内容
   const expandedMenuKeys = ref<string[]>([]); // tree搜索key
   const selectedMenuKeys = ref<string[]>([]); // tree选择key
@@ -406,15 +348,7 @@ import { getMaxLength } from '../utils/common';
   const openAboutDialog = ref(false);
   // 选中数据库名称
   const currDbName = ref('');
-  const dbTypeOptions = [{
-    value: 0,
-    label: 'SqlServer',
-  },{
-    value: 1,
-    label: 'MySql',
-  }];
   const submitOpenDbLoading = ref(false);
-  const isMore = ref(false);
   // 当前数据库信息
   const currDatabase = ref<ConnectDbInput>({
     key: null,
@@ -443,9 +377,8 @@ import { getMaxLength } from '../utils/common';
   const mouseEventY =  ref<number>(0);
 
   // 查询模式
-  const noPage = ref(true);
+  const noPage = ref(false);
   const selectDbData = ref<Array<string>>([]);
-  const editableData: UnwrapRef<Record<string, ConnectDbInput>> = reactive({});
   const currRightData = ref<any>(null);
   // 全局加载
   const currloading = ref<boolean>(false);
@@ -453,37 +386,18 @@ import { getMaxLength } from '../utils/common';
   const lifeTest = ref<number>(0);
   // 表格数据列
   const columns = ref<any[]>([]);
-  // 表格数据列
-  const dbColumns = ref<any[]>([{
-    title: '名称',
-    dataIndex: 'name',
-    sorter: false
-  },{
-    title: '地址',
-    dataIndex: 'address',
-    sorter: false
-  },{
-    title: '用户名',
-    dataIndex: 'account',
-    sorter: false,
-    width: 140
-  },{
-    title: '操作',
-    dataIndex: 'operation',
-    width: 90,
-    fixed: 'right'
-  }]);
+  const toolSearchValue = ref<string>('');
   // 主题
   const theme = ref<MenuTheme>('dark');
   // 当前表格数据
   const currData = ref<any[]>([]);
-  // 当前数据库表格数据
-  const currdbData = ref<ConnectDbInput[]>([]);
   // 表格分页信息
   const pagination = ref({
     total: null,
     pageSize: 100
   });
+  const currToolDrawerData = ref<any[]>([]);
+  const toolDrawerData = ref<any[]>([]);
   var cancelToken = axios.CancelToken.source();
   // 执行耗时/毫秒
   const elapsedTimeRef = ref<number | null>(0);
@@ -531,6 +445,90 @@ import { getMaxLength } from '../utils/common';
       }
     })
   }
+  const openDbDialogRef = ref(null);
+  const dbListDialogRef = ref(null);
+  const callOpenDbInit = (data) => {
+    console.log('callOpenDbInit');
+    if (openDbDialogRef.value) {
+      openDbDialogRef.value.init(data);
+    }
+  };
+
+  const onToolsSearch = (val)=>{
+    if (!val) {
+      currToolDrawerData.value = toolDrawerData.value;
+    } else {
+      currToolDrawerData.value = toolDrawerData.value.filter(c=> c.data.includes(val));
+    }
+  }
+  const addToolsSearch = (val) => {
+    currToolDrawerData.value.unshift(val);
+  }
+  const saveToolsSearch = () => {
+    if (toolSearchValue) {
+      onToolsSearch('');
+    }
+    localStorage.setItem('toolsdata', JSON.stringify(currToolDrawerData.value));
+    message.success('保存成功');
+  }
+  const deleteToolSearch = (index)=>{
+    currToolDrawerData.value.splice(index, 1);
+  }
+  const selectToolSearch = (val)=>{
+    editorAppendValue(val);
+    openToolDrawer.value = false;
+  }
+  const initToolsSearch = ()=> {
+    let data = localStorage.getItem('toolsdata');
+    if (data) {
+      toolDrawerData.value = JSON.parse(data);
+      currToolDrawerData.value = toolDrawerData.value;
+      console.log(JSON.stringify(currToolDrawerData.value));
+    } else {
+      toolDrawerData.value = [];
+      currToolDrawerData.value = [];
+    }
+  }
+
+  const openToolDrawerDialog = ()=>{
+    initToolsSearch();
+    openToolDrawer.value = true;
+  }
+  const onTableSearch = (data, mode, database)=>{
+    console.log('onTableSearch');
+    let currDb = treeData.value.find(c => c.title == database);
+    if (!currDb || !currDb.children || currDb.children.length < 1) {
+      return [];
+    }
+    let currMode = currDb.children.find(c => c.title == mode);
+    if (!currMode || !currMode.children || currMode.children.length < 1) {
+      return [];
+    }
+    if (!currMode.oldchildren) {
+      currMode.oldchildren = currMode.children;
+    }
+    if (!data) {
+      if (currMode.oldchildren){
+        currMode.children = currMode.oldchildren;
+        treeData.value = [...treeData.value];
+        return;
+      } else {
+        return;
+      }
+    } 
+    let currdata = data.toLowerCase();
+    currMode.children = currMode.oldchildren.filter(c=> c.type == 'table-search' || c.title.toLowerCase().includes(currdata));
+    if (currMode.children.length < 2) {
+      currMode.children.push({            
+        title: '未搜索到数据',
+        key: '未搜索到数据',
+        isLeaf: true,
+        disabled: true,
+        type: 'tablenull',
+      });
+    }
+    treeData.value = [...treeData.value];
+  }
   
   // 刷新当前数据库下拉表列表
   const refCurrDbTableList: any = () => {
@@ -543,10 +541,14 @@ import { getMaxLength } from '../utils/common';
       return [];
     }
     let currMode = currDb.children[0];
-    if (!currMode || !currMode.children || currMode.children.length < 1) {
+    if (!currMode) {
+      return [];
+    }
+    let children = currMode.oldchildren ? currMode.oldchildren : currMode.children;
+    if (!children || children.length < 1) {
       return [];
     } else {
-      return currMode.children.map((item: any) => {
+      return children.map((item: any) => {
         return {
           label: item.title,
           kind: item.title,
@@ -605,6 +607,17 @@ import { getMaxLength } from '../utils/common';
                 database: currMode.database
               }
             });
+            currMode.children.unshift({
+              title: '',
+              key: currMode.title + '-s',
+              isLeaf: true,
+              style: {
+                height: '35px'
+              },
+              type: 'table-search',
+              mode: currMode.title,
+              database: currMode.database
+            });
           }
           treeData.value = [...treeData.value];
         });
@@ -660,20 +673,8 @@ import { getMaxLength } from '../utils/common';
       submitOpenDbList();
     } else {
       openDbDialog.value = true;
-      openDbModel.key = getGuid();
-      openDbModel.account = '';
-      openDbModel.passWord =  '';
-      openDbModel.address = '';
-      openDbModel.type = 0;
-      openDbModel.port = 1433;
-      openDbModel.trustCert = true;
-      openDbModel.trustedConnection = false;
-      openDbModel.encrypt = true;
+      callOpenDbInit(null);
     }
-  };
-
-  const submitIsMore = () => {
-    isMore.value =!isMore.value;
   };
 
   // 编辑器大小改变
@@ -737,38 +738,7 @@ import { getMaxLength } from '../utils/common';
   const menuRightClick = (e)=>{
     currRightData.value = e.node;
   }
-  const edit = (key: string) => {
-    editableData[key] = cloneDeep(currdbData.value.filter(item => key === item.key)[0]);
-  };
-  const save = (key: string) => {
-    Object.assign(currdbData.value.filter(item => key === item.key)[0], editableData[key]);
-    delete editableData[key];
-    console.log('save : ' + JSON.stringify(currdbData.value))
-    localStorage.setItem('hidbdata', JSON.stringify(currdbData.value));
-  };
-  const cancel = (key: string) => {
-    delete editableData[key];
-  };
   
-  const deleteDbRow = (key: string)=>{
-    let index = currdbData.value.findIndex(item => key === item.key);
-    currdbData.value.splice(index, 1);
-    localStorage.setItem('hidbdata', JSON.stringify(currdbData.value));
-  }
-
-  const openDbModel = reactive<ConnectDbInput>({
-    key: getGuid(),
-    name: '',
-    account: '',
-    passWord: '',
-    address: '',
-    type: 0,
-    port: 1433,
-    trustCert: true,
-    trustedConnection: false,
-    encrypt: true,
-    saveLocal: true
-  });
 
   const onContextMenuClick = (treeKey: string, menuKey: string | number, data: any) => {
     if (menuKey == '11') {
@@ -782,7 +752,7 @@ import { getMaxLength } from '../utils/common';
       if (currDatabase.value.type == 0) {
         editor.setValue('select * from ' + currRightData.value.title);
       } else if (currDatabase.value.type == 1) {
-        editor.setValue( 'select * from ' + currRightData.value.title);
+        editor.setValue( 'select * from `' + currRightData.value.title + '`');
       }
       searchData();
     } else if (menuKey == '32') {
@@ -802,20 +772,20 @@ import { getMaxLength } from '../utils/common';
   };
   // 清空当前数据库数据
   const clearCurrDbData = () => {
+    clearEditData();
     treeData.value = [];
     currData.value = [];
     expandedMenuKeys.value = [];
     selectedMenuKeys.value = [];
     searchValue.value = '';
     isQuery.value = true;
-    editor.setValue('');
     pagination.value.total = undefined;
     pagination.value.pageSize = 100;
     currDbName.value = '';
     selectDbData.value = [];
     elapsedTimeRef.value = null;
     errorMsg.value = '';
-    noPage.value = true;
+    noPage.value = false;
     currDatabase.value = {
       key: null,
       name: '',
@@ -837,7 +807,7 @@ import { getMaxLength } from '../utils/common';
     clearCurrDbData();
     currloading.value = true;
     submitOpenDbLoading.value = true;
-    connectDb(openDbModel).then(res=>{
+    connectDb(selectDbVal.value).then(res=>{
       currloading.value = false;
       if (!res.data || !res.data || !res.data.success) {
         message.error(res.data.message);
@@ -846,9 +816,9 @@ import { getMaxLength } from '../utils/common';
         message.success('连接成功');
         openDbDialog.value = false;
         submitOpenDbLoading.value = false;
-        currDatabase.value = openDbModel;
+        currDatabase.value = selectDbVal.value;
         // 保存到本地
-        saveDbByLocal(openDbModel);
+        saveDbByLocal(selectDbVal.value);
         // 加载数据库列表
         loadDataBase();
       }
@@ -860,10 +830,9 @@ import { getMaxLength } from '../utils/common';
   };
   // 保存数据库到本地
   const saveDbByLocal = (data) => {
-    searchDbData();
-    console.log('saveDbByLocal');
     // 寻找相同地址，账号和类型的本地记录
-    let index = currdbData.value.findIndex(c=> c.key == data.key);
+    let currdbData = dbListDialogRef.value.currdbData;
+    let index = currdbData.findIndex(c=> c.key == data.key);
     if (!data.name || data.name.length < 1) {
       // 默认名称为地址
       data.name = data.address;
@@ -871,15 +840,14 @@ import { getMaxLength } from '../utils/common';
     if (data.saveLocal){
       if (index != -1) {
         // 更新本地
-        currdbData.value[index].passWord = data.passWord;
-        currdbData.value[index].name = data.name;
-        currdbData.value[index].port = data.port;
-        currdbData.value[index].trustCert = data.trustCert;
-        currdbData.value[index].trustedConnection = data.trustedConnection;
-        currdbData.value[index].encrypt = data.encrypt;
+        currdbData[index].passWord = data.passWord;
+        currdbData[index].port = data.port;
+        currdbData[index].trustCert = data.trustCert;
+        currdbData[index].trustedConnection = data.trustedConnection;
+        currdbData[index].encrypt = data.encrypt;
       } else {
         // 新增本地
-        currdbData.value.push(data);
+        currdbData.push(data);
       }
     } else {
       if (index == -1) {
@@ -887,46 +855,29 @@ import { getMaxLength } from '../utils/common';
         return;
       } else {
         // 不保存移除本地
-        currdbData.value.splice(index, 1);
+        currdbData.splice(index, 1);
       }
     }
-    console.log('save-local:' + JSON.stringify(currdbData.value));
-    localStorage.setItem('hidbdata', JSON.stringify(currdbData.value));
+    console.log('save-local:' + JSON.stringify(currdbData));
+    localStorage.setItem('hidbdata', JSON.stringify(currdbData));
   }
   // 打开数据库列表
-  const submitOpenDbList = ()=>{
+  const submitOpenDbList = () => {
     openDbListDialog.value = true;
-    searchDbData();
-  }
-  // 数据库类型更改默认端口
-  const typeChange = (e)=>{
-    if (e == 0) {
-      openDbModel.port = 1433;
-    } else if (e == 1) {
-      openDbModel.port = 3306;
-    } else if (e == 2){
-      openDbModel.port = 5432;
-    }
   }
   // 选择db
+  let selectDbVal = ref<ConnectDbInput>(null);
   const selectDb = (openDialog)=> {
-    if (!currSelectDb.value || !currSelectDb.value.key) {
+    console.log(dbListDialogRef.value);
+    let currSelectDb = dbListDialogRef.value.currSelectDb;
+    if (!currSelectDb || !currSelectDb.key) {
       message.error('请选择一个数据库');
       return false;
     }
-    let data = currdbData.value.filter(item => currSelectDb.value.key === item.key)[0];
+    let currdbData = dbListDialogRef.value.currdbData;
+    selectDbVal.value = currdbData.filter(item => currSelectDb.key === item.key)[0];
     console.log('selectDb');
-    console.log(data);
-    openDbModel.key = data.key;
-    openDbModel.account = data.account;
-    openDbModel.passWord = data.passWord;
-    openDbModel.address = data.address;
-    openDbModel.type = data.type;
-    openDbModel.port = data.port;
-    openDbModel.trustCert = data.trustCert;
-    openDbModel.trustedConnection = data.trustedConnection;
-    openDbModel.encrypt = data.encrypt;
-    console.log(openDbModel);
+    console.log(selectDbVal.value);
     if (openDialog) {
       openDbListDialog.value = false;
       openDbDialog.value = true;
@@ -942,21 +893,6 @@ import { getMaxLength } from '../utils/common';
       submitOpenDb();
     }
   }
-  // 当前选择数据库
-  const currSelectDb = ref<DataType>();
-  // 选择数据库事件
-  const rowSelection: TableProps['rowSelection'] = {
-    onChange: (selectedRowKeys: string[], selectedRows: DataType[]) => {
-      console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows);
-      currSelectDb.value = selectedRows[0];
-    },
-    getCheckboxProps: (record: DataType) => ({
-      disabled: record.name === 'Disabled User', // Column configuration not to be checked
-      name: record.name,
-    }),
-    type: 'radio',
-    fixed: true
-  };
   // 左侧菜单搜索事件
   const onSearch = () => {
     treeData.value = [];
@@ -1077,7 +1013,7 @@ import { getMaxLength } from '../utils/common';
         if (currDatabase.value.type == 0) {
           editor.setValue('select * from ' + e.node.dataRef.title);
         } else if (currDatabase.value.type == 1) {
-          editor.setValue( 'select * from ' + e.node.dataRef.title);
+          editor.setValue( 'select * from `' + e.node.dataRef.title + '`');
         }
         currDbName.value = e.node.dataRef.database;
         console.log('currDbName' + currDbName.value);
@@ -1134,27 +1070,27 @@ import { getMaxLength } from '../utils/common';
     }
   }
 
-  // 获取本地数据库列表
-  const searchDbData = ()=> {
-    dbloading.value = true;
-    let data = localStorage.getItem('hidbdata');
-    console.log('get-local:' + data);
-    currdbData.value = data ? JSON.parse(data) : [];
-    dbloading.value = false;
-  }
-
-  const clearData = ()=> {
+  // 清空
+  const clearEditData = () => {
     editor.setValue('');
   }
 
-  const isSelect = (val)=>{
-    if(val.includes('select') ){
-      return true;
+  // 获取是否为查询语句
+  const getIsQuery = (val) => {
+    const notquery = /(update|delete|drop|alter|truncate)/i;
+    if (notquery.test(val)) {
+      return false;
     }
-    if(val.includes('show') ){
+    const query = /(select|show)/i;
+    if (query.test(val)) {
       return true;
     }
     return false;
+  }
+
+  // 清空查询消息
+  const clearMsg = ()=>{
+    errorMsg.value = '';
   }
 
   // 表格主查询
@@ -1165,7 +1101,10 @@ import { getMaxLength } from '../utils/common';
       message.error('执行语句不能为空!');
       return;
     }
-    if (!isSelect((sql as any).toLowerCase())) {
+    
+    clearMsg();
+
+    if (!getIsQuery((sql as any).toLowerCase())) {
       isQuery.value = false;
       loading.value = true;
       execute({
@@ -1195,12 +1134,22 @@ import { getMaxLength } from '../utils/common';
         console.log(res);
         if (res && res.data && res.data.list && res.data.list.length > 0) {
           let obj  = res.data.list[0];
-          columns.value = Object.keys(obj).map(key => ({
-            title: key,
-            dataIndex: key,
+          columns.value = Object.keys(obj).map((element, index) => ({
+            title: element ? element : 'filed' + (index + 1),
+            dataIndex:  element ? element : 'filed' + (index + 1),
             sorter: false,
-            width: 30 + (getMaxLength(res.data.list, key) * 10)
+            width: 30 + (getMaxLength(res.data.list, element) * 10)
           }));
+          res.data.list.forEach((obj, index) => {
+            Object.keys(obj).forEach((key, index) => {
+              // 检查属性是否为空
+              if (key === "") {
+                const newKey = "filed" + (index + 1);
+                obj[newKey] = obj[key];
+                delete obj[key]; // 删除原属性
+              }
+            });
+          });
           currData.value = res.data.list;
           pagination.value.total = res.data.count;
         } else {
@@ -1218,6 +1167,25 @@ import { getMaxLength } from '../utils/common';
   // 撤销查询
   const cancelQuery = ()=>{
     cancelToken.cancel('您已撤销查询');
+  }
+
+  const tableHeardClick = (val)=>{
+    editorAppendValue(val);
+  }
+  const tableColumnClick = (val)=>{
+    editorAppendValue(val);
+  }
+  const editorAppendValue = (text)=>{
+    // 获取焦点位置
+    const position = editor.getPosition(); 
+    const appendText = {
+      range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column),
+      text: text,
+      forceMoveMarkers: true
+    };
+
+    // 执行编辑操作
+    editor.executeEdits('appendText', [appendText]);
   }
 
   // 提交删除表
@@ -1271,239 +1239,4 @@ import { getMaxLength } from '../utils/common';
     });
   }
 </script>
-
-<style lang="scss" scoped>
-  
-  .ant-row-rtl #components-layout-demo-top-side-2 .logo {
-    float: right;
-    margin: 16px 0 16px 24px;
-  }
-  
-  .site-layout-background {
-    background: #fff;
-  }
-  .main {
-    //margin-top: 30px;
-    width: 100%;
-    height: 100%;
-    overflow-y: hidden;
-    overflow-x: hidden;
-    display: flex;
-    flex-direction: column;
-
-    .header {
-        height: 50px;
-        width: 100%;
-        margin: 0;
-        padding: 0;
-        z-index: 999;
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-        background-color: rgb(24, 24, 40);
-
-        .btn {
-          width: 150px;
-          height: 100%;
-          display: flex;
-          flex-direction: row;
-          align-items: center;
-          justify-content: flex-start;
-          padding: 0 6px;
-        }
-        .title {
-          color: #ffffff;
-          margin-right: 12px;
-
-          .info {
-            margin-right: 12px;
-            cursor: pointer;
-          }
-        }
-    }
-
-    .content{
-      height: calc(100% - 50px);
-      width: 100%;
-      display: flex;
-      flex-direction: row;
-
-      
-      .menu {
-          height: calc(100% - 16px);
-          display: flex;
-          flex-direction: column;
-          padding: 8px;
-          background-color: #fff;
-
-          .search {
-              height: 45px;
-              width: 100%;
-              display: flex;
-              flex-direction: row;
-              align-items: center;
-              justify-content: center;
-          }
-
-          .tree {
-              width: 100%;
-              max-height: calc(100vh - 45px);
-              overflow-y: auto;
-          }
-      }
-      .drap-line {
-        height: 100%;
-        width: 5px;
-        background-color: #fffefe;
-        cursor: col-resize;
-      }
-      .drap-line-left {
-        border-left: #dbd7d7 2px solid;
-      }
-      .drap-line-right {
-        border-right: #dbd7d7 2px solid;
-      }
-      .work {
-          width: 100%;
-          height: calc(100vh - 50px);
-          padding: 0;
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-
-          .tools {
-              width: 100%;
-              height: 40px;
-              padding: 0 12px;
-              display: flex;
-              flex-direction: row;
-              align-items: center;
-              justify-content: space-between;
-
-              .tool-right {
-                display: flex;
-                flex-direction: row;
-                align-items: center;
-              }
-          }
-          .context {
-              width: 100%;
-              height: calc(100% - 40px);
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              padding: 0;
-              margin: 0;
-              background: '#fff'; 
-              padding: '6px'; 
-              min-height: '280px';
-
-              .drap-line {
-                width: calc(100% - 12px);
-                height: 1px;
-                background-color: #fffefe;
-                cursor: row-resize;
-                margin: 4px 0;
-              }
-              .drap-line-left {
-                border-top: #dbd7d7 2px solid;
-              }
-              .drap-line-right {
-                border-bottom: #dbd7d7 2px solid;
-              }
-
-              .sql {
-                  width: calc(100% - 12px);
-                  height: auto;
-                  border: #cccccc 1px solid;
-                  border-radius: 4px;
-                  padding: 6px;
-
-                  .input {
-                      height: calc(100% - 8px);
-                      margin: 4px;
-                      width: calc(100% - 8px);
-                  }
-                  .editor {
-                      height: 105px;
-                      margin: 4px;
-                      width: calc(100% - 8px);
-                  }
-              }
-              .data {
-                  width: 100%;
-
-                  .table {
-                    width: 100%;
-                    padding: 0;
-                    margin: 0;
-                  }
-                  .msg-line {
-                    display: flex;
-                    flex-direction: row;
-                    align-items: center;
-                    justify-content: flex-start;
-                    width: 100%;
-                    height: 30px;
-                    font-size: 12px;
-                    color: #333333;
-                    padding: 0 6px;
-                  }
-
-                  .msg {
-                    width: auto;
-                    height: 100%;
-                    margin-right: 8px;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: flex-start;
-                    justify-content: flex-start;
-                    padding: 8px;
-                    font-size: 12px;
-                  }
-                  .opt {
-                    width: 100%;
-                    height: 100%;
-                    display: flex;
-                    flex-direction: row;
-                    align-items: center;
-                    justify-content: center;
-                    z-index: 9999;
-                  }
-                  .error {
-                    color: rgb(249, 57, 57);
-                  }
-              }
-          }
-      }
-    }
-  }
-  .db-dialog {
-    padding: 12px 0px 0px 0px;
-    margin-top: 12px;
-
-    .more {
-      width: 100%;
-      height: 35px;
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      justify-content: center;
-      .btn {
-        width: 100%;
-      }
-    }
-  }
-  .monaco-editor .margin {
-    width: 12px !important;
-  }
-
-  .flex-row {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
-  }
-</style>
-  
+<style lang="scss" scoped src="./MainPage.scss"></style>

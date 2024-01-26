@@ -18,24 +18,11 @@ namespace HiDb.DataProvider.SqlServer
         /// <returns></returns>
         public async Task<SearchOutput> GetSearchDataAsync(SearchInput input, CancellationToken cancellationToken = default)
         {
-            var query = input.noPage ? (input.Sql,"") : GetPageSql(input.Sql, input.PageSize.Value);
-            if (!string.IsNullOrWhiteSpace(input.DataBase))
-            {
-                query.Item1 = @$"use [{input.DataBase}];
-                               {query.Item1}";
-                if (!string.IsNullOrWhiteSpace(query.Item2))
-                {
-                    query.Item2 = @$"use [{input.DataBase}];
-                               {query.Item2}";
-                }
-            }
-
-            var list = await GetListAsync(query.Item1, cancellationToken);
+            var list = await GetListAsync(input.Sql, cancellationToken, input.DataBase, input.PageSize);
             var res = new SearchOutput()
             {
-                List = list,
-                Count = string.IsNullOrWhiteSpace(query.Item2) ? list.Count :
-                    await GetCountAsync(query.Item2, cancellationToken)
+                List = list.Item1,
+                Count = list.Item2
             };
             return res;
         }
