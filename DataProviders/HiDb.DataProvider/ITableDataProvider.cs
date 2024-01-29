@@ -33,10 +33,19 @@ namespace HiDb.DataProvider
         Task<bool> DeleteTableAsync(string database, string mode, string table,
             CancellationToken cancellationToken = default);
 
+        Task<bool> ClearTableAsync(string database, string mode, string table,
+            CancellationToken cancellationToken = default);
+
+
         Task<bool> UpdateColumnConfigAsync(UpdateTableColumnInput input,
             CancellationToken cancellationToken = default);
 
-        Task<bool> ClearTableAsync(string database, string mode, string table,
+
+        Task<bool> AddColumnConfigAsync(AddTableColumnInput input,
+            CancellationToken cancellationToken = default);
+
+
+        Task<bool> DeleteColumnConfigAsync(DeleteTableColumnInput input,
             CancellationToken cancellationToken = default);
     }
 }

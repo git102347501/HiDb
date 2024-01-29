@@ -103,4 +103,22 @@ public class TableController : MainController
             cancellationToken);
         return data;
     }
+
+    [HttpPost("column/config")]
+    public async Task<bool> AddColumnConfigAsync(AddTableColumnInput input,
+        CancellationToken cancellationToken = default)
+    {
+        var data = await GetService(ServiceFactory.GetTable).AddColumnConfigAsync(input,
+            cancellationToken);
+        return data;
+    }
+
+    [HttpDelete("column/config")]
+    public async Task<bool> DeleteColumnConfigAsync(DeleteTableColumnInput input,
+        CancellationToken cancellationToken = default)
+    {
+        var data = await GetService(ServiceFactory.GetTable).DeleteColumnConfigAsync(input,
+            cancellationToken);
+        return data;
+    }
 }

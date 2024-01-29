@@ -86,3 +86,39 @@ export function updateTableColumn(dbtype, database, mode, table, column, type, r
         }
     })
 }
+
+// 添加指定列配置
+export function addTableColumn(dbtype, database, mode, table, column, type, required) {
+    return request({
+        url: '/table/column/config',
+        method: 'post',
+        headers: {
+            'dbtype': dbtype
+        },
+        data: {
+            database,
+            mode,
+            table,
+            column,
+            type,
+            required
+        }
+    })
+}
+
+// 删除指定列配置
+export function deleteTableColumn(dbtype, database, mode, table, column) {
+    return request({
+        url: '/table/column/config',
+        method: 'delete',
+        headers: {
+            'dbtype': dbtype
+        },
+        data: {
+            database,
+            mode,
+            table,
+            column
+        }
+    })
+}

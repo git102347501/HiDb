@@ -72,7 +72,7 @@ namespace HiDb.DataProvider.SqlServer
         {
             using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken);
             var sql = @$"ALTER TABLE [{input.DataBase}].[{input.Mode}].[{input.Table}]
-                        ALTER COLUMN [{input.Column}] [{input.Type}] {(input.Required ? "NOT NULL" : "NULL")}";
+                         ALTER COLUMN [{input.Column}] [{input.Type}] {(input.Required ? "NOT NULL" : "NULL")}";
             return await connection.ExecuteAsync(sql) > 1;
         }
         
@@ -81,6 +81,22 @@ namespace HiDb.DataProvider.SqlServer
         {
             using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken);
             return await connection.ExecuteAsync(@$"TRUNCATE TABLE {database}.{mode}.{table}") > 1;
+        }
+
+        public async Task<bool> AddColumnConfigAsync(AddTableColumnInput input, CancellationToken cancellationToken = default)
+        {
+            using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken);
+            var sql = @$"ALTER TABLE [{input.DataBase}].[{input.Mode}].[{input.Table}]
+                         ADD [{input.Column}] [{input.Type}] {(input.Required ? "NOT NULL" : "NULL")}";
+            return await connection.ExecuteAsync(sql) > 1;
+        }
+
+        public async Task<bool> DeleteColumnConfigAsync(DeleteTableColumnInput input, CancellationToken cancellationToken = default)
+        {
+            using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken);
+            var sql = @$"ALTER TABLE [{input.DataBase}].[{input.Mode}].[{input.Table}]
+                         DROP COLUMN [{input.Column}]";
+            return await connection.ExecuteAsync(sql) > 1;
         }
     }
 }

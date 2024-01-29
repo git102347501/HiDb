@@ -235,14 +235,14 @@
           </div>
       </div>
       <a-modal v-model:open="openDbListDialog" title="数据库列表" width="830px" height="550px">
-        <db-list-dialog ref="dbListDialogRef" />
+        <db-list-dialog  v-if="openDbListDialog" ref="dbListDialogRef" />
         <template #footer>
           <a-button key="submit" type="default" @click="selectDb(true)">打开</a-button>
           <a-button key="submit" type="primary" @click="selectDbAndOpen">连接</a-button>
         </template>
       </a-modal>
       <a-modal v-model:open="openDbDialog" title="连接数据库">
-        <open-db-dialog ref="openDbDialogRef" :model="selectDbVal"></open-db-dialog>
+        <open-db-dialog v-if="openDbDialog" ref="openDbDialogRef" :model="selectDbVal"></open-db-dialog>
         <template #footer>
           <a-button key="back" @click="cancelDbDialog">取消</a-button>
           <a-button key="submit" type="primary" :loading="submitOpenDbLoading" @click="submitOpenDb">连接</a-button>
@@ -672,8 +672,20 @@ import { dbTypeOptions } from '../utils/database';
     if (key == '1') {
       submitOpenDbList();
     } else {
+      selectDbVal.value = {
+        key: getGuid(),
+        name: '',
+        account: '',
+        passWord: '',
+        address : '',
+        port:  dbTypeOptions[0].port,
+        type: 0,
+        trustCert: true,
+        trustedConnection: false,
+        encrypt: true,
+        saveLocal: true
+      }
       openDbDialog.value = true;
-      callOpenDbInit(null);
     }
   };
 
@@ -786,28 +798,28 @@ import { dbTypeOptions } from '../utils/database';
     elapsedTimeRef.value = null;
     errorMsg.value = '';
     noPage.value = false;
-    currDatabase.value = {
-      key: null,
+    viewMode.value = 0;
+    columns.value = [];
+    selectDbVal.value = {
+      key: getGuid(),
       name: '',
       account: '',
       passWord: '',
-      address: '',
+      address : '',
+      port:  dbTypeOptions[0].port,
       type: 0,
-      port: 0,
       trustCert: true,
       trustedConnection: false,
       encrypt: true,
       saveLocal: true
-    };
-    viewMode.value = 0;
-    columns.value = [];
+    }
   }
   // 打开数据库连接
   const submitOpenDb = ()=> {
-    clearCurrDbData();
     currloading.value = true;
     submitOpenDbLoading.value = true;
-    connectDb(selectDbVal.value).then(res=>{
+    let data = openDbDialogRef.value && openDbDialogRef.value.openDbModel ?  openDbDialogRef.value.openDbModel : selectDbVal.value;
+    connectDb(data).then(res=>{
       currloading.value = false;
       if (!res.data || !res.data || !res.data.success) {
         message.error(res.data.message);
@@ -816,9 +828,9 @@ import { dbTypeOptions } from '../utils/database';
         message.success('连接成功');
         openDbDialog.value = false;
         submitOpenDbLoading.value = false;
-        currDatabase.value = selectDbVal.value;
-        // 保存到本地
-        saveDbByLocal(selectDbVal.value);
+        currDatabase.value = data;
+        // 保存到本地 warning
+        // saveDbByLocal(data);
         // 加载数据库列表
         loadDataBase();
       }
@@ -874,10 +886,7 @@ import { dbTypeOptions } from '../utils/database';
       message.error('请选择一个数据库');
       return false;
     }
-    let currdbData = dbListDialogRef.value.currdbData;
-    selectDbVal.value = currdbData.filter(item => currSelectDb.key === item.key)[0];
-    console.log('selectDb');
-    console.log(selectDbVal.value);
+    selectDbVal.value = currSelectDb;
     if (openDialog) {
       openDbListDialog.value = false;
       openDbDialog.value = true;
