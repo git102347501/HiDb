@@ -100,6 +100,9 @@
                         :style="{ 'width': (menuWidth - 110) + 'px','max-width': '300px' }" 
                       />
                     </template>
+                    <template v-if="type === 'table-more'">
+                      <CloudDownloadOutlined />
+                    </template>
                     <template v-if="type === 'table'">
                       <table-outlined />
                     </template>
@@ -302,7 +305,7 @@
 
 import { h, ref, watch, onMounted, UnwrapRef, reactive, createVNode, defineComponent  } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { ExclamationCircleOutlined,CloseOutlined, BarsOutlined,PlusCircleOutlined,DeleteOutlined,CheckOutlined,SaveOutlined, WifiOutlined,ApiOutlined,UserOutlined,BorderlessTableOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownOutlined, FrownFilled  } from '@ant-design/icons-vue';
+import { ExclamationCircleOutlined,CloseOutlined, BarsOutlined,PlusCircleOutlined,CloudDownloadOutlined,CheckOutlined,SaveOutlined, WifiOutlined,ApiOutlined,UserOutlined,BorderlessTableOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownOutlined, FrownFilled  } from '@ant-design/icons-vue';
 import { getDb,getMode,getTable } from '../api/menu';
 import { getSearch,execute} from '../api/search';
 import { connectDb } from '../api/datasource';
@@ -382,6 +385,7 @@ import { dbTypeOptions } from '../utils/database';
   const noPage = ref(false);
   const selectDbData = ref<Array<string>>([]);
   const currRightData = ref<any>(null);
+  const treeMaxSize = ref(50); // 表最大加载
   // 全局加载
   const currloading = ref<boolean>(false);
   // 后台存活监听
@@ -619,11 +623,12 @@ import { dbTypeOptions } from '../utils/database';
             key: currDbName.value + '_' + c.name,
             isLeaf: false,
             type: 'mode',
-            database: currDbName.value
+            database: currDbName.value,
+            pageIndex: 0
           }
         });
         let currMode = currDb.children[0];
-        getTable(currMode.database, currMode.title, currDatabase.value.type).then(res=>{
+        getTable(currMode.database, currMode.pageIndex, treeMaxSize.value, currMode.title, currDatabase.value.type).then(res=>{
           if (!res.data || !res.data || res.data.length < 1) {
             currMode.children = [{            
               title: '暂无表数据',
@@ -640,9 +645,21 @@ import { dbTypeOptions } from '../utils/database';
                 isLeaf: true,
                 type: 'table',
                 mode: currMode.title,
-                database: currMode.database
+                database: currMode.database,
+                pageIndex: 0
               }
             });
+            currMode.children.push({
+              title: '加载更多',
+              key: currMode.title + '-m',
+              isLeaf: true,
+              style: {
+                height: '35px'
+              },
+              type: 'table-more',
+              mode: currMode.title,
+              database: currMode.database
+            }); 
             currMode.children.unshift({
               title: '',
               key: currMode.title + '-s',
@@ -653,7 +670,7 @@ import { dbTypeOptions } from '../utils/database';
               type: 'table-search',
               mode: currMode.title,
               database: currMode.database
-            });
+            });            
           }
           treeData.value = [...treeData.value];
         });
@@ -978,7 +995,8 @@ import { dbTypeOptions } from '../utils/database';
                 key: treeNode.title + '_' + c.name,
                 isLeaf: false,
                 type: 'mode',
-                database: treeNode.title
+                database: treeNode.title,
+                pageIndex: 0
               }
             });
             treeData.value = [...treeData.value];
@@ -988,7 +1006,7 @@ import { dbTypeOptions } from '../utils/database';
             resolve();
           })
         } else if (treeNode.dataRef.type === 'mode') {
-          getTable(treeNode.dataRef.database, treeNode.title, currDatabase.value.type).then(res=>{
+          getTable(treeNode.dataRef.database, treeNode.dataRef.pageIndex, treeMaxSize.value, treeNode.title, currDatabase.value.type).then(res=>{
             if (!res.data || !res.data || res.data.length < 1) {
               treeNode.dataRef.children = [{            
                 title: '暂无表数据',
@@ -1030,7 +1048,7 @@ import { dbTypeOptions } from '../utils/database';
       message.error('未找到模式节点信息');
       return;
     }
-    getTable(database, mode, currDatabase.value.type).then(res=>{
+    getTable(database, currMode.pageIndex, treeMaxSize.value, mode, currDatabase.value.type).then(res=>{
       if (!res.data || !res.data || res.data.length < 1) {
         currMode.children = [{            
           title: '暂无表数据',
@@ -1071,6 +1089,55 @@ import { dbTypeOptions } from '../utils/database';
         }
         currDbName.value = e.node.dataRef.database;
         console.log('currDbName' + currDbName.value);
+      } else if (e.node.dataRef.type === 'table-more'){
+        console.log('table-more');
+        let currDb = treeData.value.find(c => c.title == e.node.dataRef.database);
+        if (!currDb || !currDb.children) {
+          message.error('未找到数据库节点信息');
+          return;
+        }
+        let currMode = currDb.children.find(c => c.title == e.node.dataRef.mode);
+        if (!currMode || !currMode.children) {
+          message.error('未找到模式节点信息');
+          return;
+        }
+        currMode.pageIndex = currMode.pageIndex + 1;
+        getTable(e.node.dataRef.database, currMode.pageIndex, treeMaxSize.value, 
+          e.node.dataRef.mode, currDatabase.value.type).then(res=> {
+          currMode.children.splice(currMode.children.length - 1, 1);
+          if (!res.data || !res.data || res.data.length < 1) {
+            currMode.children.push({            
+              title: '已经到底了',
+              key: e.node.dataRef.mode + 'data-end',
+              isLeaf: true,
+              disabled: true,
+              type: 'tablenull',
+            });
+          } else {
+            res.data.forEach(c => {
+              currMode.children.push({
+                title: c.name,
+                key: c.name,
+                isLeaf: true,
+                type: 'table',
+                mode: e.node.dataRef.mode,
+                database: e.node.dataRef.database
+              })
+            });
+            currMode.children.push({
+              title: '加载更多',
+              key: currMode.title + '-m',
+              isLeaf: true,
+              style: {
+                height: '35px'
+              },
+              type: 'table-more',
+              mode: currMode.title,
+              database: currMode.database
+            }) 
+          }
+          treeData.value = [...treeData.value];
+        });
       }
     }
   }
@@ -1131,11 +1198,11 @@ import { dbTypeOptions } from '../utils/database';
 
   // 获取是否为查询语句
   const getIsQuery = (val) => {
-    const notquery = /(update|delete|drop|alter|truncate)/i;
+    const notquery = /(update\s+|delete\s+|drop\s+|alter\s+|truncate\s+)/i;
     if (notquery.test(val)) {
       return false;
     }
-    const query = /(select|show)/i;
+    const query = /(select\s+|show\s+)/i;
     if (query.test(val)) {
       return true;
     }

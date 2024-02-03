@@ -4,26 +4,38 @@ import { type, arch, release } from 'os'
 import packageInfo from '../../../package.json'
 
 const menu = [
-  {
-    label: '设置',
-    submenu: [{
-      label: '快速重启',
-      accelerator: 'F5',
-      role: 'reload'
-    }, {
-      label: '退出',
-      accelerator: 'CmdOrCtrl+F4',
-      role: 'close'
-    }]
+{
+  label: '编辑',
+  submenu: [
+    { label: '复制', accelerator: 'CmdOrCtrl+C', role: 'copy' },
+    { label: '粘贴', accelerator: 'CmdOrCtrl+V', role: 'paste' },
+    { label: '剪切', accelerator: 'CmdOrCtrl+X', role: 'cut' },
+    { label: '撤销', accelerator: 'CmdOrCtrl+Z', role: 'undo' },
+    { label: '重做', accelerator: 'Shift+CmdOrCtrl+Z', role: 'redo' },
+    { label: '全选', accelerator: 'CmdOrCtrl+A', role: 'selectAll' }
+  ]
+},
+{
+  label: '设置',
+  submenu: [{
+    label: '快速重启',
+    accelerator: 'F5',
+    role: 'reload'
   }, {
-    label: '帮助',
-    submenu: [{
-      label: '关于',
-      click: function () {
-        info()
-      }
-    }]
+    label: '退出',
+    accelerator: 'CmdOrCtrl+F4',
+    role: 'close'
   }]
+}, {
+  label: '帮助',
+  submenu: [{
+    label: '关于',
+    click: function () {
+      info()
+    }
+  }]
+}];
+
 function info() {
   dialog.showMessageBox({
     title: '关于',

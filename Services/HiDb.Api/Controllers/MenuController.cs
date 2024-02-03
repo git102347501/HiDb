@@ -27,9 +27,11 @@ namespace HiDb.Api.Controllers
         }
 
         [HttpGet("table")]
-        public async Task<IEnumerable<MenuDbTableOutput>> GetModeByDb(string database, string mode)
+        public async Task<IEnumerable<MenuDbTableOutput>> GetModeByDb(string database,
+            int pageSize, int pageIndex, string mode = "")
         {
-            return await GetService(ServiceFactory.GetMenu).GetDbTableListAsync(database, mode);
+            return await GetService(ServiceFactory.GetMenu).GetDbTableListAsync(database,
+                pageSize, pageIndex, mode);
         }
     }
 }

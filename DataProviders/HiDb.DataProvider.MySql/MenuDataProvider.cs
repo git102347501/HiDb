@@ -20,10 +20,11 @@ namespace HiDb.DataProvider.MySql
                 res.Select(c => new MenuDataBaseOutput() { Name = c.Database }).ToList();
         }
 
-        public async Task<List<MenuDbTableOutput>> GetDbTableListAsync(string database, string mode = "",
-            CancellationToken cancellationToken = default)
+        public async Task<List<MenuDbTableOutput>> GetDbTableListAsync(string database,
+            int pageSize, int pageIndex, string mode = "", CancellationToken cancellationToken = default)
         {
-            var res = await GetListAsync<dynamic>($@"SHOW TABLES FROM `{database}`;", cancellationToken);
+            int offset = pageSize * pageIndex;
+            var res = await GetListAsync<dynamic>($@"SHOW TABLES FROM `{database}` LIMIT {pageSize} OFFSET {offset};", cancellationToken);
 
             return res.Select(c => new MenuDbTableOutput() { 
                 Name = ((IDictionary<string, object>)c)[$"Tables_in_{database}"].ToString() ?? "" }).ToList();

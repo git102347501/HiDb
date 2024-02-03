@@ -20,12 +20,17 @@ namespace HiDb.DataProvider.SqlServer
             return await GetListAsync<MenuDataBaseOutput>(sql, cancellationToken);
         }
 
-        public async Task<List<MenuDbTableOutput>> GetDbTableListAsync(string database, string mode,
-            CancellationToken cancellationToken = default)
+        public async Task<List<MenuDbTableOutput>> GetDbTableListAsync(string database,
+            int pageSize, int pageIndex, string mode, CancellationToken cancellationToken = default)
         {
-            return await GetListAsync<MenuDbTableOutput>(@$"SELECT TABLE_NAME AS Name
-                                                FROM [{database}].INFORMATION_SCHEMA.TABLES
-                                                WHERE TABLE_SCHEMA = '{mode}'",cancellationToken);
+            var offset = pageSize * pageIndex;
+            return await GetListAsync<MenuDbTableOutput>(
+                        @$"SELECT TABLE_NAME AS Name
+                            FROM [{database}].INFORMATION_SCHEMA.TABLES
+                            WHERE TABLE_SCHEMA = '{mode}'
+                            ORDER BY TABLE_NAME
+                            OFFSET {offset} ROWS
+                            FETCH NEXT {pageSize} ROWS ONLY",cancellationToken);
         }
 
         public async Task<List<MenuDbModeOutput>> GetDbModeListAsync(string database, 

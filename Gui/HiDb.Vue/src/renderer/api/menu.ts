@@ -29,13 +29,15 @@ export function getMode(database, dbtype) {
 }
   
 // 获取表列表
-export function getTable(database, mode, dbtype) {
+export function getTable(database, pageIndex, pageSize, mode, dbtype) {
     return request({
       url: '/menu/table',
       method: 'get',
       params: {
         database: database,
-        mode: mode
+        mode: mode,
+        pageSize: pageSize,
+        pageIndex: pageIndex
       },
       headers: {
         'dbtype': dbtype

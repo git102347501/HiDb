@@ -16,8 +16,8 @@ namespace HiDb.DataProvider
         /// 获取菜单-数据库-表列表
         /// </summary>
         /// <returns></returns>
-        public Task<List<MenuDbTableOutput>> GetDbTableListAsync(string database, string mode = "",
-            CancellationToken cancellationToken = default);
+        public Task<List<MenuDbTableOutput>> GetDbTableListAsync(string database,
+            int pageSize, int pageIndex, string mode = "", CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 获取菜单-数据库-视图列表
