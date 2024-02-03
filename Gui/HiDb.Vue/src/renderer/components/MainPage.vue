@@ -281,13 +281,15 @@
             v-for="(item, index) in currToolDrawerData"
             v-bind:key="index" style="width: 100%; margin-top: 6px;">
             <a-textarea v-model:value="item.data" placeholder="输入sql语句" :rows="4" />
-            <a-tooltip title="删除">
-              <a-button @click="deleteToolSearch(index)" danger shape="circle" 
-              style="margin: 6px 6px 0 0" :icon="h(DeleteOutlined)" />
-            </a-tooltip>
             <a-tooltip title="应用">
               <a-button @click="selectToolSearch(item.data)" type="default" shape="circle" 
-                style="margin-top: 6px" :icon="h(CheckOutlined)" />
+              style="position: absolute; right: 40px; bottom: 12px" :icon="h(CheckOutlined)" />
+            </a-tooltip>
+            <a-input v-model:value="item.name" placeholder="输入快捷命名"
+                style="width: 260px;margin: 8px 0 0 4px" />
+            <a-tooltip title="删除">
+              <a-button @click="deleteToolSearch(index)" danger shape="circle" 
+              style="position: absolute; right: 4px; bottom: 12px" :icon="h(CloseOutlined)" />
             </a-tooltip>
           </a-card>
           <a-empty description="暂无保存语句" v-if="!currToolDrawerData || currToolDrawerData.length < 1" />
@@ -300,7 +302,7 @@
 
 import { h, ref, watch, onMounted, UnwrapRef, reactive, createVNode, defineComponent  } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { ExclamationCircleOutlined,BarsOutlined,PlusCircleOutlined,DeleteOutlined,CheckOutlined,SaveOutlined, WifiOutlined,ApiOutlined,UserOutlined,BorderlessTableOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownOutlined, FrownFilled  } from '@ant-design/icons-vue';
+import { ExclamationCircleOutlined,CloseOutlined, BarsOutlined,PlusCircleOutlined,DeleteOutlined,CheckOutlined,SaveOutlined, WifiOutlined,ApiOutlined,UserOutlined,BorderlessTableOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownOutlined, FrownFilled  } from '@ant-design/icons-vue';
 import { getDb,getMode,getTable } from '../api/menu';
 import { getSearch,execute} from '../api/search';
 import { connectDb } from '../api/datasource';
@@ -397,6 +399,7 @@ import { dbTypeOptions } from '../utils/database';
     pageSize: 100
   });
   const currToolDrawerData = ref<any[]>([]);
+  const currToolMenuDrawerData = ref<any[]>([]);
   const toolDrawerData = ref<any[]>([]);
   var cancelToken = axios.CancelToken.source();
   // 执行耗时/毫秒
@@ -407,7 +410,10 @@ import { dbTypeOptions } from '../utils/database';
     pageHeight.value = document.body.clientHeight - sh;
     dftPageHeight.value = pageHeight.value;
     window.addEventListener('resize', onResize);
+    // 初始化编辑器
     initEdit();
+    // 加载工具菜单
+    refToolData();
   });
   // 初始化编辑器
   const initEdit = (val = '')=>{
@@ -436,11 +442,30 @@ import { dbTypeOptions } from '../utils/database';
       }
     })
     monaco.languages.registerCompletionItemProvider('sql', {
-      triggerCharacters: ['@'],
-      provideCompletionItems: (model, position) => {
-        let suggestions = refCurrDbTableList();
-        return {
-          suggestions
+      triggerCharacters: ['@','$'],
+      provideCompletionItems: (model, position, context) => {
+        console.log('provideCompletionItems' +  context.triggerCharacter)
+        var triggerCharacter = context.triggerCharacter;
+        if (triggerCharacter === '@') {
+          let suggestions = refCurrDbTableList();
+          return {
+            suggestions
+          }
+        } else if (triggerCharacter === '$') {
+          let suggestions = currToolMenuDrawerData.value.map(c=> {
+            return {
+              label: c.name,
+              kind: monaco.languages.CompletionItemKind.Text,
+              insertText: c.data
+            }
+          });
+          return {
+            suggestions
+          }
+        } else {
+          return {
+            suggestions: []
+          }
         }
       }
     })
@@ -461,15 +486,21 @@ import { dbTypeOptions } from '../utils/database';
       currToolDrawerData.value = toolDrawerData.value.filter(c=> c.data.includes(val));
     }
   }
-  const addToolsSearch = (val) => {
-    currToolDrawerData.value.unshift(val);
+  const addToolsSearch = () => {
+    let val = {
+      id: getGuid(),
+      data: '',
+      name: ''
+    };
+    toolDrawerData.value.unshift(val);
+    onToolsSearch('');
   }
   const saveToolsSearch = () => {
-    if (toolSearchValue) {
-      onToolsSearch('');
-    }
-    localStorage.setItem('toolsdata', JSON.stringify(currToolDrawerData.value));
+    console.log('saveToolsSearch');
+    console.log(JSON.stringify(toolDrawerData.value));
+    localStorage.setItem('toolsdata', JSON.stringify(toolDrawerData.value));
     message.success('保存成功');
+    refToolData();
   }
   const deleteToolSearch = (index)=>{
     currToolDrawerData.value.splice(index, 1);
@@ -478,12 +509,17 @@ import { dbTypeOptions } from '../utils/database';
     editorAppendValue(val);
     openToolDrawer.value = false;
   }
-  const initToolsSearch = ()=> {
+  const refToolData = ()=> {
     let data = localStorage.getItem('toolsdata');
     if (data) {
-      toolDrawerData.value = JSON.parse(data);
-      currToolDrawerData.value = toolDrawerData.value;
-      console.log(JSON.stringify(currToolDrawerData.value));
+      let curr = JSON.parse(data);
+      toolDrawerData.value = curr;
+      currToolDrawerData.value = curr;
+      console.log('getToolsSearch');
+      console.log(curr);
+      currToolMenuDrawerData.value = toolDrawerData.value.filter(c=> c.name);
+      console.log('currToolMenuDrawerData');
+      console.log(currToolMenuDrawerData.value);
     } else {
       toolDrawerData.value = [];
       currToolDrawerData.value = [];
@@ -491,7 +527,7 @@ import { dbTypeOptions } from '../utils/database';
   }
 
   const openToolDrawerDialog = ()=>{
-    initToolsSearch();
+    refToolData();
     openToolDrawer.value = true;
   }
   const onTableSearch = (data, mode, database)=>{
@@ -830,7 +866,7 @@ import { dbTypeOptions } from '../utils/database';
         submitOpenDbLoading.value = false;
         currDatabase.value = data;
         // 保存到本地 warning
-        // saveDbByLocal(data);
+        saveDbByLocal(data);
         // 加载数据库列表
         loadDataBase();
       }
@@ -843,32 +879,41 @@ import { dbTypeOptions } from '../utils/database';
   // 保存数据库到本地
   const saveDbByLocal = (data) => {
     // 寻找相同地址，账号和类型的本地记录
-    let currdbData = dbListDialogRef.value.currdbData;
-    let index = currdbData.findIndex(c=> c.key == data.key);
-    if (!data.name || data.name.length < 1) {
+    let currdbData = [];
+    if (!data.name || data.name.leçngth < 1) {
       // 默认名称为地址
       data.name = data.address;
     }
-    if (data.saveLocal){
-      if (index != -1) {
-        // 更新本地
-        currdbData[index].passWord = data.passWord;
-        currdbData[index].port = data.port;
-        currdbData[index].trustCert = data.trustCert;
-        currdbData[index].trustedConnection = data.trustedConnection;
-        currdbData[index].encrypt = data.encrypt;
-      } else {
-        // 新增本地
-        currdbData.push(data);
+    if (dbListDialogRef.value && dbListDialogRef.value.currdbData) {
+      currdbData = dbListDialogRef.value.currdbData;
+      let index = currdbData.findIndex(c=> c.key == data.key);
+      if (!data.name || data.name.leçngth < 1) {
+        // 默认名称为地址
+        data.name = data.address;
+        if (data.saveLocal){
+          if (index != -1) {
+            // 更新本地
+            currdbData[index].passWord = data.passWord;
+            currdbData[index].port = data.port;
+            currdbData[index].trustCert = data.trustCert;
+            currdbData[index].trustedConnection = data.trustedConnection;
+            currdbData[index].encrypt = data.encrypt;
+          } else {
+            // 新增本地
+            currdbData.push(data);
+          }
+        } else {
+          if (index == -1) {
+            // 不保存本地也没有，跳过
+            return;
+          } else {
+            // 不保存移除本地
+            currdbData.splice(index, 1);
+          }
+        }
       }
     } else {
-      if (index == -1) {
-        // 不保存本地也没有，跳过
-        return;
-      } else {
-        // 不保存移除本地
-        currdbData.splice(index, 1);
-      }
+      currdbData.push(data);
     }
     console.log('save-local:' + JSON.stringify(currdbData));
     localStorage.setItem('hidbdata', JSON.stringify(currdbData));

@@ -4,6 +4,7 @@ import menuconfig from '../config/menu'
 import { app, BrowserWindow, Menu, dialog } from 'electron'
 import { winURL, loadingURL,getPreloadFile } from '../config/StaticPath'
 import { join } from "path"
+import { MenuItem } from 'ant-design-vue'
 
 setIpc.Mainfunc()
 
@@ -54,11 +55,39 @@ class MainInit {
     })
     // 赋予模板
     const menu = Menu.buildFromTemplate(menuconfig as any)
-    // 加载菜单模板
-    if (process.env.NODE_ENV === 'development'){
+    if (process.platform === 'darwin') {
+      const template = [{
+        label: '我的应用',
+        submenu: [
+          { label: '关于', accelerator: 'CmdOrCtrl+I', role: 'about' },
+          { type: 'separator' },
+          { label: '隐藏', role: 'hide' },
+          { label: '隐藏其他', role: 'hideOthers' },
+          { type: 'separator' },
+          { label: '服务', role: 'services' },
+          { label: '退出', accelerator: 'Command+Q',role: 'quit' }
+        ]
+      },
+      {
+        label: '编辑',
+        submenu: [
+          { label: '复制', accelerator: 'CmdOrCtrl+C', role: 'copy' },
+          { label: '粘贴', accelerator: 'CmdOrCtrl+V', role: 'paste' },
+          { label: '剪切', accelerator: 'CmdOrCtrl+X', role: 'cut' },
+          { label: '撤销', accelerator: 'CmdOrCtrl+Z', role: 'undo' },
+          { label: '重做', accelerator: 'Shift+CmdOrCtrl+Z', role: 'redo' },
+          { label: '全选', accelerator: 'CmdOrCtrl+A', role: 'selectAll' }
+        ]
+      }] as any;
+      const menu = Menu.buildFromTemplate(template)
       Menu.setApplicationMenu(menu)
     } else {
-      Menu.setApplicationMenu(null);
+      // 加载菜单模板
+      if (process.env.NODE_ENV === 'development'){
+        Menu.setApplicationMenu(menu)
+      } else {
+        Menu.setApplicationMenu(null);
+      }
     }
     // 加载主窗口
     this.mainWindow.loadURL(this.winURL)
