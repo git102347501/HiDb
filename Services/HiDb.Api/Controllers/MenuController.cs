@@ -15,9 +15,10 @@ namespace HiDb.Api.Controllers
     {
 
         [HttpGet("db")]
-        public async Task<IEnumerable<MenuDataBaseOutput>> GetMenu(string? name = null)
+        public async Task<IEnumerable<MenuDataBaseOutput>> GetMenu(string? name = null, bool searchTable = false,
+            CancellationToken cancellationToken = default)
         {
-            return await GetService(ServiceFactory.GetMenu).GetDataBaseListAsync(name);
+            return await GetService(ServiceFactory.GetMenu).GetDataBaseListAsync(name, searchTable, cancellationToken);
         }
 
         [HttpGet("mode")]

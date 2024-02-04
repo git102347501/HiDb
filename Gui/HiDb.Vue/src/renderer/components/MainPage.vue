@@ -71,8 +71,12 @@
           <div class="menu" :style="{ 'width': menuWidth + 'px' }">
             <a-spin :spinning="currloading">
               <div class="search">
+                <a-tooltip :title="searchTable ? '搜索表' : '搜索数据库'" placement="topRight">
+                  <a-button @click="searchTable = !searchTable" 
+                    type="default" shape="circle" :icon="searchTable ? h(TableOutlined) : h(DatabaseOutlined)" />
+                </a-tooltip>
                 <a-input-search v-model:value="searchValue" 
-                  style="margin-bottom: 8px" placeholder="搜索数据库名称"  
+                  style="margin-left: 8px" :placeholder="searchTable ? '输入搜索数据库或表名称' : '输入搜索数据库名称'"  
                   @search="onSearch" />
               </div>
               <div v-if="!currloading" class="tree">
@@ -305,7 +309,7 @@
 
 import { h, ref, watch, onMounted, UnwrapRef, reactive, createVNode, defineComponent  } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { ExclamationCircleOutlined,CloseOutlined, BarsOutlined,PlusCircleOutlined,CloudDownloadOutlined,CheckOutlined,SaveOutlined, WifiOutlined,ApiOutlined,UserOutlined,BorderlessTableOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownOutlined, FrownFilled  } from '@ant-design/icons-vue';
+import { ExclamationCircleOutlined,CloseOutlined, BarsOutlined,PlusCircleOutlined,CloudDownloadOutlined,CheckOutlined,SaveOutlined, WifiOutlined,ApiOutlined,UserOutlined,BorderlessTableOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownFilled  } from '@ant-design/icons-vue';
 import { getDb,getMode,getTable } from '../api/menu';
 import { getSearch,execute} from '../api/search';
 import { connectDb } from '../api/datasource';
@@ -345,6 +349,7 @@ import { dbTypeOptions } from '../utils/database';
   });
   const openToolDrawer = ref<boolean>(false); // 工具插窗
   const searchValue = ref<string>(''); // 左侧搜索内容
+  const searchTable = ref<boolean>(false); // 左侧搜索模式
   const expandedMenuKeys = ref<string[]>([]); // tree搜索key
   const selectedMenuKeys = ref<string[]>([]); // tree选择key
   const executeNum = ref(0); // 影响行数
@@ -775,7 +780,7 @@ import { dbTypeOptions } from '../utils/database';
   // 加载数据库列表
   const loadDataBase = ()=>{
     currloading.value = true;
-    getDb(currDatabase.value.type, searchValue.value).then(res => {
+    getDb(currDatabase.value.type, searchValue.value, searchTable.value).then(res => {
       console.log(res);
       treeData.value = res.data.map(c=> {
         return {

@@ -1,7 +1,7 @@
 import request from '@renderer/utils/request'
 
 // 获取数据库列表
-export function getDb(dbtype, name) {
+export function getDb(dbtype, name, searchTable) {
     return request({
       url: '/menu/db',
       method: 'get',
@@ -9,7 +9,8 @@ export function getDb(dbtype, name) {
         'dbtype': dbtype
       },
       params: {
-        name: name
+        name: name,
+        searchTable: searchTable,
       }
     })
 }

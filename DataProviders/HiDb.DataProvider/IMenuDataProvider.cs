@@ -9,7 +9,7 @@ namespace HiDb.DataProvider
         /// 获取菜单-数据库列表
         /// </summary>
         /// <returns></returns>
-        public Task<List<MenuDataBaseOutput>> GetDataBaseListAsync(string? name = "",
+        public Task<List<MenuDataBaseOutput>> GetDataBaseListAsync(string? name = "", bool searchTable = false,
             CancellationToken cancellationToken = default);
 
         /// <summary>

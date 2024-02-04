@@ -11,7 +11,7 @@ namespace HiDb.DataProvider.MySql
     /// </summary>
     public class MenuDataProvider : MainDataProvider, IMenuDataProvider
     {
-        public async Task<List<MenuDataBaseOutput>> GetDataBaseListAsync(string? name = "",
+        public async Task<List<MenuDataBaseOutput>> GetDataBaseListAsync(string? name = "", bool searchTable = false,
             CancellationToken cancellationToken = default)
         {
             var res = await GetListAsync<MySqlDataBaseList>("SHOW DATABASES;", cancellationToken);
@@ -23,7 +23,7 @@ namespace HiDb.DataProvider.MySql
         public async Task<List<MenuDbTableOutput>> GetDbTableListAsync(string database,
             int pageSize, int pageIndex, string mode = "", CancellationToken cancellationToken = default)
         {
-            int offset = pageSize * pageIndex;
+            var offset = pageSize * pageIndex;
             var res = await GetListAsync<dynamic>($@"SHOW TABLES FROM `{database}` LIMIT {pageSize} OFFSET {offset};", cancellationToken);
 
             return res.Select(c => new MenuDbTableOutput() { 
