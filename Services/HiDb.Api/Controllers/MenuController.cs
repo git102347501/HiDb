@@ -22,17 +22,17 @@ namespace HiDb.Api.Controllers
         }
 
         [HttpGet("mode")]
-        public async Task<IEnumerable<MenuDbModeOutput>> GetModeByDb(string database)
+        public async Task<IEnumerable<MenuDbModeOutput>> GetModeByDb(string database, CancellationToken cancellationToken = default)
         {
-            return await GetService(ServiceFactory.GetMenu).GetDbModeListAsync(database);
+            return await GetService(ServiceFactory.GetMenu).GetDbModeListAsync(database, cancellationToken);
         }
 
         [HttpGet("table")]
         public async Task<IEnumerable<MenuDbTableOutput>> GetModeByDb(string database,
-            int pageSize, int pageIndex, string mode = "")
+            int pageSize, int pageIndex, string mode = "", CancellationToken cancellationToken = default)
         {
             return await GetService(ServiceFactory.GetMenu).GetDbTableListAsync(database,
-                pageSize, pageIndex, mode);
+                pageSize, pageIndex, mode, cancellationToken);
         }
     }
 }
