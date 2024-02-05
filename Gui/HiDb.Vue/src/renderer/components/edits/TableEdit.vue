@@ -18,7 +18,7 @@
               size="small"
               style="width: 100%;"
               :data-source="currdbData"
-              :scroll="{ y: tableHeight }"
+              :scroll="{ y: tableHeight, x: tableWidth }"
               :loading="loading"
               :pagination="false">
               <template #bodyCell="{ column, record }">
@@ -34,13 +34,34 @@
                     v-model:value="record.type"
                     show-search 
                     placeholder="请选择字段类型"
-                    style="width: 200px"
+                    style="width: 140px"
                     :options="dbTypeOptions"
                     :filter-option="filterOption"
                   ></a-select>
                 </template>
+                <template v-if="column.dataIndex == 'keyType'">
+                  <a-select
+                    v-model:value="record.keyType"
+                    placeholder="主键类型"
+                    style="width: 80px"
+                    :options="keyTypeOptions"
+                  ></a-select>
+                </template>
                 <template v-if="column.dataIndex == 'allowNull'">
                   <a-switch v-model:checked="record.allowNull" />
+                </template>
+                <template v-if="column.dataIndex == 'dftValue'">
+                  <a-input v-model:value="record.dftValue" placeholder="请输入默认值" />
+                </template>
+                <template v-if="column.dataIndex == 'numericPrecision'">
+                  <a-input type="number" v-model:value="record.numericPrecision" placeholder="精度" />
+                </template>
+                <template v-if="column.dataIndex == 'numSize'">
+                  <a-input type="number" 
+                    v-model:value="record.numSize" placeholder="小数位" />
+                </template>
+                <template v-if="column.dataIndex == 'remark'">
+                  <a-input type="text" v-model:value="record.remark" placeholder="精度" />
                 </template>
                 <template v-else-if="column.dataIndex === 'operation'">
                   <a-typography-link @click="saveColumnConfig(record)" :loading="record.loading" 
@@ -57,10 +78,11 @@
 import { message } from 'ant-design-vue';
 import { cloneDeep } from 'lodash-es';
 import { h, UnwrapRef, reactive, ref, watchEffect,onMounted,createVNode } from 'vue';
-import { getTableColumnList, getDbType, updateTableColumn, addTableColumn, deleteTableColumn } from '../../api/table';
+import {  getTableColumnList, getDbType, updateTableColumn, addTableColumn, deleteTableColumn } from '../../api/table';
 import {  RedoOutlined,DeleteOutlined } from '@ant-design/icons-vue';
 import Modal from 'ant-design-vue/es/modal/Modal';
 import { getGuid } from '@renderer/utils/guid';
+import { isNull } from '@renderer/utils/common';
 
 const props = defineProps(['database','mode','table','dbtype'])
 const tableHeight = ref(document.body.clientHeight);
@@ -80,19 +102,63 @@ const onResize = () => {
 const dbColumns = ref<any[]>([{
     title: '名称',
     dataIndex: 'name',
-    sorter: false
+    sorter: false,
+    width: 180
   },
   {
     title: '字段类型',
     dataIndex: 'type',
     sorter: false,
-    width: 220
+    width: 150
   },
   {
-    title: '是否允许null',
+    title: '主键',
+    dataIndex: 'keyType',
+    sorter: false,
+    align: 'center',
+    width: 100
+  },
+  {
+    title: '允许null',
     dataIndex: 'allowNull',
     sorter: false,
-    width: 180
+    align: 'center',
+    width: 100
+  },
+  {
+    title: '默认值',
+    dataIndex: 'dftValue',
+    sorter: false,
+    align: 'left',
+    width: 130
+  },
+  {
+    title: '精度',
+    dataIndex: 'numericPrecision',
+    sorter: false,
+    align: 'center',
+    width: 90
+  },
+  {
+    title: '小数位',
+    dataIndex: 'numSize',
+    sorter: false,
+    align: 'center',
+    width: 90
+  },
+  {
+    title: '备注',
+    dataIndex: 'remark',
+    sorter: false,
+    align: 'left',
+    width: 200
+  },
+  {
+    title: '排序号',
+    dataIndex: 'orderNo',
+    sorter: false,
+    align: 'center',
+    width: 70
   },
   {
     title: '操作',
@@ -101,6 +167,7 @@ const dbColumns = ref<any[]>([{
     fixed: 'right'
   }
 ]);
+const tableWidth = ref(dbColumns.value.reduce((sum, column) => sum + column.width, 0));
 // 可编辑的列
 const allowEditColumns = ref<string[]>(['name','allowNull']);
 // 当前数据库表格数据
@@ -142,6 +209,16 @@ const loadTableColumn = ()=>{
   })
 }
 const dbTypeOptions = ref([]);
+const keyTypeOptions = ref([{
+  label: '无',
+  value: 0
+},{
+  label: '主键',
+  value: 1
+},{
+  label: '外键',
+  value: 2
+}]);
 const loadDbType = ()=>{
   getDbType(props.dbtype).then(res=>{
     dbTypeOptions.value = res.data.map(c => {return { value : c.name, label: c.name}});

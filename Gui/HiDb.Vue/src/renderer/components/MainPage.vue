@@ -161,7 +161,7 @@
                   <a-select
                     v-model:value="currDbName"
                     :disabled="!currDatabase || !currDatabase.key" 
-                    show-search
+                    show-search allowClear
                     placeholder="选择当前数据库"
                     style="width: 200px"
                     :options="selectDbData"
@@ -935,6 +935,8 @@ import { dbTypeOptions } from '../utils/database';
         }
       }
     } else {
+      let localData = localStorage.getItem('hidbdata');
+      currdbData = localData ? JSON.parse(localData) : [];
       currdbData.push(data);
     }
     console.log('save-local:' + JSON.stringify(currdbData));
@@ -1129,17 +1131,27 @@ import { dbTypeOptions } from '../utils/database';
                 database: e.node.dataRef.database
               })
             });
-            currMode.children.push({
-              title: '加载更多',
-              key: currMode.title + '-m',
-              isLeaf: true,
-              style: {
-                height: '35px'
-              },
-              type: 'table-more',
-              mode: currMode.title,
-              database: currMode.database
-            }) 
+            if (res.data.length < treeMaxSize.value) {
+              currMode.children.push({            
+                title: '已经到底了',
+                key: e.node.dataRef.mode + 'data-end',
+                isLeaf: true,
+                disabled: true,
+                type: 'tablenull',
+              });
+            } else {
+              currMode.children.push({
+                title: '加载更多',
+                key: currMode.title + '-m',
+                isLeaf: true,
+                style: {
+                  height: '35px'
+                },
+                type: 'table-more',
+                mode: currMode.title,
+                database: currMode.database
+              }) 
+            }
           }
           treeData.value = [...treeData.value];
         });

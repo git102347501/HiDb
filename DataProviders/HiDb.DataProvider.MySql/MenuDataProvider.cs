@@ -24,9 +24,9 @@ namespace HiDb.DataProvider.MySql
             int pageSize, int pageIndex, string mode = "", CancellationToken cancellationToken = default)
         {
             var offset = pageSize * pageIndex;
-            var res = await GetListAsync<dynamic>($@"SHOW TABLES FROM `{database}` LIMIT {pageSize} OFFSET {offset};", cancellationToken);
+            var res = await GetListAsync<dynamic>($@"SHOW TABLES FROM `{database}`", cancellationToken);
 
-            return res.Select(c => new MenuDbTableOutput() { 
+            return res.Skip(offset).Take(pageSize).Select(c => new MenuDbTableOutput() { 
                 Name = ((IDictionary<string, object>)c)[$"Tables_in_{database}"].ToString() ?? "" }).ToList();
         }
 

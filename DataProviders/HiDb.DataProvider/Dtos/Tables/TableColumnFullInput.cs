@@ -13,7 +13,5 @@ namespace HiDb.DataProvider.Dtos.Tables
         public string Mode { get; set; }
 
         public string Table { get; set; }
-
-        public string Column { get; set; }
     }
 }
