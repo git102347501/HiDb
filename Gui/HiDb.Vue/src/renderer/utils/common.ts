@@ -29,3 +29,7 @@ export function getMaxLength (objCollection, name){
         return maxLength;
     }
 }
+
+export function isNull(val){
+    return val == null || val == undefined;
+}

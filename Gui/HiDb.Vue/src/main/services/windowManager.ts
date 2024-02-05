@@ -4,7 +4,7 @@ import menuconfig from '../config/menu'
 import { app, BrowserWindow, Menu, dialog } from 'electron'
 import { winURL, loadingURL,getPreloadFile } from '../config/StaticPath'
 import { join } from "path"
-
+import { MenuItem } from 'ant-design-vue'
 setIpc.Mainfunc()
 
 class MainInit {

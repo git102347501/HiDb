@@ -15,21 +15,24 @@ namespace HiDb.Api.Controllers
     {
 
         [HttpGet("db")]
-        public async Task<IEnumerable<MenuDataBaseOutput>> GetMenu(string? name = null)
+        public async Task<IEnumerable<MenuDataBaseOutput>> GetMenu(string? name = null, bool searchTable = false,
+            CancellationToken cancellationToken = default)
         {
-            return await GetService(ServiceFactory.GetMenu).GetDataBaseListAsync(name);
+            return await GetService(ServiceFactory.GetMenu).GetDataBaseListAsync(name, searchTable, cancellationToken);
         }
 
         [HttpGet("mode")]
-        public async Task<IEnumerable<MenuDbModeOutput>> GetModeByDb(string database)
+        public async Task<IEnumerable<MenuDbModeOutput>> GetModeByDb(string database, CancellationToken cancellationToken = default)
         {
-            return await GetService(ServiceFactory.GetMenu).GetDbModeListAsync(database);
+            return await GetService(ServiceFactory.GetMenu).GetDbModeListAsync(database, cancellationToken);
         }
 
         [HttpGet("table")]
-        public async Task<IEnumerable<MenuDbTableOutput>> GetModeByDb(string database, string mode)
+        public async Task<IEnumerable<MenuDbTableOutput>> GetModeByDb(string database,
+            int pageSize, int pageIndex, string mode = "", CancellationToken cancellationToken = default)
         {
-            return await GetService(ServiceFactory.GetMenu).GetDbTableListAsync(database, mode);
+            return await GetService(ServiceFactory.GetMenu).GetDbTableListAsync(database,
+                pageSize, pageIndex, mode, cancellationToken);
         }
     }
 }

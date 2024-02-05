@@ -1,7 +1,7 @@
 export const dbTypeOptions = [{
     value: 0,
     label: 'SqlServer',
-    post: 1433
+    port: 1433
 },{
     value: 1,
     label: 'MySql',

@@ -94,7 +94,10 @@ const submitIsMore = () => {
 
 // 数据库类型更改默认端口
 const typeChange = (e)=>{
-    openDbModel.value.port = e.port;
+    console.log('typeChange')
+    console.log(e)
+    let data = dbTypeOptions.find(c=> c.value == e);
+    openDbModel.value.port = data.port;
 }
 
 const init = (data)=>{

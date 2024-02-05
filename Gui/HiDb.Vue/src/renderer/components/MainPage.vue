@@ -71,8 +71,12 @@
           <div class="menu" :style="{ 'width': menuWidth + 'px' }">
             <a-spin :spinning="currloading">
               <div class="search">
+                <a-tooltip :title="searchTable ? '搜索表' : '搜索数据库'" placement="topRight">
+                  <a-button @click="searchTable = !searchTable" 
+                    type="default" shape="circle" :icon="searchTable ? h(TableOutlined) : h(DatabaseOutlined)" />
+                </a-tooltip>
                 <a-input-search v-model:value="searchValue" 
-                  style="margin-bottom: 8px" placeholder="搜索数据库名称"  
+                  style="margin-left: 8px" :placeholder="searchTable ? '输入搜索数据库或表名称' : '输入搜索数据库名称'"  
                   @search="onSearch" />
               </div>
               <div v-if="!currloading" class="tree">
@@ -99,6 +103,9 @@
                         placeholder="输入关键字搜索表" size="middle"  @search="onTableSearch($event, mode, database)"
                         :style="{ 'width': (menuWidth - 110) + 'px','max-width': '300px' }" 
                       />
+                    </template>
+                    <template v-if="type === 'table-more'">
+                      <CloudDownloadOutlined />
                     </template>
                     <template v-if="type === 'table'">
                       <table-outlined />
@@ -154,7 +161,7 @@
                   <a-select
                     v-model:value="currDbName"
                     :disabled="!currDatabase || !currDatabase.key" 
-                    show-search
+                    show-search allowClear
                     placeholder="选择当前数据库"
                     style="width: 200px"
                     :options="selectDbData"
@@ -235,14 +242,14 @@
           </div>
       </div>
       <a-modal v-model:open="openDbListDialog" title="数据库列表" width="830px" height="550px">
-        <db-list-dialog ref="dbListDialogRef" />
+        <db-list-dialog  v-if="openDbListDialog" ref="dbListDialogRef" />
         <template #footer>
           <a-button key="submit" type="default" @click="selectDb(true)">打开</a-button>
           <a-button key="submit" type="primary" @click="selectDbAndOpen">连接</a-button>
         </template>
       </a-modal>
       <a-modal v-model:open="openDbDialog" title="连接数据库">
-        <open-db-dialog ref="openDbDialogRef" :model="selectDbVal"></open-db-dialog>
+        <open-db-dialog v-if="openDbDialog" ref="openDbDialogRef" :model="selectDbVal"></open-db-dialog>
         <template #footer>
           <a-button key="back" @click="cancelDbDialog">取消</a-button>
           <a-button key="submit" type="primary" :loading="submitOpenDbLoading" @click="submitOpenDb">连接</a-button>
@@ -281,13 +288,15 @@
             v-for="(item, index) in currToolDrawerData"
             v-bind:key="index" style="width: 100%; margin-top: 6px;">
             <a-textarea v-model:value="item.data" placeholder="输入sql语句" :rows="4" />
-            <a-tooltip title="删除">
-              <a-button @click="deleteToolSearch(index)" danger shape="circle" 
-              style="margin: 6px 6px 0 0" :icon="h(DeleteOutlined)" />
-            </a-tooltip>
             <a-tooltip title="应用">
               <a-button @click="selectToolSearch(item.data)" type="default" shape="circle" 
-                style="margin-top: 6px" :icon="h(CheckOutlined)" />
+              style="position: absolute; right: 40px; bottom: 12px" :icon="h(CheckOutlined)" />
+            </a-tooltip>
+            <a-input v-model:value="item.name" placeholder="输入快捷命名"
+                style="width: 260px;margin: 8px 0 0 4px" />
+            <a-tooltip title="删除">
+              <a-button @click="deleteToolSearch(index)" danger shape="circle" 
+              style="position: absolute; right: 4px; bottom: 12px" :icon="h(CloseOutlined)" />
             </a-tooltip>
           </a-card>
           <a-empty description="暂无保存语句" v-if="!currToolDrawerData || currToolDrawerData.length < 1" />
@@ -300,7 +309,7 @@
 
 import { h, ref, watch, onMounted, UnwrapRef, reactive, createVNode, defineComponent  } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { ExclamationCircleOutlined,BarsOutlined,PlusCircleOutlined,DeleteOutlined,CheckOutlined,SaveOutlined, WifiOutlined,ApiOutlined,UserOutlined,BorderlessTableOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownOutlined, FrownFilled  } from '@ant-design/icons-vue';
+import { ExclamationCircleOutlined,CloseOutlined, BarsOutlined,PlusCircleOutlined,CloudDownloadOutlined,CheckOutlined,SaveOutlined, WifiOutlined,ApiOutlined,UserOutlined,BorderlessTableOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownFilled  } from '@ant-design/icons-vue';
 import { getDb,getMode,getTable } from '../api/menu';
 import { getSearch,execute} from '../api/search';
 import { connectDb } from '../api/datasource';
@@ -340,6 +349,7 @@ import { dbTypeOptions } from '../utils/database';
   });
   const openToolDrawer = ref<boolean>(false); // 工具插窗
   const searchValue = ref<string>(''); // 左侧搜索内容
+  const searchTable = ref<boolean>(false); // 左侧搜索模式
   const expandedMenuKeys = ref<string[]>([]); // tree搜索key
   const selectedMenuKeys = ref<string[]>([]); // tree选择key
   const executeNum = ref(0); // 影响行数
@@ -380,6 +390,7 @@ import { dbTypeOptions } from '../utils/database';
   const noPage = ref(false);
   const selectDbData = ref<Array<string>>([]);
   const currRightData = ref<any>(null);
+  const treeMaxSize = ref(50); // 表最大加载
   // 全局加载
   const currloading = ref<boolean>(false);
   // 后台存活监听
@@ -397,6 +408,7 @@ import { dbTypeOptions } from '../utils/database';
     pageSize: 100
   });
   const currToolDrawerData = ref<any[]>([]);
+  const currToolMenuDrawerData = ref<any[]>([]);
   const toolDrawerData = ref<any[]>([]);
   var cancelToken = axios.CancelToken.source();
   // 执行耗时/毫秒
@@ -407,7 +419,10 @@ import { dbTypeOptions } from '../utils/database';
     pageHeight.value = document.body.clientHeight - sh;
     dftPageHeight.value = pageHeight.value;
     window.addEventListener('resize', onResize);
+    // 初始化编辑器
     initEdit();
+    // 加载工具菜单
+    refToolData();
   });
   // 初始化编辑器
   const initEdit = (val = '')=>{
@@ -436,11 +451,30 @@ import { dbTypeOptions } from '../utils/database';
       }
     })
     monaco.languages.registerCompletionItemProvider('sql', {
-      triggerCharacters: ['@'],
-      provideCompletionItems: (model, position) => {
-        let suggestions = refCurrDbTableList();
-        return {
-          suggestions
+      triggerCharacters: ['@','$'],
+      provideCompletionItems: (model, position, context) => {
+        console.log('provideCompletionItems' +  context.triggerCharacter)
+        var triggerCharacter = context.triggerCharacter;
+        if (triggerCharacter === '@') {
+          let suggestions = refCurrDbTableList();
+          return {
+            suggestions
+          }
+        } else if (triggerCharacter === '$') {
+          let suggestions = currToolMenuDrawerData.value.map(c=> {
+            return {
+              label: c.name,
+              kind: monaco.languages.CompletionItemKind.Text,
+              insertText: c.data
+            }
+          });
+          return {
+            suggestions
+          }
+        } else {
+          return {
+            suggestions: []
+          }
         }
       }
     })
@@ -461,15 +495,21 @@ import { dbTypeOptions } from '../utils/database';
       currToolDrawerData.value = toolDrawerData.value.filter(c=> c.data.includes(val));
     }
   }
-  const addToolsSearch = (val) => {
-    currToolDrawerData.value.unshift(val);
+  const addToolsSearch = () => {
+    let val = {
+      id: getGuid(),
+      data: '',
+      name: ''
+    };
+    toolDrawerData.value.unshift(val);
+    onToolsSearch('');
   }
   const saveToolsSearch = () => {
-    if (toolSearchValue) {
-      onToolsSearch('');
-    }
-    localStorage.setItem('toolsdata', JSON.stringify(currToolDrawerData.value));
+    console.log('saveToolsSearch');
+    console.log(JSON.stringify(toolDrawerData.value));
+    localStorage.setItem('toolsdata', JSON.stringify(toolDrawerData.value));
     message.success('保存成功');
+    refToolData();
   }
   const deleteToolSearch = (index)=>{
     currToolDrawerData.value.splice(index, 1);
@@ -478,12 +518,17 @@ import { dbTypeOptions } from '../utils/database';
     editorAppendValue(val);
     openToolDrawer.value = false;
   }
-  const initToolsSearch = ()=> {
+  const refToolData = ()=> {
     let data = localStorage.getItem('toolsdata');
     if (data) {
-      toolDrawerData.value = JSON.parse(data);
-      currToolDrawerData.value = toolDrawerData.value;
-      console.log(JSON.stringify(currToolDrawerData.value));
+      let curr = JSON.parse(data);
+      toolDrawerData.value = curr;
+      currToolDrawerData.value = curr;
+      console.log('getToolsSearch');
+      console.log(curr);
+      currToolMenuDrawerData.value = toolDrawerData.value.filter(c=> c.name);
+      console.log('currToolMenuDrawerData');
+      console.log(currToolMenuDrawerData.value);
     } else {
       toolDrawerData.value = [];
       currToolDrawerData.value = [];
@@ -491,7 +536,7 @@ import { dbTypeOptions } from '../utils/database';
   }
 
   const openToolDrawerDialog = ()=>{
-    initToolsSearch();
+    refToolData();
     openToolDrawer.value = true;
   }
   const onTableSearch = (data, mode, database)=>{
@@ -583,11 +628,12 @@ import { dbTypeOptions } from '../utils/database';
             key: currDbName.value + '_' + c.name,
             isLeaf: false,
             type: 'mode',
-            database: currDbName.value
+            database: currDbName.value,
+            pageIndex: 0
           }
         });
         let currMode = currDb.children[0];
-        getTable(currMode.database, currMode.title, currDatabase.value.type).then(res=>{
+        getTable(currMode.database, currMode.pageIndex, treeMaxSize.value, currMode.title, currDatabase.value.type).then(res=>{
           if (!res.data || !res.data || res.data.length < 1) {
             currMode.children = [{            
               title: '暂无表数据',
@@ -604,9 +650,21 @@ import { dbTypeOptions } from '../utils/database';
                 isLeaf: true,
                 type: 'table',
                 mode: currMode.title,
-                database: currMode.database
+                database: currMode.database,
+                pageIndex: 0
               }
             });
+            currMode.children.push({
+              title: '加载更多',
+              key: currMode.title + '-m',
+              isLeaf: true,
+              style: {
+                height: '35px'
+              },
+              type: 'table-more',
+              mode: currMode.title,
+              database: currMode.database
+            }); 
             currMode.children.unshift({
               title: '',
               key: currMode.title + '-s',
@@ -617,7 +675,7 @@ import { dbTypeOptions } from '../utils/database';
               type: 'table-search',
               mode: currMode.title,
               database: currMode.database
-            });
+            });            
           }
           treeData.value = [...treeData.value];
         });
@@ -672,8 +730,20 @@ import { dbTypeOptions } from '../utils/database';
     if (key == '1') {
       submitOpenDbList();
     } else {
+      selectDbVal.value = {
+        key: getGuid(),
+        name: '',
+        account: '',
+        passWord: '',
+        address : '',
+        port:  dbTypeOptions[0].port,
+        type: 0,
+        trustCert: true,
+        trustedConnection: false,
+        encrypt: true,
+        saveLocal: true
+      }
       openDbDialog.value = true;
-      callOpenDbInit(null);
     }
   };
 
@@ -710,7 +780,7 @@ import { dbTypeOptions } from '../utils/database';
   // 加载数据库列表
   const loadDataBase = ()=>{
     currloading.value = true;
-    getDb(currDatabase.value.type, searchValue.value).then(res => {
+    getDb(currDatabase.value.type, searchValue.value, searchTable.value).then(res => {
       console.log(res);
       treeData.value = res.data.map(c=> {
         return {
@@ -786,28 +856,28 @@ import { dbTypeOptions } from '../utils/database';
     elapsedTimeRef.value = null;
     errorMsg.value = '';
     noPage.value = false;
-    currDatabase.value = {
-      key: null,
+    viewMode.value = 0;
+    columns.value = [];
+    selectDbVal.value = {
+      key: getGuid(),
       name: '',
       account: '',
       passWord: '',
-      address: '',
+      address : '',
+      port:  dbTypeOptions[0].port,
       type: 0,
-      port: 0,
       trustCert: true,
       trustedConnection: false,
       encrypt: true,
       saveLocal: true
-    };
-    viewMode.value = 0;
-    columns.value = [];
+    }
   }
   // 打开数据库连接
   const submitOpenDb = ()=> {
-    clearCurrDbData();
     currloading.value = true;
     submitOpenDbLoading.value = true;
-    connectDb(selectDbVal.value).then(res=>{
+    let data = openDbDialogRef.value && openDbDialogRef.value.openDbModel ?  openDbDialogRef.value.openDbModel : selectDbVal.value;
+    connectDb(data).then(res=>{
       currloading.value = false;
       if (!res.data || !res.data || !res.data.success) {
         message.error(res.data.message);
@@ -816,9 +886,9 @@ import { dbTypeOptions } from '../utils/database';
         message.success('连接成功');
         openDbDialog.value = false;
         submitOpenDbLoading.value = false;
-        currDatabase.value = selectDbVal.value;
-        // 保存到本地
-        saveDbByLocal(selectDbVal.value);
+        currDatabase.value = data;
+        // 保存到本地 warning
+        saveDbByLocal(data);
         // 加载数据库列表
         loadDataBase();
       }
@@ -831,32 +901,43 @@ import { dbTypeOptions } from '../utils/database';
   // 保存数据库到本地
   const saveDbByLocal = (data) => {
     // 寻找相同地址，账号和类型的本地记录
-    let currdbData = dbListDialogRef.value.currdbData;
-    let index = currdbData.findIndex(c=> c.key == data.key);
-    if (!data.name || data.name.length < 1) {
+    let currdbData = [];
+    if (!data.name || data.name.leçngth < 1) {
       // 默认名称为地址
       data.name = data.address;
     }
-    if (data.saveLocal){
-      if (index != -1) {
-        // 更新本地
-        currdbData[index].passWord = data.passWord;
-        currdbData[index].port = data.port;
-        currdbData[index].trustCert = data.trustCert;
-        currdbData[index].trustedConnection = data.trustedConnection;
-        currdbData[index].encrypt = data.encrypt;
-      } else {
-        // 新增本地
-        currdbData.push(data);
+    if (dbListDialogRef.value && dbListDialogRef.value.currdbData) {
+      currdbData = dbListDialogRef.value.currdbData;
+      let index = currdbData.findIndex(c=> c.key == data.key);
+      if (!data.name || data.name.leçngth < 1) {
+        // 默认名称为地址
+        data.name = data.address;
+        if (data.saveLocal){
+          if (index != -1) {
+            // 更新本地
+            currdbData[index].passWord = data.passWord;
+            currdbData[index].port = data.port;
+            currdbData[index].trustCert = data.trustCert;
+            currdbData[index].trustedConnection = data.trustedConnection;
+            currdbData[index].encrypt = data.encrypt;
+          } else {
+            // 新增本地
+            currdbData.push(data);
+          }
+        } else {
+          if (index == -1) {
+            // 不保存本地也没有，跳过
+            return;
+          } else {
+            // 不保存移除本地
+            currdbData.splice(index, 1);
+          }
+        }
       }
     } else {
-      if (index == -1) {
-        // 不保存本地也没有，跳过
-        return;
-      } else {
-        // 不保存移除本地
-        currdbData.splice(index, 1);
-      }
+      let localData = localStorage.getItem('hidbdata');
+      currdbData = localData ? JSON.parse(localData) : [];
+      currdbData.push(data);
     }
     console.log('save-local:' + JSON.stringify(currdbData));
     localStorage.setItem('hidbdata', JSON.stringify(currdbData));
@@ -874,10 +955,7 @@ import { dbTypeOptions } from '../utils/database';
       message.error('请选择一个数据库');
       return false;
     }
-    let currdbData = dbListDialogRef.value.currdbData;
-    selectDbVal.value = currdbData.filter(item => currSelectDb.key === item.key)[0];
-    console.log('selectDb');
-    console.log(selectDbVal.value);
+    selectDbVal.value = currSelectDb;
     if (openDialog) {
       openDbListDialog.value = false;
       openDbDialog.value = true;
@@ -924,7 +1002,8 @@ import { dbTypeOptions } from '../utils/database';
                 key: treeNode.title + '_' + c.name,
                 isLeaf: false,
                 type: 'mode',
-                database: treeNode.title
+                database: treeNode.title,
+                pageIndex: 0
               }
             });
             treeData.value = [...treeData.value];
@@ -934,7 +1013,7 @@ import { dbTypeOptions } from '../utils/database';
             resolve();
           })
         } else if (treeNode.dataRef.type === 'mode') {
-          getTable(treeNode.dataRef.database, treeNode.title, currDatabase.value.type).then(res=>{
+          getTable(treeNode.dataRef.database, treeNode.dataRef.pageIndex, treeMaxSize.value, treeNode.title, currDatabase.value.type).then(res=>{
             if (!res.data || !res.data || res.data.length < 1) {
               treeNode.dataRef.children = [{            
                 title: '暂无表数据',
@@ -976,7 +1055,7 @@ import { dbTypeOptions } from '../utils/database';
       message.error('未找到模式节点信息');
       return;
     }
-    getTable(database, mode, currDatabase.value.type).then(res=>{
+    getTable(database, currMode.pageIndex, treeMaxSize.value, mode, currDatabase.value.type).then(res=>{
       if (!res.data || !res.data || res.data.length < 1) {
         currMode.children = [{            
           title: '暂无表数据',
@@ -1017,6 +1096,65 @@ import { dbTypeOptions } from '../utils/database';
         }
         currDbName.value = e.node.dataRef.database;
         console.log('currDbName' + currDbName.value);
+      } else if (e.node.dataRef.type === 'table-more'){
+        console.log('table-more');
+        let currDb = treeData.value.find(c => c.title == e.node.dataRef.database);
+        if (!currDb || !currDb.children) {
+          message.error('未找到数据库节点信息');
+          return;
+        }
+        let currMode = currDb.children.find(c => c.title == e.node.dataRef.mode);
+        if (!currMode || !currMode.children) {
+          message.error('未找到模式节点信息');
+          return;
+        }
+        currMode.pageIndex = currMode.pageIndex + 1;
+        getTable(e.node.dataRef.database, currMode.pageIndex, treeMaxSize.value, 
+          e.node.dataRef.mode, currDatabase.value.type).then(res=> {
+          currMode.children.splice(currMode.children.length - 1, 1);
+          if (!res.data || !res.data || res.data.length < 1) {
+            currMode.children.push({            
+              title: '已经到底了',
+              key: e.node.dataRef.mode + 'data-end',
+              isLeaf: true,
+              disabled: true,
+              type: 'tablenull',
+            });
+          } else {
+            res.data.forEach(c => {
+              currMode.children.push({
+                title: c.name,
+                key: c.name,
+                isLeaf: true,
+                type: 'table',
+                mode: e.node.dataRef.mode,
+                database: e.node.dataRef.database
+              })
+            });
+            if (res.data.length < treeMaxSize.value) {
+              currMode.children.push({            
+                title: '已经到底了',
+                key: e.node.dataRef.mode + 'data-end',
+                isLeaf: true,
+                disabled: true,
+                type: 'tablenull',
+              });
+            } else {
+              currMode.children.push({
+                title: '加载更多',
+                key: currMode.title + '-m',
+                isLeaf: true,
+                style: {
+                  height: '35px'
+                },
+                type: 'table-more',
+                mode: currMode.title,
+                database: currMode.database
+              }) 
+            }
+          }
+          treeData.value = [...treeData.value];
+        });
       }
     }
   }
@@ -1077,11 +1215,11 @@ import { dbTypeOptions } from '../utils/database';
 
   // 获取是否为查询语句
   const getIsQuery = (val) => {
-    const notquery = /(update|delete|drop|alter|truncate)/i;
+    const notquery = /(update\s+|delete\s+|drop\s+|alter\s+|truncate\s+)/i;
     if (notquery.test(val)) {
       return false;
     }
-    const query = /(select|show)/i;
+    const query = /(select\s+|show\s+)/i;
     if (query.test(val)) {
       return true;
     }

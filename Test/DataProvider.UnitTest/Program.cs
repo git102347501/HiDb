@@ -68,7 +68,7 @@ try
             var s = modeList.FirstOrDefault()?.Name;
             if (s != null)
             {
-                var tableList = await menuService.GetDbTableListAsync(s, name);
+                var tableList = await menuService.GetDbTableListAsync(s, 0 ,100, name);
                 Console.WriteLine("4. Get DbTable:" + string.Join(",", tableList.Select(c => c.Name).ToList()));
             }
         }

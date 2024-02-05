@@ -14,43 +14,28 @@ namespace HiDb.DataProvider.MySql
     /// </summary>
     public class TableDataProvider : MainDataProvider, ITableDataProvider
     {
-        public async Task<TableColumnFullOutput> GetDbColumnFullInfoAsync(TableColumnFullInput input,
+        public async Task<List<TableColumnFullOutput>> GetDbColumnListAsync(TableColumnInput input,
             CancellationToken cancellationToken = default)
         {
-            var use = @$"use [{input.DataBase}];";
-            return await GetFirstAsync<TableColumnFullOutput>(use + @$"SELECT 
+            return await GetListAsync<TableColumnFullOutput>(@$"SELECT 
                                 COLUMN_NAME AS Name,
                                 DATA_TYPE AS Type,
+                                CASE COLUMN_KEY
+                                WHEN 'PRI' THEN 1
+                                WHEN 'MUL' THEN 2
+                                ELSE 0 END AS KeyType,
                                 IS_NULLABLE AS AllowNull,
                                 COLUMN_DEFAULT AS DftValue,
-                                NUMERIC_PRECISION AS NumericPrecision，
+                                NUMERIC_PRECISION AS NumSize,
                                 ORDINAL_POSITION AS OrderNo,
-                                CHARACTER_MAXIMUM_LENGTH AS NumericPrecision,
-                                NUMERIC_SCALE AS Size
+                                CHARACTER_MAXIMUM_LENGTH AS MaxLength,
+                                COLUMN_COMMENT AS Remark
                             FROM 
                                 INFORMATION_SCHEMA.COLUMNS
-                            LEFT JOIN 
-								sys.extended_properties ep ON ep.major_id = OBJECT_ID(c.TABLE_SCHEMA + '.' + c.TABLE_NAME) 
-                            AND ep.minor_id = c.ORDINAL_POSITION 
-                            AND ep.name = 'MS_Description'
-                            WHERE 
-                                TABLE_CATALOG = '{input.DataBase}'
-                                AND TABLE_SCHEMA = '{input.Mode}'
-                                AND TABLE_NAME = '{input.Table}';", cancellationToken);
-        }
-
-        public async Task<List<TableColumnOutput>> GetDbColumnListAsync(TableColumnInput input,
-            CancellationToken cancellationToken = default)
-        {
-            return await GetListAsync<TableColumnOutput>(@$"SELECT 
-                                column_name AS Name,
-                                data_type AS Type,
-                                is_nullable  AS AllowNull
-                            FROM 
-                                information_schema.columns 
                             WHERE 
                                 table_schema= '{input.DataBase}'
-                                AND table_name= '{input.Table}';", cancellationToken, input.DataBase);
+                                AND table_name= '{input.Table}'
+                            order by ORDINAL_POSITION;", cancellationToken, input.DataBase);
         }
         
         public async Task<List<TableDbTypeOutput>> GetDbTypeListAsync(CancellationToken cancellationToken = default)
@@ -81,6 +66,22 @@ namespace HiDb.DataProvider.MySql
         {
             using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken, database);
             return await connection.ExecuteAsync(@$"TRUNCATE TABLE {database}.{table}") > 1;
+        }
+
+        public async Task<bool> AddColumnConfigAsync(AddTableColumnInput input, CancellationToken cancellationToken = default)
+        {
+            using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken);
+            var sql = @$"ALTER TABLE [{input.DataBase}].[{input.Mode}].[{input.Table}]
+                         ADD [{input.Column}] [{input.Type}] {(input.Required ? "NOT NULL" : "NULL")}";
+            return await connection.ExecuteAsync(sql) > 1;
+        }
+
+        public async Task<bool> DeleteColumnConfigAsync(DeleteTableColumnInput input, CancellationToken cancellationToken = default)
+        {
+            using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken);
+            var sql = @$"ALTER TABLE [{input.DataBase}].[{input.Mode}].[{input.Table}]
+                         DROP COLUMN [{input.Column}]";
+            return await connection.ExecuteAsync(sql) > 1;
         }
     }
 }

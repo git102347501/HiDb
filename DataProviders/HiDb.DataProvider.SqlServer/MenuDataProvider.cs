@@ -9,23 +9,51 @@ namespace HiDb.DataProvider.SqlServer
     /// </summary>
     public class MenuDataProvider : MainDataProvider, IMenuDataProvider
     {
-        public async Task<List<MenuDataBaseOutput>> GetDataBaseListAsync(string? name = "", 
+        public async Task<List<MenuDataBaseOutput>> GetDataBaseListAsync(string? name = "", bool searchTable = false,
             CancellationToken cancellationToken = default)
         {
             var sql = "SELECT name AS Name FROM sys.databases";
-            if (!string.IsNullOrWhiteSpace(name))
+            if (!searchTable && !string.IsNullOrWhiteSpace(name))
             {
                 sql = @$"SELECT name AS Name FROM sys.databases where name like '%{name}%'";
             }
-            return await GetListAsync<MenuDataBaseOutput>(sql, cancellationToken);
+            var res = await GetListAsync<MenuDataBaseOutput>(sql, cancellationToken);
+            if (searchTable)
+            {
+                var list = new List<MenuDataBaseOutput>();
+                foreach (var db in res)
+                {
+                    if (await GetDbTableCountAsync(db.Name, name, cancellationToken) > 0)
+                    {
+                        list.Add(db);
+                    }
+                }
+
+                return list;
+            }
+
+            return res;
+        }
+        
+        private async Task<long> GetDbTableCountAsync(string database, string tableName, CancellationToken cancellationToken = default)
+        {
+            return await GetFirstAsync<long>(
+                @$"SELECT count(1) AS Name
+                            FROM [{database}].INFORMATION_SCHEMA.TABLES
+                            WHERE TABLE_NAME like '%{tableName}%'",cancellationToken);
         }
 
-        public async Task<List<MenuDbTableOutput>> GetDbTableListAsync(string database, string mode,
-            CancellationToken cancellationToken = default)
+        public async Task<List<MenuDbTableOutput>> GetDbTableListAsync(string database,
+            int pageSize, int pageIndex, string mode, CancellationToken cancellationToken = default)
         {
-            return await GetListAsync<MenuDbTableOutput>(@$"SELECT TABLE_NAME AS Name
-                                                FROM [{database}].INFORMATION_SCHEMA.TABLES
-                                                WHERE TABLE_SCHEMA = '{mode}'",cancellationToken);
+            var offset = pageSize * pageIndex;
+            return await GetListAsync<MenuDbTableOutput>(
+                        @$"SELECT TABLE_NAME AS Name
+                            FROM [{database}].INFORMATION_SCHEMA.TABLES
+                            WHERE TABLE_SCHEMA = '{mode}'
+                            ORDER BY TABLE_NAME
+                            OFFSET {offset} ROWS
+                            FETCH NEXT {pageSize} ROWS ONLY",cancellationToken);
         }
 
         public async Task<List<MenuDbModeOutput>> GetDbModeListAsync(string database, 

@@ -12,6 +12,11 @@ namespace HiDb.DataProvider.Dtos.Tables
         /// 默认值
         /// </summary>
         public string DftValue { get; set; }
+        
+        /// <summary>
+        /// 键类型
+        /// </summary>
+        public int KeyType { get; set; }
 
         /// <summary>
         /// 列位置
@@ -26,12 +31,17 @@ namespace HiDb.DataProvider.Dtos.Tables
         /// <summary>
         /// 文本最大长度
         /// </summary>
-        public int MaxLength { get; set; }
+        public long MaxLength { get; set; }
 
         /// <summary>
-        /// 数字大小
+        /// 数值小数位
         /// </summary>
-        public int Size { get; set; }
+        public int NumSize { get; set; }
+
+        /// <summary>
+        /// 字段备注
+        /// </summary>
+        public string Remark { get; set; }
 
         ///// <summary>
         ///// 索引

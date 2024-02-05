@@ -16,25 +16,12 @@ namespace HiDb.Api.Controllers;
 public class TableController : MainController
 {
     /// <summary>
-    /// 获取属性详情
-    /// </summary>
-    /// <param name="input"></param>
-    /// <returns></returns>
-    [HttpPost("column/detail")]
-    public async Task<TableColumnFullOutput> GetDbColumnFullInfoAsync(TableColumnFullInput input,
-        CancellationToken cancellationToken = default)
-    {
-        var data = await GetService(ServiceFactory.GetTable).GetDbColumnFullInfoAsync(input, cancellationToken);
-        return data;
-    }
-
-    /// <summary>
     /// 获取表属性列表
     /// </summary>
     /// <param name="input"></param>
     /// <returns></returns>
     [HttpPost("column/list")]
-    public async Task<List<TableColumnOutput>> GetDbColumnListAsync(TableColumnInput input,
+    public async Task<List<TableColumnFullOutput>> GetDbColumnListAsync(TableColumnInput input,
         CancellationToken cancellationToken = default)
     {
         var data = await GetService(ServiceFactory.GetTable).GetDbColumnListAsync(input,
@@ -100,6 +87,24 @@ public class TableController : MainController
         CancellationToken cancellationToken = default)
     {
         var data = await GetService(ServiceFactory.GetTable).UpdateColumnConfigAsync(input,
+            cancellationToken);
+        return data;
+    }
+
+    [HttpPost("column/config")]
+    public async Task<bool> AddColumnConfigAsync(AddTableColumnInput input,
+        CancellationToken cancellationToken = default)
+    {
+        var data = await GetService(ServiceFactory.GetTable).AddColumnConfigAsync(input,
+            cancellationToken);
+        return data;
+    }
+
+    [HttpDelete("column/config")]
+    public async Task<bool> DeleteColumnConfigAsync(DeleteTableColumnInput input,
+        CancellationToken cancellationToken = default)
+    {
+        var data = await GetService(ServiceFactory.GetTable).DeleteColumnConfigAsync(input,
             cancellationToken);
         return data;
     }

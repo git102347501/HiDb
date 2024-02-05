@@ -13,19 +13,22 @@ namespace HiDb.DataProvider.SqlServer
     /// </summary>
     public class TableDataProvider : MainDataProvider, ITableDataProvider
     {
-        public async Task<TableColumnFullOutput> GetDbColumnFullInfoAsync(TableColumnFullInput input,
+        public async Task<List<TableColumnFullOutput>> GetDbColumnListAsync(TableColumnInput input,
             CancellationToken cancellationToken = default)
         {
-            var use = @$"use [{input.DataBase}];";
-            return await GetFirstAsync<TableColumnFullOutput>(use + @$"SELECT 
+            return await GetListAsync<TableColumnFullOutput>(@$"SELECT 
                                 COLUMN_NAME AS Name,
+                                CASE COLUMN_KEY
+                                WHEN 'PRI' THEN 1
+                                WHEN 'MUL' THEN 2
+                                ELSE 0 END AS KeyType,
                                 DATA_TYPE AS Type,
                                 IS_NULLABLE AS AllowNull,
                                 COLUMN_DEFAULT AS DftValue,
-                                NUMERIC_PRECISION AS NumericPrecision，
+                                NUMERIC_PRECISION AS NumericPrecision,
                                 ORDINAL_POSITION AS OrderNo,
-                                CHARACTER_MAXIMUM_LENGTH AS NumericPrecision,
-                                NUMERIC_SCALE AS Size
+                                CHARACTER_MAXIMUM_LENGTH AS MaxLength,
+                                NUMERIC_SCALE AS NumSize
                             FROM 
                                 INFORMATION_SCHEMA.COLUMNS
                             LEFT JOIN 
@@ -35,22 +38,8 @@ namespace HiDb.DataProvider.SqlServer
                             WHERE 
                                 TABLE_CATALOG = '{input.DataBase}'
                                 AND TABLE_SCHEMA = '{input.Mode}'
-                                AND TABLE_NAME = '{input.Table}';", cancellationToken);
-        }
-
-        public async Task<List<TableColumnOutput>> GetDbColumnListAsync(TableColumnInput input,
-            CancellationToken cancellationToken = default)
-        {
-            return await GetListAsync<TableColumnOutput>(@$"SELECT 
-                                COLUMN_NAME AS Name,
-                                DATA_TYPE AS Type,
-                                IS_NULLABLE AS AllowNullStr
-                            FROM 
-                                INFORMATION_SCHEMA.COLUMNS
-                            WHERE 
-                                TABLE_CATALOG = '{input.DataBase}'
-                                AND TABLE_SCHEMA = '{input.Mode}'
-                                AND TABLE_NAME = '{input.Table}';", cancellationToken, input.DataBase);
+                                AND TABLE_NAME = '{input.Table}'
+                            order by ORDINAL_POSITION;", cancellationToken, input.DataBase);
         }
 
         public async Task<List<TableDbTypeOutput>> GetDbTypeListAsync(CancellationToken cancellationToken = default)
@@ -72,7 +61,7 @@ namespace HiDb.DataProvider.SqlServer
         {
             using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken);
             var sql = @$"ALTER TABLE [{input.DataBase}].[{input.Mode}].[{input.Table}]
-                        ALTER COLUMN [{input.Column}] [{input.Type}] {(input.Required ? "NOT NULL" : "NULL")}";
+                         ALTER COLUMN [{input.Column}] [{input.Type}] {(input.Required ? "NOT NULL" : "NULL")}";
             return await connection.ExecuteAsync(sql) > 1;
         }
         
@@ -81,6 +70,22 @@ namespace HiDb.DataProvider.SqlServer
         {
             using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken);
             return await connection.ExecuteAsync(@$"TRUNCATE TABLE {database}.{mode}.{table}") > 1;
+        }
+
+        public async Task<bool> AddColumnConfigAsync(AddTableColumnInput input, CancellationToken cancellationToken = default)
+        {
+            using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken);
+            var sql = @$"ALTER TABLE [{input.DataBase}].[{input.Mode}].[{input.Table}]
+                         ADD [{input.Column}] [{input.Type}] {(input.Required ? "NOT NULL" : "NULL")}";
+            return await connection.ExecuteAsync(sql) > 1;
+        }
+
+        public async Task<bool> DeleteColumnConfigAsync(DeleteTableColumnInput input, CancellationToken cancellationToken = default)
+        {
+            using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken);
+            var sql = @$"ALTER TABLE [{input.DataBase}].[{input.Mode}].[{input.Table}]
+                         DROP COLUMN [{input.Column}]";
+            return await connection.ExecuteAsync(sql) > 1;
         }
     }
 }

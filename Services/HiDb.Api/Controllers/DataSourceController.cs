@@ -18,7 +18,7 @@ namespace HiDb.Api.Controllers
         [HttpPost("connect")]
         public async Task<ConnectDbOutput> ConnectDbAsync(ConnectDbInput input, CancellationToken cancellationToken)
         {
-            return await GetService(ServiceFactory.GetDataSource).ConnectDbAsync(input,cancellationToken);
+            return await GetService(ServiceFactory.GetDataSource).ConnectDbAsync(input, cancellationToken);
         }
     }
 }
