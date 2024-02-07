@@ -2,5 +2,5 @@ namespace HiDb.DataProvider.MySql.Models;
 
 public class MySqlDbTypeList
 {
-    public string COLUMNS { get; set; }
+    public string COLUMN_TYPE { get; set; }
 }

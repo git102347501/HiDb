@@ -19,7 +19,7 @@ serves.interceptors.response.use(
   (res) => {
     // 设置接受数据之后，做什么处理
     if (res.data.code === 50000) {
-      // ElMessage.error(res.data.data);
+      // message.error(res.data.data);
     }
     return res;
   },

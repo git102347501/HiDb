@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlTypes;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,9 +15,24 @@ namespace HiDb.DataProvider.Dtos.Tables
         public string DftValue { get; set; }
         
         /// <summary>
-        /// 键类型
+        /// 是否主键
         /// </summary>
-        public int KeyType { get; set; }
+        public int IsKey { get; set; }
+
+        /// <summary>
+        /// 是否主键
+        /// </summary>
+        public bool IsKeyValue { get { return IsKey == 1;  } }
+
+        /// <summary>
+        /// 是否外键
+        /// </summary>
+        public int IsForeignKey { get; set; }
+
+        /// <summary>
+        /// 是否外键
+        /// </summary>
+        public bool IsForeignKeyValue { get { return IsForeignKey == 1; } }
 
         /// <summary>
         /// 列位置

@@ -21,9 +21,11 @@ namespace HiDb.DataProvider.MySql
                                 COLUMN_NAME AS Name,
                                 DATA_TYPE AS Type,
                                 CASE COLUMN_KEY
-                                WHEN 'PRI' THEN 1
-                                WHEN 'MUL' THEN 2
-                                ELSE 0 END AS KeyType,
+                                    WHEN 'PRI' THEN 1
+                                    ELSE 0 END AS IsKey,
+                                CASE COLUMN_KEY
+                                    WHEN 'MUL' THEN 1
+                                    ELSE 0 END AS IsForeignKey,
                                 IS_NULLABLE AS AllowNull,
                                 COLUMN_DEFAULT AS DftValue,
                                 NUMERIC_PRECISION AS NumSize,
@@ -42,7 +44,7 @@ namespace HiDb.DataProvider.MySql
         {
             var res = await GetListAsync<MySqlDbTypeList>( @$"SELECT DISTINCT COLUMN_TYPE 
                                                     FROM information_schema.COLUMNS;", cancellationToken);
-            return res.Select(c => new TableDbTypeOutput() {Name = c.COLUMNS}).ToList();
+            return res.Select(c => new TableDbTypeOutput() {Name = c.COLUMN_TYPE }).ToList();
         }
 
         public async Task<bool> DeleteTableAsync(string database, string mode, string table, 

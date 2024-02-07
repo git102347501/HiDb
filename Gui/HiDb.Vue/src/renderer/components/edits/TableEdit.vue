@@ -15,6 +15,7 @@
         <div class="data">
           <a-table class="table"
               :columns="dbColumns" 
+              @resizeColumn="handleResizeColumn"
               size="small"
               style="width: 100%;"
               :data-source="currdbData"
@@ -39,13 +40,11 @@
                     :filter-option="filterOption"
                   ></a-select>
                 </template>
-                <template v-if="column.dataIndex == 'keyType'">
-                  <a-select
-                    v-model:value="record.keyType"
-                    placeholder="主键类型"
-                    style="width: 80px"
-                    :options="keyTypeOptions"
-                  ></a-select>
+                <template v-if="column.dataIndex == 'isKeyValue'">
+                  <a-switch v-model:checked="record.isKeyValue" />
+                </template>
+                <template v-if="column.dataIndex == 'isForeignKeyValue'">
+                  <a-switch v-model:checked="record.isForeignKeyValue" />
                 </template>
                 <template v-if="column.dataIndex == 'allowNull'">
                   <a-switch v-model:checked="record.allowNull" />
@@ -54,14 +53,13 @@
                   <a-input v-model:value="record.dftValue" placeholder="请输入默认值" />
                 </template>
                 <template v-if="column.dataIndex == 'numericPrecision'">
-                  <a-input type="number" v-model:value="record.numericPrecision" placeholder="精度" />
+                  <a-input-number placeholder="精度" v-model:value="record.numericPrecision" :min="0" :max="999" :step="1" string-mode />
                 </template>
                 <template v-if="column.dataIndex == 'numSize'">
-                  <a-input type="number" 
-                    v-model:value="record.numSize" placeholder="小数位" />
+                  <a-input-number placeholder="小数位" v-model:value="record.numSize" :min="0" :max="999" :step="1" string-mode />
                 </template>
                 <template v-if="column.dataIndex == 'remark'">
-                  <a-input type="text" v-model:value="record.remark" placeholder="精度" />
+                  <a-input type="text" v-model:value="record.remark" placeholder="字段备注" />
                 </template>
                 <template v-else-if="column.dataIndex === 'operation'">
                   <a-typography-link @click="saveColumnConfig(record)" :loading="record.loading" 
@@ -83,6 +81,7 @@ import {  RedoOutlined,DeleteOutlined } from '@ant-design/icons-vue';
 import Modal from 'ant-design-vue/es/modal/Modal';
 import { getGuid } from '@renderer/utils/guid';
 import { isNull } from '@renderer/utils/common';
+import { SelectProps } from 'ant-design-vue/es/vc-select/Select';
 
 const props = defineProps(['database','mode','table','dbtype'])
 const tableHeight = ref(document.body.clientHeight);
@@ -103,26 +102,38 @@ const dbColumns = ref<any[]>([{
     title: '名称',
     dataIndex: 'name',
     sorter: false,
+    resizable: true,
     width: 180
   },
   {
     title: '字段类型',
     dataIndex: 'type',
     sorter: false,
+    resizable: true,
     width: 150
   },
   {
     title: '主键',
-    dataIndex: 'keyType',
+    dataIndex: 'isKeyValue',
     sorter: false,
     align: 'center',
-    width: 100
+    resizable: true,
+    width: 70
+  },
+  {
+    title: '外键',
+    dataIndex: 'isForeignKeyValue',
+    sorter: false,
+    align: 'center',
+    resizable: true,
+    width: 70
   },
   {
     title: '允许null',
     dataIndex: 'allowNull',
     sorter: false,
     align: 'center',
+    resizable: true,
     width: 100
   },
   {
@@ -130,6 +141,7 @@ const dbColumns = ref<any[]>([{
     dataIndex: 'dftValue',
     sorter: false,
     align: 'left',
+    resizable: true,
     width: 130
   },
   {
@@ -137,20 +149,23 @@ const dbColumns = ref<any[]>([{
     dataIndex: 'numericPrecision',
     sorter: false,
     align: 'center',
-    width: 90
+    resizable: true,
+    width: 100
   },
   {
     title: '小数位',
     dataIndex: 'numSize',
     sorter: false,
     align: 'center',
-    width: 90
+    resizable: true,
+    width: 100
   },
   {
     title: '备注',
     dataIndex: 'remark',
     sorter: false,
     align: 'left',
+    resizable: true,
     width: 200
   },
   {
@@ -158,6 +173,7 @@ const dbColumns = ref<any[]>([{
     dataIndex: 'orderNo',
     sorter: false,
     align: 'center',
+    resizable: true,
     width: 70
   },
   {
@@ -208,20 +224,10 @@ const loadTableColumn = ()=>{
     loading.value = false;
   })
 }
-const dbTypeOptions = ref([]);
-const keyTypeOptions = ref([{
-  label: '无',
-  value: 0
-},{
-  label: '主键',
-  value: 1
-},{
-  label: '外键',
-  value: 2
-}]);
-const loadDbType = ()=>{
-  getDbType(props.dbtype).then(res=>{
-    dbTypeOptions.value = res.data.map(c => {return { value : c.name, label: c.name}});
+const dbTypeOptions = ref<SelectProps['options']>([]);
+const loadDbType = () => {
+  getDbType(props.dbtype).then(res => {
+    dbTypeOptions.value = res.data.map(c => { return { value : c.name, label: c.name }});
   })
 }
 
@@ -305,6 +311,10 @@ const deleteColumnConfig = (data)=>{
 }
 const clearData = ()=>{
   currdbData.value = [];
+}
+
+const handleResizeColumn = (w, col) => {
+  col.width = w;
 }
 
 watchEffect(()=>{

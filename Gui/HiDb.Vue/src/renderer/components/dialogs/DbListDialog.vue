@@ -55,6 +55,9 @@ import { ConnectDbInput } from '../model/MainPageMode';
 import { TableProps } from 'ant-design-vue';
 import { DataType } from 'vue-request';
 import { cloneDeep } from 'lodash-es';
+import MySql from '../icons/MySql.vue';
+import SqlServer from '../icons/SqlServer.vue';
+import PgSql from '../icons/PgSql.vue';
 
 const dbloading = ref(false);
 
