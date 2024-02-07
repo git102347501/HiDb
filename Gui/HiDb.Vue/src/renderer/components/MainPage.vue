@@ -25,7 +25,7 @@
         </div>
         <div class="title">
           <span class="info" @click="getLife">
-            <a-tooltip title="点击重新尝试连接">
+            <a-tooltip :title="BASE_URL + ',点击测试连接'">
               <span v-if="lifeTest == 1">
                 <wifi-outlined :width="20" :height="20" style="margin-right: 4px;" />服务连接中...</span>
               <span style="color: green" v-if="lifeTest == 9">
@@ -181,6 +181,11 @@
                   <a-tooltip title="常用语句">
                     <a-button @click="openToolDrawerDialog" style="margin-left: 6px" type="default" shape="circle" :icon="h(BarsOutlined)" />
                   </a-tooltip>
+                  <a-tooltip :title="isLockQuery == 0 ? '未指定查询模式' : isLockQuery == 1 ? '指定为执行模式' : '指定为查询模式'">
+                    <a-button v-if="isLockQuery == 0"  @click="isLockQuery = 1" style="margin-left: 6px" shape="circle" :icon="h(StopOutlined)" />
+                    <a-button v-if="isLockQuery == 1" @click="isLockQuery = 2" style="margin-left: 6px" type="primary" shape="circle" :icon="h(CaretRightOutlined)" />
+                    <a-button v-if="isLockQuery == 2" @click="isLockQuery = 0" style="margin-left: 6px" type="primary" shape="circle" :icon="h(SearchOutlined)" />
+                  </a-tooltip>
                 </div>
               </div>
               <div class="context" >
@@ -195,6 +200,7 @@
                     v-show="!currloading">
                     <a-table class="table"
                         v-if="isQuery && !errorMsg"
+                        @resizeColumn="handleResizeColumn"
                         :columns="columns" 
                         size="small"
                         :data-source="currData"
@@ -309,7 +315,7 @@
 
 import { h, ref, watch, onMounted, UnwrapRef, reactive, createVNode, defineComponent  } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { ExclamationCircleOutlined,CloseOutlined, BarsOutlined,PlusCircleOutlined,CloudDownloadOutlined,CheckOutlined,SaveOutlined, WifiOutlined,ApiOutlined,UserOutlined,BorderlessTableOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownFilled  } from '@ant-design/icons-vue';
+import { ExclamationCircleOutlined,CloseOutlined,SearchOutlined,StopOutlined, BarsOutlined,PlusCircleOutlined,CloudDownloadOutlined,CheckOutlined,SaveOutlined, WifiOutlined,ApiOutlined,UserOutlined,BorderlessTableOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownFilled  } from '@ant-design/icons-vue';
 import { getDb,getMode,getTable } from '../api/menu';
 import { getSearch,execute} from '../api/search';
 import { connectDb } from '../api/datasource';
@@ -331,7 +337,7 @@ import { deleteTable, clearTable } from '../api/table';
 import axios from 'axios';
 import { getMaxLength } from '../utils/common';
 import { dbTypeOptions } from '../utils/database';
-
+  const BASE_URL = process.env.API_HOST;
   const sh = 280;
   const pageHeight = ref(0);
   const dftPageHeight = ref(0);
@@ -354,6 +360,7 @@ import { dbTypeOptions } from '../utils/database';
   const selectedMenuKeys = ref<string[]>([]); // tree选择key
   const executeNum = ref(0); // 影响行数
   const isQuery = ref(true); // 是否走查询
+  const isLockQuery = ref(0); // 是否走查询
   const errorMsg = ref(''); // 错误消息
   const openAboutDialog = ref(false);
   // 选中数据库名称
@@ -390,7 +397,7 @@ import { dbTypeOptions } from '../utils/database';
   const noPage = ref(false);
   const selectDbData = ref<Array<string>>([]);
   const currRightData = ref<any>(null);
-  const treeMaxSize = ref(50); // 表最大加载
+  const treeMaxSize = ref(30); // 表最大加载
   // 全局加载
   const currloading = ref<boolean>(false);
   // 后台存活监听
@@ -879,6 +886,7 @@ import { dbTypeOptions } from '../utils/database';
     let data = openDbDialogRef.value && openDbDialogRef.value.openDbModel ?  openDbDialogRef.value.openDbModel : selectDbVal.value;
     connectDb(data).then(res=>{
       currloading.value = false;
+      clearCurrDbData();
       if (!res.data || !res.data || !res.data.success) {
         message.error(res.data.message);
         submitOpenDbLoading.value = false;
@@ -902,42 +910,37 @@ import { dbTypeOptions } from '../utils/database';
   const saveDbByLocal = (data) => {
     // 寻找相同地址，账号和类型的本地记录
     let currdbData = [];
-    if (!data.name || data.name.leçngth < 1) {
+    if (!data.name || data.name.length < 1) {
       // 默认名称为地址
       data.name = data.address;
     }
     if (dbListDialogRef.value && dbListDialogRef.value.currdbData) {
       currdbData = dbListDialogRef.value.currdbData;
-      let index = currdbData.findIndex(c=> c.key == data.key);
-      if (!data.name || data.name.leçngth < 1) {
-        // 默认名称为地址
-        data.name = data.address;
-        if (data.saveLocal){
-          if (index != -1) {
-            // 更新本地
-            currdbData[index].passWord = data.passWord;
-            currdbData[index].port = data.port;
-            currdbData[index].trustCert = data.trustCert;
-            currdbData[index].trustedConnection = data.trustedConnection;
-            currdbData[index].encrypt = data.encrypt;
-          } else {
-            // 新增本地
-            currdbData.push(data);
-          }
-        } else {
-          if (index == -1) {
-            // 不保存本地也没有，跳过
-            return;
-          } else {
-            // 不保存移除本地
-            currdbData.splice(index, 1);
-          }
-        }
-      }
     } else {
       let localData = localStorage.getItem('hidbdata');
       currdbData = localData ? JSON.parse(localData) : [];
-      currdbData.push(data);
+    }
+    let index = currdbData.findIndex(c=> c.key == data.key);
+    if (data.saveLocal){
+      if (index != -1) {
+        // 更新本地
+        currdbData[index].passWord = data.passWord;
+        currdbData[index].port = data.port;
+        currdbData[index].trustCert = data.trustCert;
+        currdbData[index].trustedConnection = data.trustedConnection;
+        currdbData[index].encrypt = data.encrypt;
+      } else {
+        // 新增本地
+        currdbData.push(data);
+      }
+    } else {
+      if (index == -1) {
+        // 不保存本地也没有，跳过
+        return;
+      } else {
+        // 不保存移除本地
+        currdbData.splice(index, 1);
+      }
     }
     console.log('save-local:' + JSON.stringify(currdbData));
     localStorage.setItem('hidbdata', JSON.stringify(currdbData));
@@ -1042,7 +1045,9 @@ import { dbTypeOptions } from '../utils/database';
         }
       });
   };
-
+  const handleResizeColumn = (w, col) => {
+    col.width = w;
+  }
   // 刷新模式下表列表
   const refDatabaseTable = (database, mode, msg = true) => {
     let currDb = treeData.value.find(c => c.title == database);
@@ -1215,6 +1220,9 @@ import { dbTypeOptions } from '../utils/database';
 
   // 获取是否为查询语句
   const getIsQuery = (val) => {
+    if (isLockQuery.value > 0) {
+      return isLockQuery.value == 2;
+    }
     const notquery = /(update\s+|delete\s+|drop\s+|alter\s+|truncate\s+)/i;
     if (notquery.test(val)) {
       return false;
@@ -1276,6 +1284,7 @@ import { dbTypeOptions } from '../utils/database';
             title: element ? element : 'filed' + (index + 1),
             dataIndex:  element ? element : 'filed' + (index + 1),
             sorter: false,
+            resizable: true,
             width: 30 + (getMaxLength(res.data.list, element) * 10)
           }));
           res.data.list.forEach((obj, index) => {

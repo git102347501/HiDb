@@ -18,10 +18,18 @@ namespace HiDb.DataProvider.SqlServer
         {
             return await GetListAsync<TableColumnFullOutput>(@$"SELECT 
                                 COLUMN_NAME AS Name,
-                                CASE COLUMN_KEY
-                                WHEN 'PRI' THEN 1
-                                WHEN 'MUL' THEN 2
-                                ELSE 0 END AS KeyType,
+                                (SELECT count(1)
+                                FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+                                WHERE CONSTRAINT_CATALOG = '{input.DataBase}'  
+                                AND TABLE_SCHEMA = '{input.Mode}'
+                                AND TABLE_NAME = '{input.Table}'
+                                AND COLUMN_NAME = c.COLUMN_NAME ) as IsKey,
+                                (case when (SELECT CONSTRAINT_NAME
+                                FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+                                WHERE CONSTRAINT_CATALOG = '{input.DataBase}'  
+                                AND TABLE_SCHEMA = '{input.Mode}'
+                                AND TABLE_NAME = '{input.Table}'
+                                AND COLUMN_NAME = c.COLUMN_NAME ) is not null then 1 else 0 end) as IsForeignKey,
                                 DATA_TYPE AS Type,
                                 IS_NULLABLE AS AllowNull,
                                 COLUMN_DEFAULT AS DftValue,
@@ -30,7 +38,7 @@ namespace HiDb.DataProvider.SqlServer
                                 CHARACTER_MAXIMUM_LENGTH AS MaxLength,
                                 NUMERIC_SCALE AS NumSize
                             FROM 
-                                INFORMATION_SCHEMA.COLUMNS
+                                INFORMATION_SCHEMA.COLUMNS AS c
                             LEFT JOIN 
 								sys.extended_properties ep ON ep.major_id = OBJECT_ID(c.TABLE_SCHEMA + '.' + c.TABLE_NAME) 
                             AND ep.minor_id = c.ORDINAL_POSITION 
