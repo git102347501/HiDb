@@ -9,8 +9,8 @@ Modern Database Management Desktop Software Based on Electron
 Supports multiple platforms on Windows and Mac, runs completely offline locally, and is a pure tool application
 
 <img width="1512" alt="image" src="https://github.com/git102347501/HiDb/assets/37917403/b7dae823-64e4-49f7-84e3-ef3b6fd450e9">
-
-<img width="1512" alt="image" src="https://github.com/git102347501/HiDb/assets/37917403/ab904198-585d-498e-9be4-bcdf9b46f386">
+ 
+<img width="1512" alt="image" src="https://github.com/git102347501/HiDb/assets/37917403/a4a64b16-80ae-432e-8296-7fa2147d36d0">
 
 
 # Install (如何安装)
