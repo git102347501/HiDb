@@ -31,7 +31,7 @@ namespace HiDb.DataProvider.SqlServer
                                 AND TABLE_NAME = '{input.Table}'
                                 AND COLUMN_NAME = c.COLUMN_NAME ) is not null then 1 else 0 end) as IsForeignKey,
                                 DATA_TYPE AS Type,
-                                IS_NULLABLE AS AllowNull,
+                                IS_NULLABLE AS AllowNullStr,
                                 COLUMN_DEFAULT AS DftValue,
                                 NUMERIC_PRECISION AS NumericPrecision,
                                 ORDINAL_POSITION AS OrderNo,
@@ -69,14 +69,21 @@ namespace HiDb.DataProvider.SqlServer
         {
             using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken, input.DataBase);
             var sql = @$"ALTER TABLE [{input.DataBase}].[{input.Mode}].[{input.Table}]
-                         ALTER COLUMN [{input.Column}] [{FormatType(input.Type, input.NumericPrecision, input.NumSize)}] {GetRequiredSql(input)} {GetDftValueSql(input)}";
-            var res = await connection.ExecuteAsync(sql) > 1;
-            if (!res) return res;
-            if (!string.IsNullOrWhiteSpace((input.Remark)))
+                         ALTER COLUMN {input.Column} {FormatType(input.Type, input.NumericPrecision, input.NumSize)} {GetRequiredSql(input)} {GetDftValueSql(input)}";
+            try
             {
-                return await connection.ExecuteAsync(GetUpdateRemarkSql(input)) > 1;
+                var res = await connection.ExecuteAsync(sql) > 1;
+                if (!res) return res;
+                if (!string.IsNullOrWhiteSpace((input.Remark)))
+                {
+                    return await connection.ExecuteAsync(GetUpdateRemarkSql(input)) > 1;
+                }
+                return res;
             }
-            return res;
+            catch (Exception e)
+            {
+                throw new Exception("执行错误:" + e.Message);
+            }
         }
 
         /// <summary>
@@ -95,7 +102,8 @@ namespace HiDb.DataProvider.SqlServer
 
         private string GetDftValueSql(ChangeTableColumnInput input)
         {
-            return $"{(string.IsNullOrWhiteSpace(input.DftValue) ? "": $" DEFAULT '{input.DftValue}'")}";
+            var isNum = input.Type.Contains("decimal") || input.Type.Contains("numeric");
+            return $"{(string.IsNullOrWhiteSpace(input.DftValue) ? "" : isNum ? $" DEFAULT {input.DftValue}" : $" DEFAULT '{input.DftValue}'")}";
         }
 
         /// <summary>
@@ -138,14 +146,21 @@ namespace HiDb.DataProvider.SqlServer
         {
             using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken, input.DataBase);
             var sql = @$"ALTER TABLE [{input.DataBase}].[{input.Mode}].[{input.Table}]
-                         ADD [{input.Column}] [{FormatType(input.Type, input.NumericPrecision, input.NumSize)}] {GetRequiredSql(input)} {GetDftValueSql(input)}";
-            var res = await connection.ExecuteAsync(sql) > 1;
-            if (!res) return res;
-            if (!string.IsNullOrWhiteSpace((input.Remark)))
+                         ADD {input.Column} {FormatType(input.Type, input.NumericPrecision, input.NumSize)} {GetRequiredSql(input)} {GetDftValueSql(input)}";
+            try
             {
-                return await connection.ExecuteAsync(GetUpdateRemarkSql(input)) > 1;
+                var res = await connection.ExecuteAsync(sql) > 1;
+                if (!res) return res;
+                if (!string.IsNullOrWhiteSpace((input.Remark)))
+                {
+                    return await connection.ExecuteAsync(GetUpdateRemarkSql(input)) > 1;
+                }
+                return res;
             }
-            return res;
+            catch (Exception e)
+            {
+                throw new Exception("执行错误:" + e.Message);
+            }
         }
 
         public async Task<bool> DeleteColumnConfigAsync(DeleteTableColumnInput input, CancellationToken cancellationToken = default)

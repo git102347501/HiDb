@@ -1,15 +1,15 @@
 <template>
     <div class="tbedit">
         <div class="tool">
+          <a-tooltip title="添加表字段">
+              <a-button @click="addNewColumnConfig" 
+                :icon="h(PlusOutlined)" type="primary"
+                style="margin-right: 6px;">添加</a-button>
+          </a-tooltip>
           <a-tooltip title="刷新表结构数据">
               <a-button @click="loadTableColumn" 
                 :icon="h(RedoOutlined)"
                 style="margin-right: 6px;">刷新</a-button>
-          </a-tooltip>
-          <a-tooltip title="添加表字段">
-              <a-button @click="addNewColumnConfig" 
-                :icon="h(RedoOutlined)"
-                style="margin-right: 6px;">添加</a-button>
           </a-tooltip>
         </div>
         <div class="data">
@@ -77,7 +77,7 @@ import { message } from 'ant-design-vue';
 import { cloneDeep } from 'lodash-es';
 import { h, UnwrapRef, reactive, ref, watchEffect,onMounted,createVNode } from 'vue';
 import {  getTableColumnList, getDbType, updateTableColumn, addTableColumn, deleteTableColumn } from '../../api/table';
-import {  RedoOutlined,DeleteOutlined } from '@ant-design/icons-vue';
+import {  RedoOutlined,DeleteOutlined,PlusOutlined } from '@ant-design/icons-vue';
 import Modal from 'ant-design-vue/es/modal/Modal';
 import { getGuid } from '@renderer/utils/guid';
 import { isNull } from '@renderer/utils/common';
@@ -188,22 +188,6 @@ const tableWidth = ref(dbColumns.value.reduce((sum, column) => sum + column.widt
 const allowEditColumns = ref<string[]>(['name','allowNull']);
 // 当前数据库表格数据
 const currdbData = ref<any[]>([]);
-// 编辑数据
-const editableData: UnwrapRef<Record<string, any>> = reactive({});
-// 编辑列
-const edit = (key: string) => {
-    editableData[key] = cloneDeep(currdbData.value.filter(item => key === item.key)[0]);
-};
-// 保存编辑
-const save = (key: string) => {
-    Object.assign(currdbData.value.filter(item => key === item.key)[0], editableData[key]);
-    delete editableData[key];
-    localStorage.setItem('hidbdata', JSON.stringify(currdbData.value));
-};
-// 撤销编辑
-const cancel = (key: string) => {
-    delete editableData[key];
-};
 // 加载
 const loading = ref(false);
 // 加载字段配置
@@ -217,6 +201,7 @@ const loadTableColumn = ()=>{
     loading.value = false;
     res.data.forEach(element => {
       element.isNew = false;
+      element.dftValue = element.dftValue ? element.dftValue.match(/\('(.*)'\)/)[1] : '';
     });
     currdbData.value = res.data;
   },()=> {
@@ -244,21 +229,32 @@ const saveColumnConfig = (data)=>{
     return;
   }
   data.loading = true;
+  let req = {
+    database: props.database, 
+    mode: props.mode, 
+    table: props.table,
+    column: data.name,
+    type: data.type, 
+    required: !data.allowNull,
+    dftValue: data.dftValue,
+    NumericPrecision: data.numericPrecision,
+    NumSize: data.numSize,
+    Remark: data.remark
+  };
   if (!data.isNew) {
-    updateTableColumn(props.dbtype, props.database, props.mode, props.table,
-      data.name, data.type, !data.allowNull).then(res=>{
+    updateTableColumn(req, props.dbtype).then(res=>{
         if (res) {
           message.success('保存成功');
         } else {
           message.warning('保存失败');
         }
         data.loading = false;
-    },()=>{ 
-      message.warning('保存错误'); 
+    },(err)=>{ 
+      message.error(err ? JSON.stringify(err) : '保存错误'); 
       data.loading = false; 
     })
   } else {
-    addColumnConfig(data);
+    addColumnConfig(data, req);
   }
 }
 const addNewColumnConfig = () =>{
@@ -271,10 +267,9 @@ const addNewColumnConfig = () =>{
     allowNull: true
   })
 }
-const addColumnConfig = (data)=>{
+const addColumnConfig = (data, req)=>{
   data.loading = true;
-  addTableColumn(props.dbtype, props.database, props.mode, props.table,
-    data.name, data.type, !data.allowNull).then(res=>{
+  addTableColumn(req, props.dbtype).then(res=>{
       if (res) {
         message.success('添加成功');
         data.isNew = false;
@@ -282,7 +277,10 @@ const addColumnConfig = (data)=>{
         message.warning('添加失败');
       }
       data.loading = false;
-  },()=>{ data.loading = false; })
+  },(err)=> { 
+    data.loading = false;  
+    message.error(err ? JSON.stringify(err) : '添加错误');
+  })
 }
 const deleteColumnConfig = (data)=>{
   Modal.confirm({
@@ -309,16 +307,12 @@ const deleteColumnConfig = (data)=>{
       },
     });
 }
-const clearData = ()=>{
-  currdbData.value = [];
-}
 
 const handleResizeColumn = (w, col) => {
   col.width = w;
 }
 
 watchEffect(()=>{
-  console.log('watch');
   loadTableColumn();
 });
 </script>

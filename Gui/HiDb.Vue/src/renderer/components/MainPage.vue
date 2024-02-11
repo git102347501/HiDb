@@ -113,6 +113,9 @@
                     <template v-if="type === 'tablenull'">
                       <borderless-table-outlined />
                     </template>
+                    <template v-if="type === 'tableend'">
+                      <minus-outlined />
+                    </template>
                   </template>
                   <template #title="{ key: treeKey, title }">
                     <a-dropdown :trigger="['contextmenu']">
@@ -315,7 +318,7 @@
 
 import { h, ref, watch, onMounted, UnwrapRef, reactive, createVNode, defineComponent  } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { ExclamationCircleOutlined,CloseOutlined,SearchOutlined,StopOutlined, BarsOutlined,PlusCircleOutlined,CloudDownloadOutlined,CheckOutlined,SaveOutlined, WifiOutlined,ApiOutlined,UserOutlined,BorderlessTableOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownFilled  } from '@ant-design/icons-vue';
+import { ExclamationCircleOutlined,MinusOutlined, CloseOutlined,SearchOutlined,StopOutlined, BarsOutlined,PlusCircleOutlined,CloudDownloadOutlined,CheckOutlined,SaveOutlined, WifiOutlined,ApiOutlined,UserOutlined,BorderlessTableOutlined,DatabaseOutlined,FileAddOutlined,CaretRightOutlined,RedoOutlined, DownOutlined, TabletOutlined, TableOutlined, FrownFilled  } from '@ant-design/icons-vue';
 import { getDb,getMode,getTable } from '../api/menu';
 import { getSearch,execute} from '../api/search';
 import { connectDb } from '../api/datasource';
@@ -661,17 +664,27 @@ import { dbTypeOptions } from '../utils/database';
                 pageIndex: 0
               }
             });
-            currMode.children.push({
-              title: '加载更多',
-              key: currMode.title + '-m',
-              isLeaf: true,
-              style: {
-                height: '35px'
-              },
-              type: 'table-more',
-              mode: currMode.title,
-              database: currMode.database
-            }); 
+            if (res.data.length < treeMaxSize.value) {
+              currMode.children.push({            
+                title: '没有更多了',
+                key: currMode.title + 'data-end',
+                isLeaf: true,
+                disabled: true,
+                type: 'tableend',
+              });
+            } else {
+              currMode.children.push({
+                title: '加载更多',
+                key: currMode.title + '-m',
+                isLeaf: true,
+                style: {
+                  height: '35px'
+                },
+                type: 'table-more',
+                mode: currMode.title,
+                database: currMode.database
+              }) 
+            }
             currMode.children.unshift({
               title: '',
               key: currMode.title + '-s',
@@ -1119,11 +1132,11 @@ import { dbTypeOptions } from '../utils/database';
           currMode.children.splice(currMode.children.length - 1, 1);
           if (!res.data || !res.data || res.data.length < 1) {
             currMode.children.push({            
-              title: '已经到底了',
+              title: '没有更多了',
               key: e.node.dataRef.mode + 'data-end',
               isLeaf: true,
               disabled: true,
-              type: 'tablenull',
+              type: 'tableend',
             });
           } else {
             res.data.forEach(c => {
@@ -1138,11 +1151,11 @@ import { dbTypeOptions } from '../utils/database';
             });
             if (res.data.length < treeMaxSize.value) {
               currMode.children.push({            
-                title: '已经到底了',
+                title: '没有更多了',
                 key: e.node.dataRef.mode + 'data-end',
                 isLeaf: true,
                 disabled: true,
-                type: 'tablenull',
+                type: 'tableend',
               });
             } else {
               currMode.children.push({
