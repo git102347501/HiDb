@@ -49,3 +49,6 @@ Supports multiple platforms on Windows and Mac, runs completely offline locally,
 
 # Contribution Guide （贡献指南）
 - [Contribution](CONTRIBUTING.md)
+
+# Special Thanks （特别鸣谢）
+[![JetBrains](https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.svg)](https://jb.gg/OpenSourceSupport)
