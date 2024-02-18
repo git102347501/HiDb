@@ -69,40 +69,26 @@ export function clearTable(dbtype, database, mode, table) {
 }
 
 // 更新指定列配置
-export function updateTableColumn(dbtype, database, mode, table, column, type, required) {
+export function updateTableColumn(data, dbtype) {
     return request({
         url: '/table/column/config',
         method: 'put',
         headers: {
             'dbtype': dbtype
         },
-        data: {
-            database,
-            mode,
-            table,
-            column,
-            type,
-            required
-        }
+        data: data
     })
 }
 
 // 添加指定列配置
-export function addTableColumn(dbtype, database, mode, table, column, type, required) {
+export function addTableColumn(data, dbtype) {
     return request({
         url: '/table/column/config',
         method: 'post',
         headers: {
             'dbtype': dbtype
         },
-        data: {
-            database,
-            mode,
-            table,
-            column,
-            type,
-            required
-        }
+        data: data
     })
 }
 

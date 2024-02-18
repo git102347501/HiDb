@@ -17,7 +17,7 @@ public class UpdateTableColumnInput : ChangeTableColumnInput
     /// <summary>
     /// 默认值
     /// </summary>
-    public string DftValue { get; set; }
+    public string? DftValue { get; set; }
 
     /// <summary>
     /// 精度
