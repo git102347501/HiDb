@@ -69,16 +69,22 @@ namespace HiDb.DataProvider.SqlServer
         {
             using var connection = await SqlConnectionFactory.Get().CreateConnectionAsync(cancellationToken, input.DataBase);
             var sql = @$"ALTER TABLE [{input.DataBase}].[{input.Mode}].[{input.Table}]
-                         ALTER COLUMN {input.Column} {FormatType(input.Type, input.NumericPrecision, input.NumSize)} {GetRequiredSql(input)} {GetDftValueSql(input)}";
+                         ALTER COLUMN {input.Column} {FormatType(input.Type, input.NumericPrecision, input.NumSize)} {GetRequiredSql(input)}";
             try
             {
-                var res = await connection.ExecuteAsync(sql) > 1;
-                if (!res) return res;
+                await connection.ExecuteAsync(sql);
                 if (!string.IsNullOrWhiteSpace((input.Remark)))
                 {
-                    return await connection.ExecuteAsync(GetUpdateRemarkSql(input)) > 1;
+                    await connection.ExecuteAsync(GetUpdateRemarkSql(input));
                 }
-                return res;
+
+                var dft = connection.QueryFirstOrDefault<string>(GetExistDftValueSql(input));
+                var dftSql = GetUpdateDftValueSql(input, dft);
+                if (!string.IsNullOrWhiteSpace(dftSql))
+                {
+                    await connection.ExecuteAsync(dftSql);
+                }
+                return true;
             }
             catch (Exception e)
             {
@@ -97,6 +103,32 @@ namespace HiDb.DataProvider.SqlServer
                 ,N'SCHEMA', N'{input.Mode}',N'TABLE', N'{input.Table}'
                 ,N'COLUMN', N'{input.Column}';";
             
+            return sql;
+        }
+
+        private string GetUpdateDftValueSql(ChangeTableColumnInput input, string existDft)
+        {
+            var drop = !string.IsNullOrWhiteSpace(existDft) ? @$"ALTER TABLE [{input.DataBase}].[{input.Mode}].[{input.Table}]
+                        DROP CONSTRAINT {existDft};" : "";
+            var sql = "";
+            if (!string.IsNullOrWhiteSpace(input.DftValue))
+            {
+                sql = @$"ALTER TABLE [{input.DataBase}].[{input.Mode}].[{input.Table}]
+                         ADD CONSTRAINT DF_{input.Column} DEFAULT '{input.DftValue}' FOR {input.Column};";
+            }
+
+            return drop + sql;
+        }
+
+        private string GetExistDftValueSql(ChangeTableColumnInput input)
+        {
+            var sql = $@"SELECT name
+                        FROM sys.default_constraints
+                        WHERE parent_object_id = OBJECT_ID('{input.Mode}.{input.Table}') AND parent_column_id = (
+                            SELECT column_id
+                            FROM sys.columns
+                            WHERE object_id = OBJECT_ID('{input.Mode}.{input.Table}') AND name = '{input.Column}'
+                        );";
             return sql;
         }
 

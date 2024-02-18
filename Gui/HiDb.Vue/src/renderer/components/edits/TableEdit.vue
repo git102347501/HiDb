@@ -250,7 +250,7 @@ const saveColumnConfig = (data)=>{
         }
         data.loading = false;
     },(err)=>{ 
-      message.error(err ? JSON.stringify(err) : '保存错误'); 
+      message.error(err && err.message ? err.message : '保存错误'); 
       data.loading = false; 
     })
   } else {
