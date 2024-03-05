@@ -12,6 +12,9 @@
             </template>
           </a-dropdown>
           <div style="margin-left: 8px;">
+            <a-button type="text" @click="openConfigModal" style="color: #fff">设置</a-button>
+          </div>
+          <div style="margin-left: 8px;">
             <a-dropdown>
               <a-button type="text" style="color: #fff">关于</a-button>
               <template #overlay>
@@ -270,6 +273,13 @@
           <a-button key="back" @click="openAboutDialog = false">关闭</a-button>
         </template>
       </a-modal>
+      <a-modal v-model:open="openConfigDialog" width="780px" title="软件配置">
+        <config-dialog ref="configDialogRef"></config-dialog>
+        <template #footer>
+          <a-button key="back" @click="openConfigDialog = false">关闭</a-button>
+          <a-button key="submit" type="primary" @click="selectDbAndOpen">保存</a-button>
+        </template>
+      </a-modal>
       <a-modal v-model:open="openVersionDialog" width="480px" title="版本信息">
         <version-dialog></version-dialog>
         <template #footer>
@@ -336,10 +346,13 @@ import AboutDialog from './dialogs/AboutDialog.vue';
 import VersionDialog from './dialogs/VersionDialog.vue';
 import OpenDbDialog from './dialogs/OpenDbDialog.vue';
 import DbListDialog from './dialogs/DbListDialog.vue';
+import ConfigDialog from './dialogs/ConfigDialog.vue';
 import { deleteTable, clearTable } from '../api/table';
 import axios from 'axios';
 import { getMaxLength } from '../utils/common';
 import { dbTypeOptions } from '../utils/database';
+const { clipboard } = require('electron');
+
   const BASE_URL = process.env.API_HOST;
   const sh = 280;
   const pageHeight = ref(0);
@@ -366,6 +379,7 @@ import { dbTypeOptions } from '../utils/database';
   const isLockQuery = ref(0); // 是否走查询
   const errorMsg = ref(''); // 错误消息
   const openAboutDialog = ref(false);
+  const openConfigDialog = ref(false);
   // 选中数据库名称
   const currDbName = ref('');
   const submitOpenDbLoading = ref(false);
@@ -433,6 +447,7 @@ import { dbTypeOptions } from '../utils/database';
     initEdit();
     // 加载工具菜单
     refToolData();
+    loadConfigData();
   });
   // 初始化编辑器
   const initEdit = (val = '')=>{
@@ -491,6 +506,7 @@ import { dbTypeOptions } from '../utils/database';
   }
   const openDbDialogRef = ref(null);
   const dbListDialogRef = ref(null);
+  const configDialogRef = ref(null);
   const callOpenDbInit = (data) => {
     console.log('callOpenDbInit');
     if (openDbDialogRef.value) {
@@ -746,6 +762,11 @@ import { dbTypeOptions } from '../utils/database';
     }
   }
 
+  const openConfigModal = ()=> {
+    console.log('openConfigModal');
+    openConfigDialog.value = true;
+  };
+
   const selectedMenu: MenuProps['onClick'] = ({ key }) => {
     if (key == '1') {
       submitOpenDbList();
@@ -999,7 +1020,29 @@ import { dbTypeOptions } from '../utils/database';
   const cancelDbDialog = ()=>{
     openDbDialog.value = false;
   }
-
+  const currConfig = ref(null);
+  const loadConfigData = ()=>{
+    let configData = localStorage.getItem('hidbconfig');
+    if (configData) {
+      currConfig.value = JSON.parse(configData);
+    }
+  }
+  const saveConfigData = ()=> {
+    if (!configDialogRef || !configDialogRef.value){
+      message.error('保存配置信息为空');
+      return;
+    }
+    currConfig.value = {
+        styleConfig: {
+            theme: configDialogRef.value.styleConfig.theme
+        },
+        editConfig: {
+            dclickMode: configDialogRef.value.editConfig.dclickMode
+        }
+    };
+    localStorage.setItem('hidbconfig', JSON.stringify(currConfig.value));
+    message.success('保存配置成功');
+  }
   // tree 点击加载
   const onLoadData: TreeProps['loadData'] = treeNode => {
       return new Promise<void>(resolve => {
@@ -1335,17 +1378,30 @@ import { dbTypeOptions } from '../utils/database';
   const tableColumnClick = (val)=>{
     editorAppendValue(val);
   }
+  // 全局配置
+  const config = ref({
+    clickTableFun: 'copy'
+  })
   const editorAppendValue = (text)=>{
     // 获取焦点位置
-    const position = editor.getPosition(); 
-    const appendText = {
-      range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column),
-      text: text,
-      forceMoveMarkers: true
-    };
 
     // 执行编辑操作
-    editor.executeEdits('appendText', [appendText]);
+    if (currConfig.value.editConfig.dclickMode = '2') {
+      // 获取焦点位置
+      const position = editor.getPosition(); 
+      const appendText = {
+        range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column),
+        text: text,
+        forceMoveMarkers: true
+      };
+
+      // 执行编辑操作
+      editor.executeEdits('appendText', [appendText]);
+
+    } else if (currConfig.value.editConfig.dclickMode = '1') {
+      clipboard.writeText(text, 'clipboard');
+      message.success('复制成功');
+    }
   }
 
   // 提交删除表
