@@ -1961,10 +1961,10 @@ electron-updater@^6.1.1:
     semver "^7.3.8"
     tiny-typed-emitter "^2.1.0"
 
-electron@^26.2.1:
-  version "26.6.2"
-  resolved "https://registry.npmmirror.com/electron/-/electron-26.6.2.tgz#92ca61b4a238cf2b254fa75e8ce65af1b5d17050"
-  integrity sha512-OWxzVtCJwN9en34bnLupw2dTRsDTBzQZyz0Wx0zjeJ2wgUVlpqavtVDpt50aaJpJR/5GcHH/apIa3uvGWz/ABQ==
+electron@^26.2.4:
+  version "26.2.4"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-26.2.4.tgz#36616b2386b083c13ae9188f2d8ccf233c23404a"
+  integrity sha512-weMUSMyDho5E0DPQ3breba3D96IxwNvtYHjMd/4/wNN3BdI5s3+0orNnPVGJFcLhSvKoxuKUqdVonUocBPwlQA==
   dependencies:
     "@electron/get" "^2.0.0"
     "@types/node" "^18.11.18"
