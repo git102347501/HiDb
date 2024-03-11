@@ -1,7 +1,7 @@
 <template>
     <div>
         <a-tabs v-model:activeKey="activeKey" >
-            <a-tab-pane key="1" tab="外观主题">
+            <a-tab-pane :key="1" tab="外观主题">
                 <a-form
                 ref="styleFormRef"
                 name="styleForm-validation">
@@ -16,7 +16,7 @@
                     </a-form-item>
                 </a-form>
             </a-tab-pane>
-            <a-tab-pane key="2" tab="编辑器配置" force-render>
+            <a-tab-pane :key="2" tab="编辑器配置" force-render>
                 <a-form
                     ref="editFormRef"
                     name="editForm-validation">
@@ -31,7 +31,7 @@
                     </a-form-item>
                 </a-form>
             </a-tab-pane>
-            <a-tab-pane key="3" tab="其他配置">
+            <a-tab-pane :key="3" tab="其他配置">
                 暂无
             </a-tab-pane>
         </a-tabs>
@@ -39,6 +39,7 @@
 </template>
 <script lang="ts" setup>
 import { onMounted, UnwrapRef, reactive, ref } from 'vue';
+import { dftConfig } from '../../utils/dft';
 
 const activeKey = ref(1);
 onMounted(() => {
@@ -52,6 +53,8 @@ const editConfig = reactive<any>({
 });
 const loadConfigData = ()=> {
     let data = localStorage.getItem('hidbconfig');
+    console.log('loadConfigData');
+    console.dir(data);
     if (data) {
       let curr = JSON.parse(data);
       if (curr.styleConfig) {
@@ -60,6 +63,9 @@ const loadConfigData = ()=> {
       if (curr.editConfig) {
         editConfig.dclickMode = curr.editConfig.dclickMode;
       }
+    } else {
+        styleConfig.theme = dftConfig.styleConfig.theme;
+        editConfig.dclickMode = dftConfig.editConfig.dclickMode;
     }
 }
 defineExpose({

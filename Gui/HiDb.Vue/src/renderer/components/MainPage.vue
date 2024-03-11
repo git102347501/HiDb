@@ -277,7 +277,7 @@
         <config-dialog ref="configDialogRef"></config-dialog>
         <template #footer>
           <a-button key="back" @click="openConfigDialog = false">关闭</a-button>
-          <a-button key="submit" type="primary" @click="selectDbAndOpen">保存</a-button>
+          <a-button key="submit" type="primary" @click="saveConfigData">保存</a-button>
         </template>
       </a-modal>
       <a-modal v-model:open="openVersionDialog" width="480px" title="版本信息">
@@ -351,6 +351,8 @@ import { deleteTable, clearTable } from '../api/table';
 import axios from 'axios';
 import { getMaxLength } from '../utils/common';
 import { dbTypeOptions } from '../utils/database';
+import { dftConfig } from '../utils/dft';
+
 const { clipboard } = require('electron');
 
   const BASE_URL = process.env.API_HOST;
@@ -1020,12 +1022,26 @@ const { clipboard } = require('electron');
   const cancelDbDialog = ()=>{
     openDbDialog.value = false;
   }
-  const currConfig = ref(null);
+  const currConfig = ref({
+    styleConfig: {
+      theme: 'light'
+    },
+    editConfig: {
+      dclickMode: '1'
+    }
+  });
   const loadConfigData = ()=>{
     let configData = localStorage.getItem('hidbconfig');
+    console.log('main-loadConfigData');
+    console.dir(configData);
+    console.log(currConfig.value);
     if (configData) {
       currConfig.value = JSON.parse(configData);
+    } else {
+      currConfig.value.editConfig = dftConfig.editConfig;
+      currConfig.value.styleConfig = dftConfig.styleConfig;
     }
+    console.log(currConfig.value);
   }
   const saveConfigData = ()=> {
     if (!configDialogRef || !configDialogRef.value){
@@ -1042,6 +1058,7 @@ const { clipboard } = require('electron');
     };
     localStorage.setItem('hidbconfig', JSON.stringify(currConfig.value));
     message.success('保存配置成功');
+    openConfigDialog.value = false;
   }
   // tree 点击加载
   const onLoadData: TreeProps['loadData'] = treeNode => {
@@ -1378,15 +1395,12 @@ const { clipboard } = require('electron');
   const tableColumnClick = (val)=>{
     editorAppendValue(val);
   }
-  // 全局配置
-  const config = ref({
-    clickTableFun: 'copy'
-  })
   const editorAppendValue = (text)=>{
     // 获取焦点位置
 
     // 执行编辑操作
-    if (currConfig.value.editConfig.dclickMode = '2') {
+    console.log(currConfig.value.editConfig.dclickMode);
+    if (currConfig.value.editConfig.dclickMode == '2') {
       // 获取焦点位置
       const position = editor.getPosition(); 
       const appendText = {
@@ -1398,8 +1412,8 @@ const { clipboard } = require('electron');
       // 执行编辑操作
       editor.executeEdits('appendText', [appendText]);
 
-    } else if (currConfig.value.editConfig.dclickMode = '1') {
-      clipboard.writeText(text, 'clipboard');
+    } else if (currConfig.value.editConfig.dclickMode == '1') {
+      clipboard.writeText(text);
       message.success('复制成功');
     }
   }
