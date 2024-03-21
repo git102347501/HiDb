@@ -821,6 +821,21 @@ const { clipboard } = require('electron');
   }
 
   // 加载数据库列表
+  const loadSelectDb = () => {
+    currloading.value = true;
+    getDb(currDatabase.value.type, '', false).then(res => {
+      selectDbData.value = res.data.map(c=> {
+        return {
+          value: c.name,
+          label: c.name
+        }}
+      );
+      currloading.value = false;
+    }, err => {
+      message.error(err.message);
+      currloading.value = false;
+    })
+  }
   const loadDataBase = ()=>{
     currloading.value = true;
     getDb(currDatabase.value.type, searchValue.value, searchTable.value).then(res => {
@@ -833,11 +848,6 @@ const { clipboard } = require('electron');
           type: 'db'
         }});
       console.log(treeData.value);
-      selectDbData.value = res.data.map(c=> {
-        return {
-          value: c.name,
-          label: c.name
-        }});
       currloading.value = false;
     }, err => {
       message.error(err.message);
@@ -888,7 +898,7 @@ const { clipboard } = require('electron');
     clearEditData();
     treeData.value = [];
     currData.value = [];
-    expandedMenuKeys.value = [];
+    expandedMenuKeys.value = [];  
     selectedMenuKeys.value = [];
     searchValue.value = '';
     isQuery.value = true;
@@ -935,6 +945,8 @@ const { clipboard } = require('electron');
         saveDbByLocal(data);
         // 加载数据库列表
         loadDataBase();
+        // 加载全局筛选列表
+        loadSelectDb();
       }
     }, err => { 
       currloading.value = false;
