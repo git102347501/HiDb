@@ -94,7 +94,7 @@
                   <template #switcherIcon="{ switcherCls }">
                     <down-outlined :class="switcherCls" />
                   </template>
-                  <template #icon="{ type, mode, database }">
+                  <template #icon="{ type, mode, database, search }">
                     <template v-if="type === 'db'">
                       <database-outlined />
                     </template>
@@ -103,6 +103,7 @@
                     </template>
                     <template v-if="type === 'table-search'">
                       <a-input-search
+                        :value="search"
                         placeholder="输入关键字搜索表" size="middle"  @search="onTableSearch($event, mode, database)"
                         :style="{ 'width': (menuWidth - 110) + 'px','max-width': '300px' }" 
                       />
@@ -661,7 +662,11 @@ const { clipboard } = require('electron');
           }
         });
         let currMode = currDb.children[0];
-        getTable(currMode.database, currMode.pageIndex, treeMaxSize.value, currMode.title, currDatabase.value.type).then(res=>{
+        let isSearchTable = searchTable.value && searchValue.value.length > 0;
+        let index = isSearchTable ? 0 :currMode.pageIndex;
+        let size = isSearchTable ? 999 : treeMaxSize.value;
+        
+        getTable(currMode.database, index, size, currMode.title, currDatabase.value.type).then(res=>{
           if (!res.data || !res.data || res.data.length < 1) {
             currMode.children = [{            
               title: '暂无表数据',
@@ -682,28 +687,36 @@ const { clipboard } = require('electron');
                 pageIndex: 0
               }
             });
-            if (res.data.length < treeMaxSize.value) {
-              currMode.children.push({            
-                title: '没有更多了',
-                key: currMode.title + 'data-end',
-                isLeaf: true,
-                disabled: true,
-                type: 'tableend',
-              });
-            } else {
-              currMode.children.push({
-                title: '加载更多',
-                key: currMode.title + '-m',
-                isLeaf: true,
-                style: {
-                  height: '35px'
-                },
-                type: 'table-more',
-                mode: currMode.title,
-                database: currMode.database
-              }) 
+            // 如果当前正在搜索表，自动过滤表
+            console.log('如果当前正在搜索表，自动过滤表');
+            if (searchTable.value && searchValue.value.length > 0) {
+              onTableSearch(searchValue.value, currMode.title, currMode.database);
+            }
+            if (!isSearchTable) {
+              if (res.data.length < treeMaxSize.value) {
+                currMode.children.push({            
+                  title: '没有更多了',
+                  key: currMode.title + 'data-end',
+                  isLeaf: true,
+                  disabled: true,
+                  type: 'tableend',
+                });
+              } else {
+                currMode.children.push({
+                  title: '加载更多',
+                  key: currMode.title + '-m',
+                  isLeaf: true,
+                  style: {
+                    height: '35px'
+                  },
+                  type: 'table-more',
+                  mode: currMode.title,
+                  database: currMode.database
+                }) 
+              }
             }
             currMode.children.unshift({
+              search: searchValue.value,
               title: '',
               key: currMode.title + '-s',
               isLeaf: true,
@@ -1101,7 +1114,8 @@ const { clipboard } = require('electron');
             resolve();
           })
         } else if (treeNode.dataRef.type === 'mode') {
-          getTable(treeNode.dataRef.database, treeNode.dataRef.pageIndex, treeMaxSize.value, treeNode.title, currDatabase.value.type).then(res=>{
+          getTable(treeNode.dataRef.database, treeNode.dataRef.pageIndex, treeMaxSize.value, 
+            treeNode.title, currDatabase.value.type).then(res=>{
             if (!res.data || !res.data || res.data.length < 1) {
               treeNode.dataRef.children = [{            
                 title: '暂无表数据',

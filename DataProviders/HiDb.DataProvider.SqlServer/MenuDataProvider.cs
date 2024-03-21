@@ -23,9 +23,18 @@ namespace HiDb.DataProvider.SqlServer
                 var list = new List<MenuDataBaseOutput>();
                 foreach (var db in res)
                 {
-                    if (await GetDbTableCountAsync(db.Name, name, cancellationToken) > 0)
+                    try
                     {
-                        list.Add(db);
+                        // 可能会没权限访问
+                        if (await GetDbTableCountAsync(db.Name, name, cancellationToken) > 0)
+                        {
+                            list.Add(db);
+                        }
+                    }
+                    catch
+                    {
+                        // 如果产生异常跳过
+                        continue;
                     }
                 }
 
